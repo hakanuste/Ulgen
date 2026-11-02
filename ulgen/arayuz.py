@@ -1072,7 +1072,31 @@ async function yzCiz() {
   s.kota.forEach(t => { const e = t.tahmini;
     ekle(k, t.ad + " — " + (t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir"),
       "bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms + " ms; hata %" + Math.round(t.hata_orani * 100)); });
-  ekle(k, "Bulut anahtarı eklemek için Mac'te: python -m ulgen --sir-kaydet nvidia (gemini, groq, mistral, openrouter)");
+  if (!yerel) { ekle(k, "Anahtar eklemek güvenlik için yalnızca Mac'in kendi tarayıcısından yapılır."); return; }
+  anahtarKutusu(k);
+}
+
+function anahtarKutusu(k) {
+  baslik(k, "Bulut anahtarı ekle (Mac'in Anahtar Zinciri'ne yazılır)");
+  const kap = document.createElement("div"); kap.className = "satir2";
+  const sec = document.createElement("select"); sec.className = "dugme";
+  ["gemini", "nvidia", "groq", "mistral", "openrouter"].forEach(a => { const o = document.createElement("option"); o.value = a; o.textContent = a; sec.appendChild(o); });
+  const gir = document.createElement("input"); gir.type = "password"; gir.autocomplete = "off"; gir.placeholder = "API anahtarı";
+  gir.style.cssText = "width:100%;margin:8px 0;padding:10px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+  const sonuc = document.createElement("pre"); sonuc.style.cssText = "white-space:pre-wrap;font-size:12px;color:var(--soluk)";
+  const kaydet = document.createElement("button"); kaydet.className = "dugme aktif"; kaydet.textContent = "Kaydet";
+  const dene = document.createElement("button"); dene.className = "dugme"; dene.textContent = "Bağlantıyı dene"; dene.style.marginLeft = "8px";
+  kaydet.onclick = async () => {
+    const c = await istek("/yz/anahtar", { saglayici: sec.value, anahtar: gir.value });
+    gir.value = ""; sonuc.textContent = c.tamam ? "Kaydedildi (" + c.yer + "). Şimdi 'Bağlantıyı dene'yi kullanın." : (c.hata || "Kaydedilemedi.");
+  };
+  dene.onclick = async () => {
+    dene.disabled = true; sonuc.textContent = "Deneniyor...";
+    try { const c = await istek("/yz/dene", { saglayici: sec.value }); sonuc.textContent = c.cikti || c.hata || "Yanıt yok."; }
+    finally { dene.disabled = false; }
+  };
+  kap.appendChild(sec); kap.appendChild(gir); kap.appendChild(kaydet); kap.appendChild(dene); kap.appendChild(sonuc);
+  k.appendChild(kap);
 }
 
 async function ayarCiz() {

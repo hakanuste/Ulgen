@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Yapay Zekâ sayfasında "Bulut anahtarı ekle" kutusu (yalnız 127.0.0.1; Anahtar Zinciri; "Bağlantıyı dene").
 - Raporlar: sabah/akşam/haftalık (`ulgen/rapor.py`, göç 9, `rapor_acik`, `rapor_saatleri`).
 - `--dene [sağlayıcı]`: gerçek bulut isteği, süre/token/hata ipucu.
 - Çevrimdışı ses: `CevrimdisiTanima`, `/ses/yaz`, `/ses/durum`, `--ses-modeli-indir`.

@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import hava, obsidyen, saglik_veri, ses
+from . import gizli, hava, obsidyen, saglik_veri, ses
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -447,6 +447,34 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {"hatirlaticilar": satirlar})
             return self._cevap(404, {"hata": "bulunamadı"})
 
+        def _yz_anahtar(self, yol, veri):
+            """API anahtarını Anahtar Zinciri'ne yazar / bağlantıyı dener.
+
+            YALNIZCA Mac'in kendi tarayıcısından (127.0.0.1). Anahtar yanıtta,
+            günlükte ve veritabanında asla yer almaz."""
+            if not self.server.yerel:
+                return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                 "tarayıcısından"})
+            ad = veri.get("saglayici")
+            if ad not in ayar.SIRLAR:
+                return self._cevap(400, {"hata": "bilinmeyen sağlayıcı"})
+            if yol == "/yz/anahtar":
+                anahtar = veri.get("anahtar")
+                if (not isinstance(anahtar, str) or not 8 <= len(anahtar) <= 400
+                        or re.search(r"\s", anahtar)
+                        or not anahtar.isprintable()):
+                    return self._cevap(400, {"hata": "anahtar geçersiz görünüyor"})
+                yer = gizli.sir_yaz(ad, anahtar)
+                veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı yazıldı" % ad)
+                return self._cevap(200, {"tamam": True, "yer": yer})
+            import io
+            from contextlib import redirect_stdout
+            from . import tani
+            ara = io.StringIO()
+            with redirect_stdout(ara):
+                kod = tani.dene([ad])
+            return self._cevap(200, {"calisti": kod == 0, "cikti": ara.getvalue()})
+
         def _ses_yaz(self, tur):
             """Ham ses → metin (yerel, internetsiz). Gövde ≤ 8 MB."""
             try:
@@ -503,6 +531,8 @@ def istek_sinifi(ulgen, limit):
                                          .bitir(kimlik)})
             if urlparse(self.path).path == "/ilac/yanit":
                 return self._doz_yanit(veri)
+            if urlparse(self.path).path in ("/yz/anahtar", "/yz/dene"):
+                return self._yz_anahtar(urlparse(self.path).path, veri)
             if urlparse(self.path).path == "/saglik/veri":
                 try:
                     e, a = saglik_veri.ekle(veri.get("olcumler"))
