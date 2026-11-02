@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Sürüm numarası artık yapıyı da gösterir (2.7.25); hangi yapının çalıştığı arayüzde görülür.
 - Sesle "dur / sus / kes / yeter" ("Ülgen" demeden de) sürekli dinleme açıkken anında yakalanır; konuşmayı ve süren işi durdurur.
 - "dur" ve "Sus" artık sunucuda süren sohbet/araştırma işini de durdurur (`/sohbet/iptal`, ara adımlarda denetim).
 - Görevler sekmesinde "+ Görev / + Randevu / + Rutin" formları (hiç kayıt yokken de görünür).
