@@ -11,11 +11,12 @@ llama.cpp sunucusu ya da Gemini kullanılabilir.
 """
 
 import json
+import re
 import time
 import urllib.error
 import urllib.request
 
-from . import ag
+from . import ag, ayar, veritabani
 
 GEMINI_TABAN = "https://generativelanguage.googleapis.com/v1beta"
 
@@ -261,7 +262,49 @@ class OpenAIUyumluBeyin(Beyin):
     def _basliklar(self):
         return {"Authorization": "Bearer " + self.anahtar}
 
+    # Model emekli olduysa (HTTP 404/410) liste sorulup yeni model seçilir.
+    TERCIH = ("llama-3.3-70b", "llama-3.1-70b", "lightning", "nemotron",
+              "llama-3.1-8b", "qwen", "mistral", "gemma")
+    ELE = ("embed", "rerank", "vision", "-vl", "vlm", "guard", "safety",
+           "reward", "parse", "clip", "retriev", "nv-", "audio", "speech",
+           "tts", "asr", "diffusion", "image", "code-", "translate")
+
+    def _yeni_model(self, eski):
+        adaylar = [m for m in self.modelleri_listele()
+                   if m != eski and not any(e in m.lower() for e in self.ELE)]
+        for tercih in self.TERCIH:
+            for m in adaylar:
+                if tercih in m.lower():
+                    return m
+        return None
+
     def yanitla(self, sistem, mesajlar, azami_token=700):
+        try:
+            return self._yanitla(sistem, mesajlar, azami_token)
+        except BeyinHatasi as hata:
+            if not re.match(r"HTTP (404|410)\b", str(hata)):
+                raise
+            try:
+                yeni = self._yeni_model(self.model)
+            except BeyinHatasi:
+                yeni = None
+            if not yeni:
+                raise
+            eski, self.model = self.model, yeni
+            try:
+                yanit = self._yanitla(sistem, mesajlar, azami_token)
+            except BeyinHatasi:
+                self.model = eski
+                raise
+            try:                                   # kalıcı olsun
+                ayar.guncelle(self.saglayici + "_model", yeni)
+                veritabani.gunluge_yaz("bilgi", "model", "%s modeli %s -> %s" % (
+                    self.saglayici, eski, yeni))
+            except Exception:
+                pass
+            return yanit
+
+    def _yanitla(self, sistem, mesajlar, azami_token=700):
         from . import kota
         kota.ucretsiz_dogrula(self.saglayici, self.model)
         govde = {"model": self.model, "temperature": 0.6, "stream": False,
