@@ -130,3 +130,26 @@ def hepsini_uret(zorla=False):
             if "sınır" in str(hata) or "anahtar" in str(hata):
                 break
     return sonuc
+
+
+def yukle(ad, ham):
+    """Kendi mp3 dosyanızı bir cümle için koyar (ElevenLabs gerekmez)."""
+    hedef = yol(ad)
+    if not ham or len(ham) > AZAMI_BAYT:
+        raise KlipHatasi("dosya boş ya da 4 MB'tan büyük")
+    if not (ham[:3] == b"ID3" or (len(ham) > 2 and ham[0] == 0xFF
+                                  and ham[1] & 0xE0 == 0xE0)):
+        raise KlipHatasi("yalnız mp3 dosyası kabul edilir")
+    os.makedirs(klasor(), mode=0o700, exist_ok=True)
+    gecici = hedef + ".tmp"
+    with open(gecici, "wb") as f:
+        f.write(ham)
+    os.replace(gecici, hedef)
+
+
+def sil(ad):
+    try:
+        os.remove(yol(ad))
+        return True
+    except FileNotFoundError:
+        return False

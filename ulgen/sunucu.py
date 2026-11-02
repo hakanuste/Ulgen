@@ -418,6 +418,11 @@ def istek_sinifi(ulgen, limit):
                                          if not any(g in k for g in gizli_alan)})
             if yol == "/ses/klipler":
                 return self._cevap(200, ses_klip.hazir_klipler())
+            if yol == "/ses/cumleler":
+                return self._cevap(200, [
+                    {"ad": a, "metin": m, "var": os.path.isfile(
+                        ses_klip.yol(a))}
+                    for a, m in ses_klip.CUMLELER.items()])
             if yol.startswith("/ses/klip/"):
                 ad = yol[len("/ses/klip/"):]
                 try:
@@ -520,6 +525,32 @@ def istek_sinifi(ulgen, limit):
                 kod = tani.dene([ad])
             return self._cevap(200, {"calisti": kod == 0, "cikti": ara.getvalue()})
 
+        def _klip_yukle(self, tur):
+            """Kendi mp3'ünüzü sabit cümleye koyar (POST ham mp3, ≤ 4 MB)."""
+            ad = urlparse(self.path).path[len("/ses/klip/"):]
+            try:
+                uzunluk = int(self.headers.get("Content-Length", 0) or 0)
+            except ValueError:
+                uzunluk = 0
+            if ad not in ses_klip.CUMLELER:
+                self._cevap(404, {"hata": "bilinmeyen cümle"})
+                return
+            if uzunluk <= 0 or uzunluk > ses_klip.AZAMI_BAYT:
+                self._cevap(413, {"hata": "dosya boş ya da 4 MB'tan büyük"})
+                return
+            if not tur.startswith(("audio/", "application/octet-stream")):
+                self._cevap(415, {"hata": "mp3 dosyası gerekli"})
+                return
+            govde = self.rfile.read(uzunluk)
+            if not self._yetkili():
+                return
+            try:
+                ses_klip.yukle(ad, govde)
+            except ses_klip.KlipHatasi as hata:
+                self._cevap(400, {"hata": str(hata)})
+                return
+            self._cevap(200, {"tamam": True})
+
         def _ses_yaz(self, tur):
             """Ham ses → metin (yerel, internetsiz). Gövde ≤ 8 MB."""
             try:
@@ -549,6 +580,8 @@ def istek_sinifi(ulgen, limit):
             tur = (self.headers.get("Content-Type") or "").lower()
             if urlparse(self.path).path == "/ses/yaz":
                 return self._ses_yaz(tur)
+            if urlparse(self.path).path.startswith("/ses/klip/"):
+                return self._klip_yukle(tur)
             if not tur.startswith("application/json"):
                 return self._cevap(415, {"hata": "application/json gerekli"})
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)
@@ -561,6 +594,11 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
                     "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path == "/ses/klip-sil":
+                ad = veri.get("ad")
+                if ad not in ses_klip.CUMLELER:
+                    return self._cevap(400, {"hata": "bilinmeyen cümle"})
+                return self._cevap(200, {"silindi": ses_klip.sil(ad)})
             if urlparse(self.path).path == "/ilac/duzenle":
                 kimlik = veri.get("id")
                 if (not isinstance(kimlik, int) or isinstance(kimlik, bool)

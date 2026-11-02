@@ -83,3 +83,26 @@ class KlipTesti(TemizVeri):
         k, _ = istek(p, "/yz/anahtar", "POST", json.dumps(
             {"saglayici": "elevenlabs", "ses_kimligi": "../kotu"}), JSON)
         self.assertEqual(k, 400)
+
+
+class KlipYuklemeTesti(TemizVeri):
+
+    def test_yukle_dinle_sil_ve_sinirlar(self):
+        srv = sunucu.yerel_sunucu(Ulgen(), 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        p = srv.server_address[1]
+        A = {"Content-Type": "audio/mpeg"}
+        mp3 = b"ID3\x04\x00\x00\x00\x00\x00\x00" + b"x" * 50
+        self.assertEqual(istek(p, "/ses/klip/tamam", "POST", mp3, A)[0], 200)
+        self.assertEqual(istek(p, "/ses/klip/tamam")[1], mp3)
+        k, h = istek(p, "/ses/cumleler")
+        self.assertTrue([c for c in json.loads(h) if c["ad"] == "tamam"][0]["var"])
+        self.assertEqual(istek(p, "/ses/klip/tamam", "POST", b"MZ-exe-degil-mp3", A)[0], 400)
+        self.assertEqual(istek(p, "/ses/klip/olmayan", "POST", mp3, A)[0], 404)
+        self.assertEqual(istek(p, "/ses/klip/tamam", "POST", mp3, {"Content-Type": "text/html"})[0], 415)
+        self.assertEqual(istek(p, "/ses/klip/tamam", "POST", mp3, A, yetkisiz=True)[0], 401)
+        k, h = istek(p, "/ses/klip-sil", "POST", json.dumps({"ad": "tamam"}), JSON)
+        self.assertTrue(json.loads(h)["silindi"])
+        self.assertEqual(istek(p, "/ses/klip/tamam")[0], 404)
+        self.assertEqual(istek(p, "/ses/klip-sil", "POST", json.dumps({"ad": "../x"}), JSON)[0], 400)

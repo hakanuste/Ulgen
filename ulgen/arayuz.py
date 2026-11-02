@@ -524,9 +524,15 @@ function konus(metin) {
   yerelKonus(metin);
 }
 
+function sesTercihi() {
+  try { return JSON.parse(localStorage.getItem("ulgen_ses") || "{}"); } catch (e) { return {}; }
+}
+
 function yerelKonus(metin) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
+  const t = sesTercihi();
+  const secili = t.ad ? speechSynthesis.getVoices().find(v => v.name === t.ad) : null;
   // Uzun metinler (sabah raporu) tek parça okununca tarayıcıda kesilir;
   // bu yüzden cümle cümle okunur.
   const parcalar = metin.replace(/\s+/g, " ").match(/[^.!?]+[.!?]*/g) || [metin];
@@ -534,8 +540,9 @@ function yerelKonus(metin) {
     if (!p.trim()) continue;
     const u = new SpeechSynthesisUtterance(p.trim());
     u.lang = "tr-TR";
-    u.rate = 0.95;
-    u.pitch = 0.8;
+    if (secili) u.voice = secili;
+    u.rate = t.hiz || 0.95;
+    u.pitch = t.perde || 0.8;
     speechSynthesis.speak(u);
   }
 }
@@ -1125,8 +1132,55 @@ function anahtarKutusu(k) {
   k.appendChild(kap);
 }
 
+async function sesPaneli(k) {
+  baslik(k, "Ses seçimi");
+  // 1) Yerel ses (bu cihazın sesi): ad, hız, perde
+  const kap = ekle(k, "Okuma sesi (bu cihazda)", "Sabit cümleler dışındaki yanıtlar bu sesle okunur.");
+  const t = sesTercihi();
+  const sec = document.createElement("select"); sec.className = "dugme"; sec.style.cssText = "max-width:100%;margin-top:6px";
+  const doldur = () => {
+    sec.innerHTML = "";
+    const oto = document.createElement("option"); oto.value = ""; oto.textContent = "Otomatik"; sec.appendChild(oto);
+    speechSynthesis.getVoices().filter(v => /tr/i.test(v.lang)).concat(speechSynthesis.getVoices().filter(v => !/tr/i.test(v.lang)))
+      .forEach(v => { const o = document.createElement("option"); o.value = v.name; o.textContent = v.name + " (" + v.lang + ")"; sec.appendChild(o); });
+    sec.value = t.ad || "";
+  };
+  if ("speechSynthesis" in window) { doldur(); speechSynthesis.onvoiceschanged = doldur; }
+  const kaydetTercih = () => { t.ad = sec.value; t.hiz = parseFloat(hiz.value); t.perde = parseFloat(perde.value);
+    try { localStorage.setItem("ulgen_ses", JSON.stringify(t)); } catch (e) { /* özel gezinti */ } };
+  const kaydirak = (ad, min, max, adim, deger) => { const e = document.createElement("input"); e.type = "range"; e.min = min; e.max = max; e.step = adim; e.value = deger; e.style.cssText = "width:100%"; e.title = ad; return e; };
+  const hiz = kaydirak("Hız", 0.6, 1.4, 0.05, t.hiz || 0.95), perde = kaydirak("Perde", 0.5, 1.5, 0.05, t.perde || 0.8);
+  const dene = document.createElement("button"); dene.className = "dugme aktif"; dene.textContent = "Dene"; dene.style.marginTop = "6px";
+  dene.onclick = () => { kaydetTercih(); yerelKonus("Merhaba, ben Ülgen. Sesim böyle."); };
+  sec.onchange = kaydetTercih; hiz.onchange = kaydetTercih; perde.onchange = kaydetTercih;
+  kap.appendChild(sec); kap.appendChild(document.createTextNode("Hız")); kap.appendChild(hiz);
+  kap.appendChild(document.createTextNode("Perde")); kap.appendChild(perde); kap.appendChild(dene);
+  // 2) Sabit cümleler için kendi mp3 dosyalarınız
+  baslik(k, "Kendi ses dosyalarınız (mp3)");
+  const cumleler = await istek("/ses/cumleler");
+  cumleler.forEach(c => {
+    const d = ekle(k, c.metin, c.var ? "Kendi dosyanız yüklü" : "Dosya yok (yerel ses okur)");
+    const f = document.createElement("input"); f.type = "file"; f.accept = "audio/mpeg,.mp3"; f.style.cssText = "display:block;margin-top:6px;max-width:100%";
+    f.onchange = async () => {
+      if (!f.files[0]) return;
+      const h = { "Content-Type": "audio/mpeg" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+      const r = await fetch("/ses/klip/" + c.ad, { method: "POST", headers: h, body: f.files[0] });
+      const v = await r.json(); balonEkle(r.ok ? "Ses dosyası yüklendi." : (v.hata || "Yüklenemedi."), "asistan");
+      klipler = await istek("/ses/klipler"); ayarCiz();
+    };
+    d.appendChild(f);
+    if (c.var) {
+      const b = document.createElement("button"); b.className = "dugme"; b.textContent = "Dinle"; b.style.margin = "6px 6px 0 0"; b.onclick = () => klipCal(c.ad);
+      const s = document.createElement("button"); s.className = "dugme"; s.textContent = "Kaldır"; s.style.marginTop = "6px";
+      s.onclick = async () => { await istek("/ses/klip-sil", { ad: c.ad }); klipler = await istek("/ses/klipler"); ayarCiz(); };
+      d.appendChild(b); d.appendChild(s);
+    }
+  });
+}
+
 async function ayarCiz() {
   const a = await istek("/ayar/ozet"); const k = document.getElementById("pAyarlar"); k.innerHTML = "";
+  await sesPaneli(k);
   baslik(k, "Ayarlar (salt okunur; API anahtarları gösterilmez)");
   Object.keys(a).sort().forEach(n => ekle(k, n, typeof a[n] === "object" ? JSON.stringify(a[n]) : String(a[n])));
   ekle(k, "Değiştirmek için Mac'te ~/ÜlgenVeri/ayar.json dosyasını düzenleyin.", "Güvenlik ayarları (yerel_yetki, sifresiz_veritabani_izni) arayüzden değiştirilemez; bilerek böyle.");
