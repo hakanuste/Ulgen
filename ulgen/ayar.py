@@ -61,6 +61,9 @@ VARSAYILAN = {
     # Dosya ve veri klasörleri
     "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
     "elevenlabs_ses_kimligi": "J17lijyP1BHYcM7ld0Rg",  # "dede korkut" (Voices > Copy Voice ID)
+    # Kendini güncelleme: "kullanici/depo" (GitHub); özel depo için "github" anahtarı
+    "guncelleme_depo": "",
+    "guncelleme_dal": "main",
     "elevenlabs_bulut_ses": False,  # True: yanıt metinleri ElevenLabs'e gider (isteğe bağlı)
     "elevenlabs_model": "eleven_flash_v2_5",
     "elevenlabs_kararlilik": 0.66,
@@ -111,7 +114,8 @@ SABLON = {
 SIRLAR = {"gemini": "gemini_anahtar", "groq": "groq_anahtar",
           "nvidia": "nvidia_anahtar",
           "mistral": "mistral_anahtar", "openrouter": "openrouter_anahtar",
-          "elevenlabs": "elevenlabs_anahtar"}
+          "elevenlabs": "elevenlabs_anahtar",
+          "github": "github_anahtar"}
 
 
 def yol_ac(yol):

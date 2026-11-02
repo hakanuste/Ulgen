@@ -125,6 +125,36 @@ def _parola(yeni):
     return ilk
 
 
+def guncelleme_komutu(argv):
+    """--guncelle (GitHub) | --guncelle-zip DOSYA | --guncelle-geri-al."""
+    from . import guncelle
+    try:
+        if "--guncelle-geri-al" in argv:
+            print("Geri alındı:", guncelle.geri_al())
+        elif "--guncelle-zip" in argv:
+            sonuc = guncelle.uygula_zip(_deger(argv, "--guncelle-zip"))
+            print("Güncellendi: %(eski)s -> %(yeni)s (yedek: %(yedek)s)" % sonuc)
+        else:
+            d = guncelle.durum()
+            print("Kurulu: %s | Depodaki: %s" % (d["kurulu"], d["uzak"]))
+            if d["hata"]:
+                print("Hata:", d["hata"])
+                return 1
+            if not d["yeni_var"]:
+                print("Zaten güncel.")
+                return 0
+            sonuc = guncelle.depodan_guncelle()
+            print("Güncellendi: %(eski)s -> %(yeni)s (yedek: %(yedek)s)" % sonuc)
+    except guncelle.GuncellemeHatasi as hata:
+        print("Güncelleme yapılmadı:", hata)
+        return 1
+    if guncelle.yeniden_baslat():
+        print("Sunucu yeniden başlatılıyor.")
+    else:
+        print("Sunucuyu yeniden başlatın.")
+    return 0
+
+
 def yonetim(argv):
     """Sunucu açmayan yönetim komutları. İşlenmediyse None döndürür."""
     if "--cihaz-ekle" in argv or "--anahtar" in argv:
@@ -186,6 +216,9 @@ def yonetim(argv):
     if "--tani" in argv:
         from . import tani
         return tani.calistir()
+    if "--guncelle" in argv or "--guncelle-zip" in argv \
+            or "--guncelle-geri-al" in argv:
+        return guncelleme_komutu(argv)
     if "--sir-kaydet" in argv:
         ad = _deger(argv, "--sir-kaydet")
         if ad not in ayar.SIRLAR:

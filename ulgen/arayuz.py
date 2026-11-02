@@ -1195,7 +1195,7 @@ async function yzCiz() {
   await anahtarlarim(k);
 }
 
-const SAGLAYICI_AD = { gemini: "Gemini", nvidia: "NVIDIA", groq: "Groq", mistral: "Mistral", openrouter: "OpenRouter", elevenlabs: "ElevenLabs (ses)" };
+const SAGLAYICI_AD = { gemini: "Gemini", nvidia: "NVIDIA", groq: "Groq", mistral: "Mistral", openrouter: "OpenRouter", elevenlabs: "ElevenLabs (ses)", github: "GitHub (özel depo güncellemesi için)" };
 
 // Hangi sağlayıcıya anahtar girilmiş: görünür, eklenir, değiştirilir, silinir.
 async function anahtarlarim(k) {
@@ -1348,8 +1348,47 @@ async function sesPaneli(k) {
   });
 }
 
+// Kendini güncelleme: depodan yeni kodu çeker; ortam, veri ve anahtarlar korunur, eski kod yedeklenir.
+async function guncellemePaneli(k) {
+  baslik(k, "Güncelleme");
+  let d;
+  try { d = await istek("/guncelle/durum"); } catch (e) { ekle(k, "Güncelleme durumu okunamadı."); return; }
+  const kap = ekle(k, "Kurulu sürüm: " + d.kurulu + (d.uzak ? "  ·  depodaki: " + d.uzak : ""),
+    d.hata ? d.hata : (d.yeni_var ? "Yeni sürüm var." : "Güncelsiniz."));
+  const st = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+  const dug = (yazi, ac, tehlike) => { const b = document.createElement("button"); b.className = "dugme" + (ac ? " aktif" : ""); b.textContent = yazi;
+    b.style.cssText = "margin:6px 6px 0 0" + (tehlike ? ";border-color:var(--ulgen-danger);color:var(--ulgen-danger)" : ""); kap.appendChild(b); return b; };
+  if (!d.depo) {
+    const gir = document.createElement("input"); gir.placeholder = "GitHub deposu (örn. hakanuste/Ulgen)"; gir.autocomplete = "off"; gir.style.cssText = st; kap.appendChild(gir);
+    const kay = dug("Depoyu kaydet", true);
+    kay.onclick = async () => { const c = await istek("/guncelle/depo", { depo: gir.value.trim() }); balonEkle(c.depo ? "Güncelleme deposu: " + c.depo : (c.hata || "Kaydedilemedi."), "asistan"); ayarCiz(); };
+    return;
+  }
+  const den = dug("Denetle"); den.onclick = () => ayarCiz();
+  if (d.yeni_var) {
+    const gu = dug("Güncelle", true);
+    gu.onclick = async () => {
+      if (!confirm("Ülgen " + d.kurulu + " → " + d.uzak + " güncellenecek; eski kod yedeklenir ve sunucu yeniden başlar. Devam edilsin mi?")) return;
+      gu.disabled = true; balonEkle("Güncelleniyor…", "asistan");
+      const c = await istek("/guncelle/uygula", { onay: true });
+      if (!c.tamam) { balonEkle("Güncelleme yapılmadı: " + (c.hata || "bilinmeyen hata"), "asistan"); gu.disabled = false; return; }
+      balonEkle("Güncellendi: " + c.eski + " → " + c.yeni + ". Sunucu yeniden başlıyor; sayfa birazdan yenilenecek.", "asistan");
+      setTimeout(function bekle() { fetch("/saglik", { cache: "no-store" }).then(r => r.json()).then(j => { if (j.surum === c.yeni) location.reload(); else setTimeout(bekle, 1500); }).catch(() => setTimeout(bekle, 1500)); }, 4000);
+    };
+  }
+  if (d.geri_alinabilir) {
+    const ge = dug("Önceki sürüme dön", false, true);
+    ge.onclick = async () => {
+      if (!confirm("Son güncellemeden önceki kod geri konulacak. Emin misiniz?")) return;
+      const c = await istek("/guncelle/geri-al", { onay: true });
+      balonEkle(c.tamam ? "Geri alındı (" + c.geri + "). Sunucu yeniden başlıyor." : "Geri alınamadı: " + (c.hata || ""), "asistan");
+    };
+  }
+}
+
 async function ayarCiz() {
   const a = await istek("/ayar/ozet"); const k = document.getElementById("pAyarlar"); k.innerHTML = "";
+  if (yerel) await guncellemePaneli(k);
   await sesPaneli(k);
   baslik(k, "Ayarlar (salt okunur; API anahtarları gösterilmez)");
   Object.keys(a).sort().forEach(n => ekle(k, n, typeof a[n] === "object" ? JSON.stringify(a[n]) : String(a[n])));

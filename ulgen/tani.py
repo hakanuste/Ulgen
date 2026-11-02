@@ -173,7 +173,8 @@ def calistir():
 
     # ---- beyin ve anahtarlar
     a = ayar.yukle()
-    anahtarlar = [ad for ad, alan in ayar.SIRLAR.items() if a.get(alan)]
+    anahtarlar = [ad for ad, alan in ayar.SIRLAR.items()
+                  if a.get(alan) and ad != "github"]
     ekle(_satir("TAMAM" if anahtarlar else "UYARI", "Bulut anahtarları",
                 ", ".join(anahtarlar) or "hiçbiri kayıtlı"))
     for ad, adres in (("Ollama", a["ollama_adres"]),

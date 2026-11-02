@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import gizli, hava, iptal, obsidyen, saglik_veri, ses, ses_klip
+from . import gizli, guncelle, hava, iptal, obsidyen, saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -416,6 +416,14 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/guncelle/durum":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                d = guncelle.durum()
+                d["depo"] = ayar.yukle().get("guncelleme_depo", "")
+                d["geri_alinabilir"] = bool(guncelle.yedekler())
+                return self._cevap(200, d)
             if yol == "/yz/anahtarlar":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
@@ -503,6 +511,33 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {"hatirlaticilar": satirlar})
             return self._cevap(404, {"hata": "bulunamadı"})
 
+        def _guncelle(self, yol, veri):
+            """Depo ayarı, güncelleme ve geri alma. YALNIZCA 127.0.0.1."""
+            if not self.server.yerel:
+                return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                 "tarayıcısından"})
+            try:
+                if yol == "/guncelle/depo":
+                    depo = str(veri.get("depo", "")).strip()
+                    if not guncelle.DEPO_DESENI.match(depo):
+                        return self._cevap(400, {"hata": "biçim: kullanici/depo"})
+                    ayar.guncelle("guncelleme_depo", depo)
+                    return self._cevap(200, {"depo": depo})
+                if veri.get("onay") is not True:
+                    return self._cevap(400, {"hata": "onay gerekli"})
+                if yol == "/guncelle/uygula":
+                    sonuc = guncelle.depodan_guncelle()
+                elif yol == "/guncelle/geri-al":
+                    sonuc = {"geri": guncelle.geri_al()}
+                else:
+                    return self._cevap(404, {"hata": "bulunamadı"})
+            except guncelle.GuncellemeHatasi as hata:
+                return self._cevap(200, {"tamam": False, "hata": str(hata)})
+            veritabani.gunluge_yaz("bilgi", "guncelleme", json.dumps(sonuc))
+            sonuc["tamam"] = True
+            sonuc["yeniden_basliyor"] = guncelle.yeniden_baslat()
+            return self._cevap(200, sonuc)
+
         def _yz_anahtar(self, yol, veri):
             """API anahtarını Anahtar Zinciri'ne yazar / bağlantıyı dener.
 
@@ -514,6 +549,11 @@ def istek_sinifi(ulgen, limit):
             ad = veri.get("saglayici")
             if ad not in ayar.SIRLAR:
                 return self._cevap(400, {"hata": "bilinmeyen sağlayıcı"})
+            if yol == "/yz/dene" and ad == "github":
+                d = guncelle.durum()
+                return self._cevap(200, {"calisti": not d["hata"], "cikti":
+                                         d["hata"] or "GitHub erişimi tamam; "
+                                         "depodaki sürüm %s." % d["uzak"]})
             if yol == "/yz/anahtar" and ad == "elevenlabs" \
                     and veri.get("ses_kimligi"):
                 kim = str(veri["ses_kimligi"]).strip()
@@ -727,6 +767,8 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
                 return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
                                          .sil(kimlik)})
+            if urlparse(self.path).path.startswith("/guncelle/"):
+                return self._guncelle(urlparse(self.path).path, veri)
             if urlparse(self.path).path == "/yz/anahtar-sil":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
