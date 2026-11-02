@@ -1053,7 +1053,8 @@ async function bilgiCiz() {
     sonuc.innerHTML = "";
     baslik(sonuc, "Notlar (Obsidian)");
     if (!r.dizin.hazir) ekle(sonuc, "Not dizini hazır değil.");
-    else if (!g.value) ekle(sonuc, "Aramak için yazın. Kasa: " + r.dizin.kasa);
+    else if (!r.dizin.erisim) ekle(sonuc, "Obsidian kasasına ulaşılamıyor", r.dizin.ileti);
+    else if (!g.value) ekle(sonuc, "Aramak için yazın. Kasa: " + r.dizin.kasa, r.dizin.dosya + " not dosyası, " + r.dizin.dizinli + " tanesi dizinlendi.");
     else if (!r.notlar.length) ekle(sonuc, "Eşleşen not yok.");
     r.notlar.forEach(n => ekle(sonuc, n.baslik, n.alinti));
     baslik(sonuc, "Hafıza");

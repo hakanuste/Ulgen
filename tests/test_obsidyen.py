@@ -81,3 +81,29 @@ class Obsidyen(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KasaBulmaTesti(TemizVeri):
+
+    def test_ayarsiz_obsidian_kasasini_bulur(self):
+        ev = os.path.expanduser("~")
+        for temiz in ("Documents", "Obsidyen", "Obsidian"):
+            shutil.rmtree(os.path.join(ev, temiz), ignore_errors=True)
+        yol = os.path.join(ev, "Documents", "Notlarim")
+        os.makedirs(os.path.join(yol, ".obsidian"))
+        open(os.path.join(yol, "a.md"), "w").write("merhaba")
+        self.assertEqual(obsidyen.kasa_yolu(), yol)
+        tamam, ileti, adet = obsidyen.erisim_durumu()
+        self.assertEqual((tamam, adet), (True, 1))
+
+    def test_yok_ve_izin_hatasi_acik_yazilir(self):
+        tamam, ileti, _ = obsidyen.erisim_durumu("/yok/boyle/klasor")
+        self.assertFalse(tamam)
+        self.assertIn("yok", ileti)
+        yol = os.path.join(os.path.expanduser("~"), "Izinsiz")
+        os.makedirs(yol)
+        from unittest import mock
+        with mock.patch("os.walk", side_effect=PermissionError):
+            tamam, ileti, _ = obsidyen.erisim_durumu(yol)
+        self.assertFalse(tamam)
+        self.assertIn("Tam Disk Erişimi", ileti)

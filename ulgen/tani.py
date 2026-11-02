@@ -59,6 +59,15 @@ def calistir():
     if sys.version_info < (3, 8):
         ekle(_satir("HATA", "Python çok eski", "3.8+ gerekir"))
 
+    # ---- Obsidian
+    try:
+        from . import obsidyen
+        tamam, ileti, _ = obsidyen.erisim_durumu()
+        ekle(_satir("TAMAM" if tamam else "UYARI", "Obsidian kasası",
+                    "%s — %s" % (obsidyen.kasa_yolu(), ileti)))
+    except Exception as hata:        # tanı asla çökmesin
+        ekle(_satir("UYARI", "Obsidian kasası", str(hata)[:120]))
+
     # ---- kütüphaneler
     for modul, zorunlu in (("cryptography", True), ("requests", True),
                            ("bs4", True), ("certifi", True), ("pypdf", True),

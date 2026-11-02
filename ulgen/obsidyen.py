@@ -27,8 +27,61 @@ def normal(metin):
     return metin.translate(_CEVIRI).lower()
 
 
+def _adaylar():
+    """Ayar boşsa bakılacak yerler: içinde .obsidian klasörü olan klasör."""
+    ev = os.path.expanduser("~")
+    sabit = [os.path.join(ev, "Documents", "Obsidyen"),
+             os.path.join(ev, "Documents", "Obsidian"),
+             os.path.join(ev, "Obsidyen"), os.path.join(ev, "Obsidian")]
+    for ust in (os.path.join(ev, "Documents"), ev,
+                os.path.join(ev, "Library", "Mobile Documents",
+                             "iCloud~md~obsidian", "Documents")):
+        try:
+            for ad in sorted(os.listdir(ust)):
+                yol = os.path.join(ust, ad)
+                if os.path.isdir(os.path.join(yol, ".obsidian")):
+                    sabit.append(yol)
+        except OSError:
+            continue
+    return sabit
+
+
 def kasa_yolu():
-    return ayar.yol_ac(ayar.yukle().get("kasa", "~/Documents/Obsidyen"))
+    """ayar.json "kasa" doluysa o; değilse bulunan ilk Obsidian kasası."""
+    ayarli = ayar.yukle().get("kasa")
+    if ayarli:
+        return ayar.yol_ac(ayarli)
+    adaylar = _adaylar()
+    for yol in adaylar:          # önce gerçekten Obsidian kasası olanlar
+        if os.path.isdir(os.path.join(yol, ".obsidian")):
+            return yol
+    for yol in adaylar:
+        if os.path.isdir(yol):
+            return yol
+    return ayar.yol_ac("~/Documents/Obsidyen")
+
+
+def erisim_durumu(kasa=None):
+    """(tamam_mi, ileti, md_sayisi): klasör var mı, okunabiliyor mu."""
+    kasa = kasa or kasa_yolu()
+    if not os.path.isdir(kasa):
+        return False, ("Kasa klasörü yok: %s. ayar.json içinde \"kasa\" "
+                       "alanına gerçek yolu yazın." % kasa), 0
+    try:
+        adet = sum(1 for k, _, a in os.walk(kasa, onerror=_hata_ver)
+                   for x in a if x.lower().endswith(".md"))
+    except PermissionError:
+        return False, ("macOS bu klasöre erişimi engelliyor. Sistem Ayarları "
+                       "> Gizlilik ve Güvenlik > Tam Disk Erişimi'ne "
+                       "~/Ülgen/ortam/bin/python ekleyin, Ülgen'i yeniden "
+                       "başlatın."), 0
+    except OSError as hata:
+        return False, "Kasa okunamadı: %s" % hata, 0
+    return True, "Kasa okunuyor: %d not dosyası." % adet, adet
+
+
+def _hata_ver(hata):
+    raise hata
 
 
 def hazir_mi():
@@ -47,7 +100,7 @@ def _oku(yol):
 
 
 def _dosyalar(kasa):
-    for kok, klasorler, adlar in os.walk(kasa):
+    for kok, klasorler, adlar in os.walk(kasa):    # erişim kontrolü tara()'da
         klasorler[:] = [k for k in klasorler if not k.startswith(".")]
         for ad in adlar:
             kucuk = ad.lower()
@@ -74,8 +127,9 @@ def tara(zorla=False):
         kasa = kasa_yolu()
         sonuc = {"yeni": 0, "guncel": 0, "silinen": 0, "toplam": 0,
                  "hata": 0, "kasa": kasa}
-        if not os.path.isdir(kasa):
-            sonuc["hata"] = "kasa klasörü yok: %s" % kasa
+        tamam, ileti, _ = erisim_durumu(kasa)
+        if not tamam:
+            sonuc["hata"] = ileti
             _SON.update(zaman=simdi, sonuc=sonuc)
             return sonuc
         var = {s["yol"]: s for s in veritabani.sorgu(
@@ -157,3 +211,15 @@ def ara(metin, adet=3):
         baslik = os.path.splitext(os.path.basename(s["yol"]))[0]
         sonuc.append((baslik, s["yol"], _alinti(s["yol"], kelimeler)))
     return sonuc
+
+
+def durum():
+    """Panel için: kasa yolu, erişim iletisi, dizinlenen not sayısı."""
+    kasa = kasa_yolu()
+    tamam, ileti, adet = erisim_durumu(kasa)
+    dizinli = 0
+    if hazir_mi():
+        dizinli = veritabani.sorgu(
+            "SELECT COUNT(*) AS c FROM not_dizin", (), True)[0]["c"]
+    return {"kasa": kasa, "erisim": tamam, "ileti": ileti,
+            "dosya": adet, "dizinli": dizinli, "hazir": hazir_mi()}

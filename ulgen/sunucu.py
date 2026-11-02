@@ -406,8 +406,7 @@ def istek_sinifi(ulgen, limit):
                     "notlar": [{"baslik": b, "alinti": al[:400]}
                                for b, _, al in obsidyen.ara(q, 5)]
                     if q else [],
-                    "dizin": {"kasa": obsidyen.kasa_yolu(),
-                              "hazir": obsidyen.hazir_mi()}})
+                    "dizin": obsidyen.durum()})
             if yol == "/projeler":
                 return self._cevap(200, {
                     "hafiza": sorted(ulgen.hafiza.projeler()),
