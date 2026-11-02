@@ -48,10 +48,10 @@ def cikarimsal_ozet(metin, hedef):
 
 def kasa_alintilari(metin, sinir=3000):
     """Obsidian kasasında soruyla en ilgili 3 notun ilgili bölümünü döndürür."""
-    kasa = ayar.yol_ac(ayar.yukle().get("kasa", "~/Documents/Obsidyen"))
+    from . import obsidyen
+    kasa = obsidyen.kasa_yolu()
     if not os.path.isdir(kasa):
         return ""
-    from . import obsidyen
     if obsidyen.hazir_mi():
         parcalar, toplam = [], 0
         for baslik, _, alinti in obsidyen.ara(metin):
