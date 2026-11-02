@@ -15,13 +15,18 @@ KURULUM (Mac)
     4. Launchpad > Ülgen. Tarayıcıda açılır.
 Python yoksa: Terminal'de "brew install python", sonra betiği yeniden çalıştırın.
 
-iPHONE (ZeroTier ağınız zaten kurulu)
-    Safari: http://<Mac'in ZeroTier adresi>:8765
-    İstenen anahtarı Mac'te şu komutla alın:
-    ~/Ülgen/ortam/bin/python -m ulgen --anahtar
-    Paylaş > Ana Ekrana Ekle ile uygulama gibi kullanın.
-    Not: iPhone'da mikrofon, adres https değilse çalışmayabilir (denenmedi).
-    Çalışmazsa yazarak kullanın.
+iPHONE (ZeroTier ağınız zaten kurulu) - GÜVENLİK İÇİN HTTPS ZORUNLU, BİR KEZ KURULUR
+    1. Mac'te belirteç üretin (yalnızca bir kez gösterilir):
+       ~/Ülgen/ortam/bin/python -m ulgen --cihaz-ekle iPhone
+    2. iPhone Safari'de  http://<Mac'in ZeroTier adresi>:8766  açın,
+       "Sertifikayı indir" > İzin ver. Sonra:
+       Ayarlar > Genel > VPN ve Aygıt Yönetimi > Ülgen Yerel CA > Yükle
+       Ayarlar > Genel > Hakkında > Sertifika Güven Ayarları > Ülgen Yerel CA'yı AÇIN.
+    3. Safari'de  https://<Mac'in ZeroTier adresi>:8443  açın, belirteci yapıştırın.
+       Paylaş > Ana Ekrana Ekle ile uygulama gibi kullanın.
+    ESKİ http://<adres>:8765 ADRESİ ARTIK ÇALIŞMAZ (güvenlik için kapatıldı).
+    Telefon kaybolursa:  --cihazlar  ile bakın,  --cihaz-iptal NUMARA  ile kapatın.
+    Not: bu sertifika adımları iPhone'da denenmedi; takılırsanız bildirin.
 
 5. BEYİN (ücretsiz) - üçünden biri yeter
     a) Ollama: ollama.com'dan kurun, "ollama pull llama3.2:3b".
@@ -30,7 +35,8 @@ iPHONE (ZeroTier ağınız zaten kurulu)
     b) llama.cpp: llama-server'ı 8080 kapısında, bir GGUF modelle başlatın
        (UMAY'da kullandığınız gibi). Ülgen kendisi bulur.
     c) Google Gemini (bulut, ücretsiz katman): aistudio.google.com'dan anahtar
-       alın, kurulum sırasında sorulunca yapıştırın (ya da ~/ÜlgenVeri/ayar.json).
+       alın, kurulum sırasında sorulunca yapıştırın (Anahtar Zinciri'ne yazılır; sonradan:
+       python -m ulgen --sir-kaydet gemini).
        UYARI: ücretsiz katmanda metinler Google'ca ürün geliştirmede kullanılabilir.
        Bu yüzden hafıza, sağlık verisi ve kasa notları varsayılan olarak buluta
        GİTMEZ ("bulut_kisisel_veri": false). Günlük kota da sınırlıdır.
@@ -55,7 +61,7 @@ NE YAPAR
       dosyalarını okur, adda ve içerikte arar, en yeniyi bulur, özetler.
       Örnek: "dosya ara: finans raporu", "en son finans raporunu özetle".
       Taranmış (resim) PDF'ler okunamaz; OCR yoktur.
-    - Hafıza şifreli: memory.json diskte şifreli tutulur (AES/Fernet). Anahtar Mac
+    - Hafıza şifreli: memory.json diskte AES-256-GCM ile şifrelidir. Anahtar Mac
       Anahtar Zinciri'nde, olmazsa ~/ÜlgenVeri/bellek.anahtar dosyasındadır.
       Anahtarı kaybederseniz dosya çözülemez (eskisi .bozuk adıyla saklanır).
       Bilgisayarınıza girmiş birine karşı tam koruma değildir.
@@ -65,6 +71,8 @@ NE YAPAR
       gemini_anahtar gerekir. Görüntü geçici dosyada tutulur, sonra silinir.
     - Mac komutları: "sesi 40 yap", "Safari aç", "pil durumu", "ekran görüntüsü".
     - Terminal modu: ~/Ülgen/ortam/bin/python -m ulgen --terminal
+    - Yedek: python -m ulgen --yedek-al ~/yedek.ulgenyedek  (parola sorar; unutulursa kurtarılamaz)
+      Geri yükleme: --yedek-yukle DOSYA (mevcut dosyalar silinmez, 'yedekler' klasörüne taşınır).
     - Sesli mod (uyandırma sözcüğü "Ülgen"):
       ~/Ülgen/ortam/bin/pip install -r ~/Ülgen/requirements-ses.txt
       (Mac'te önce: brew install portaudio), sonra  python -m ulgen --ses

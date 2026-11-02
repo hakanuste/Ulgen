@@ -6,7 +6,7 @@ Güncelleme: Aşama 1 sonu · Durum sütunu yalnızca **testle doğrulananı** "
 
 | # | Bulgu | Durum | Nasıl | Doğrulayan test |
 |---|-------|-------|-------|-----------------|
-| S1 | Komut kara listesi atlatılıyordu | **Düzeltildi** | Kara liste kaldırıldı; **izin listesi**: yalnızca salt okunur 21 komut onaysız. Listede olmayan her komut, birleşik/yönlendirmeli komut, mutlak yol ile verilen komut → ONAY. Gizli yollar (`~/ÜlgenVeri`, `.ssh`, `/etc`...) ve üst klasörde `grep -r` de ONAY ister | `test_guvenlik.KomutAnaliz`, `Enjeksiyon` |
+| S1 | Komut kara listesi atlatılıyordu | **Düzeltildi** | Kara liste kaldırıldı; **izin listesi**: yalnızca salt okunur 23 komut onaysız. Listede olmayan her komut, birleşik/yönlendirmeli komut, mutlak yol ile verilen komut → ONAY. Gizli yollar (`~/ÜlgenVeri`, `.ssh`, `/etc`...) ve üst klasörde `grep -r` de ONAY ister | `test_guvenlik.KomutAnaliz`, `Enjeksiyon` |
 | S2 | CSRF / DNS rebinding | **Düzeltildi** | Host yalnızca IP, `localhost` ya da `izinli_hostlar`; `Origin` aynı kaynak olmalı, `Sec-Fetch-Site: cross-site` ve `Origin: null` reddedilir; POST yalnızca `application/json` (415) | `test_sunucu.YerelSunucu` |
 | S3 | `0.0.0.0` dinleme | **Düzeltildi** | Yalnızca `127.0.0.1` ve ZeroTier (`zt*`) adresleri; adres değişince dinleyiciler yenilenir | `test_loopback_dinleme` + gerçek süreç denemesi |
 | S4 | Tek sabit anahtar, deneme sınırı yok | **Düzeltildi** | Cihaz başına 256 bit belirteç, veritabanında yalnızca SHA-256 özeti, iptal, isteğe bağlı süre; IP başına 5 yanlış denemede 5 dk engel (429) | `UzakSunucu`, `Belirtec` |
