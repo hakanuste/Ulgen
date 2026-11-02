@@ -168,8 +168,9 @@ def origin_gecerli_mi(origin, host, fetch_site):
     return urlparse(origin).netloc.lower() == (host or "").lower()
 
 
-VARLIKLAR = {"/varlik/logo.webp": ("logo.webp", "image/webp"),
-             "/varlik/simge.png": ("simge.png", "image/png")}
+VARLIKLAR = {"/varlik/simge.png": ("simge.png", "image/png")}
+for _ad in ("logo", "afis", "sahne", "zemin", "kure", "pusula"):
+    VARLIKLAR["/varlik/%s.webp" % _ad] = (_ad + ".webp", "image/webp")
 
 
 def _gorevler_json():

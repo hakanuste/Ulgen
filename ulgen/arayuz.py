@@ -82,6 +82,12 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
 #kodCikti { height: 28%; overflow: auto; margin: 6px 0 0; background: #05080b; border: 1px solid #22303d;
             border-radius: 10px; padding: 8px; font: 13px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
 
+#ana { background: linear-gradient(rgba(5,11,26,.86), rgba(5,11,26,.92)), url(/varlik/zemin.webp) center / cover; }
+#akis { background: linear-gradient(rgba(8,16,38,.80), rgba(8,16,38,.9)), url(/varlik/sahne.webp) center / cover; }
+img.sus { display: block; width: 100%; height: 92px; object-fit: cover; border-radius: 12px; margin: 2px 0 8px;
+          border: 1px solid var(--kenar); }
+img.pus { display: block; width: 84px; height: 84px; margin: 4px auto 8px; border-radius: 50%; object-fit: cover;
+          box-shadow: 0 0 18px rgba(212,175,90,.35); }
 /* ---- ÜLGEN teması: gece mavisi + altın ---- */
 :root { --bg:#050b1a; --kart:#0a1530; --kart2:#0e1c40; --yazi:#e9f0ff; --soluk:#8fa0c4; --vurgu:#37a8ff;
         --kullanici:#14437a; --kenar:#1b3166; --altin:#d4af5a; --altin2:#7d6428; --yesil:#3fd07a; --kirmizi:#ff6b5e; }
@@ -161,11 +167,13 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
                border-top: 1px solid var(--kenar); font-size: 12px; color: var(--soluk); }
   #kullanici b { color: var(--yazi); display: block; font-size: 14px; }
   #afis { display: block; position: relative; height: 132px; flex: none; border-bottom: 1px solid var(--altin2); overflow: hidden; }
-  #afis svg.arka { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #afis .arka { position: absolute; inset: 0; background:
+      linear-gradient(90deg, rgba(5,11,26,.88) 0%, rgba(5,11,26,.2) 30%, rgba(5,11,26,.1) 70%, rgba(5,11,26,.7) 100%),
+      url(/varlik/afis.webp) center 40% / cover; }
   #baslikOrta { position: absolute; left: 0; right: 0; top: 14px; text-align: center; }
   #baslikOrta b { display: block; font-size: 36px; letter-spacing: 10px; color: #f1e3b5; font-weight: 700;
                   text-shadow: 0 0 18px rgba(212,175,90,.5), 0 2px 0 #7d6428; }
-  #baslikOrta small { color: var(--yazi); font-size: 14px; letter-spacing: 1px; }
+  #baslikOrta small { color: #fff; font-size: 14px; letter-spacing: 1px; text-shadow: 0 0 6px #000, 0 1px 3px #000; }
   #sagUst { position: absolute; right: 18px; top: 10px; display: flex; gap: 14px; align-items: center; }
   #sagUst .ik { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--kenar); background: rgba(10,21,48,.8);
                 display: grid; place-items: center; position: relative; color: var(--yazi); }
@@ -222,19 +230,7 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
 </aside>
 <div id="ana">
 <div id="afis">
-  <svg class="arka" viewBox="0 0 1200 132" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-    <defs><linearGradient id="gk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#071236"/><stop offset="1" stop-color="#14306f"/></linearGradient>
-    <radialGradient id="ay" cx=".5" cy=".5" r=".5"><stop offset=".6" stop-color="#e9f3ff"/><stop offset="1" stop-color="#a9c8ff"/></radialGradient>
-    <radialGradient id="ayis" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#6ea8ff" stop-opacity=".55"/><stop offset="1" stop-color="#6ea8ff" stop-opacity="0"/></radialGradient></defs>
-    <rect width="1200" height="132" fill="url(#gk)"/>
-    <g fill="#cfe0ff"><circle cx="120" cy="22" r="1.2"/><circle cx="260" cy="48" r="1"/><circle cx="330" cy="14" r="1.4"/><circle cx="470" cy="38" r="1"/><circle cx="560" cy="18" r="1.2"/><circle cx="700" cy="30" r="1"/><circle cx="790" cy="12" r="1.4"/><circle cx="905" cy="40" r="1"/><circle cx="60" cy="60" r="1"/><circle cx="640" cy="60" r="1"/><circle cx="1010" cy="16" r="1.2"/><circle cx="1130" cy="50" r="1"/><circle cx="410" cy="70" r="1"/></g>
-    <circle cx="985" cy="62" r="92" fill="url(#ayis)"/><circle cx="985" cy="62" r="46" fill="url(#ay)"/>
-    <g fill="#c4d6f5" opacity=".5"><circle cx="970" cy="50" r="9"/><circle cx="1000" cy="74" r="7"/><circle cx="975" cy="82" r="5"/></g>
-    <path d="M0 132V96l60-26 50 22 70-48 60 40 80-32 70 50 90-44 80 40 90-52 70 46 110-30 70 36 120-40 80 30v62z" fill="#0c1d4d"/>
-    <path d="M0 132V112l90-30 70 28 110-34 90 36 110-30 100 34 130-40 100 34 110-28 90 24 100-30v62z" fill="#081334"/>
-    <path d="M1052 132l12-28 10-6-4-14 8-6 6-12 5 8 8 2 4 10 12 6 6 14 8 8-6 18z" fill="#04091c"/>
-    <path d="M1078 74l-2-12 7-8 6-1 4-8 2 7 8 3-3 6 5 5-6 2-3 8-6-2-5 4-4-3z" fill="#04091c"/>
-  </svg>
+  <div class="arka"></div>
   <div id="baslikOrta"><b>ÜLGEN</b><small>Kişisel Yapay Zekâ Yardımcı</small></div>
   <div id="sagUst">
     <div class="ik" onclick="sekme('bildirim')" style="cursor:pointer"><svg class="i"><use href="#i-zil"/></svg><em id="zilSayi" style="display:none">0</em></div>
@@ -575,6 +571,7 @@ async function kasaCiz() {
   const p = document.getElementById("pKasa");
   const d = await istek("/kasa/durum");
   p.replaceChildren();
+  resimEkle(p, "pusula", "pus");
   baslik(p, "Özel Kasa");
   const not = (m) => ekle(p, m);
   const girdi = (tip, yer) => { const i = document.createElement("input"); i.type = tip; i.placeholder = yer; i.style.cssText = "width:100%;margin:4px 0"; p.appendChild(i); return i; };
@@ -667,6 +664,9 @@ function kartK(ust, baslik, govde, ikon, ek, git) {
   });
   ust.appendChild(d); return d;
 }
+function resimEkle(kap, ad, sinif) {
+  const i = document.createElement("img"); i.src = "/varlik/" + ad + ".webp"; i.alt = ""; i.className = sinif; kap.appendChild(i); return i;
+}
 function cubuk(oran) { const c = document.createElement("div"); c.className = "cubuk";
   const i = document.createElement("i"); i.style.width = Math.max(0, Math.min(100, oran)) + "%"; c.appendChild(i); return c; }
 function satirS(kap, a, b, sinif, rozet) { const r = document.createElement("div"); r.className = "s";
@@ -713,6 +713,7 @@ async function panoYenile() {
     h.innerHTML = "<span>Adım<br>—</span>"; k5.appendChild(h);
     const n = document.createElement("div"); n.style.cssText = "text-align:center;font-size:12px"; n.textContent = "iPhone Sağlık köprüsü kurulunca dolar"; k5.appendChild(n);
     const k3 = kartK(p2, "Yapay Zekâ Modelleri", [], "katman");
+    resimEkle(k3, "kure", "sus");
     sis.kota.forEach(t => satirS(k3, t.ad, t.engelli ? "Engelli" : "Hazır", t.engelli ? "" : "ok", rozetBul(t.ad)));
     const k4 = kartK(p2, "Sistem Durumu", [], "ayar");
     const d = sis.donanim || {};
