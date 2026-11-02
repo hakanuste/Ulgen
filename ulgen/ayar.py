@@ -58,7 +58,7 @@ VARSAYILAN = {
     "tts_motor": "otomatik",
     "uyandirma_sozcukleri": ["ülgen", "ulgen", "ülgün", "ulgun"],
     # Dosya ve veri klasörleri
-    "kasa": "~/Documents/Obsidyen",
+    "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
     "izinli_klasorler": [
         "~/Documents/Obsidyen",
         "~/Documents/Ülgen Genel Asistan",
@@ -91,7 +91,7 @@ SABLON = {
     "gemini_model": "gemini-3.5-flash-lite",
     "bulut_kisisel_veri": False,
     "ses": "Yelda",
-    "kasa": "~/Documents/Obsidyen",
+    "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
     "sabah_ozeti_dakika": 10,
     "hava_acik": True,
     "rapor_acik": True,
