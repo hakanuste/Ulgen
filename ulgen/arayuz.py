@@ -1160,6 +1160,24 @@ async function gorevlerCiz() {
 const durumYazi = { alindi: "alındı", almadi: "almadı", atlandi: "atlandı", tamamlandi: "tamamlandı",
                     bekliyor: "bekliyor", ertelendi: "ertelendi", yanitsiz: "YANITSIZ (bilinmiyor)" };
 
+async function kayitliIlaclar(k) {
+  const liste = await istek("/ilac/liste");
+  baslik(k, "Kayıtlı ilaçlar");
+  if (!liste.length) { ekle(k, "Kayıtlı ilaç yok."); return; }
+  liste.forEach(i => {
+    const d = ekle(k, i.ad + (i.doz_notu ? " (" + i.doz_notu + ")" : "") + (i.aktif ? "" : "  — durduruldu"), i.saatler || "saat yok");
+    const b = document.createElement("button");
+    b.className = "dugme"; b.style.cssText = "margin-top:6px;border-color:var(--ulgen-danger);color:var(--ulgen-danger)"; b.textContent = "Sil (hatalı girdi)";
+    b.onclick = async () => {
+      if (!confirm(i.ad + " ve tüm doz kayıtları kalıcı silinecek. Emin misiniz?")) return;
+      b.disabled = true;
+      const c = await istek("/ilac/sil", { id: i.id, onay: true });
+      balonEkle(c.yanit, "asistan"); ilacCiz();
+    };
+    d.appendChild(b);
+  });
+}
+
 async function ilacCiz() {
   const l = await istek("/ilac/bugun");
   const k = document.getElementById("pIlac");
@@ -1210,6 +1228,7 @@ async function ilacCiz() {
     location.href = c.adres;
   };
   t.appendChild(tb);
+  await kayitliIlaclar(k);
 }
 
 function bildirimCiz() {

@@ -452,6 +452,9 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, self._kasa_durum())
             if yol == "/sistem":
                 return self._cevap(200, _sistem_json(ulgen))
+            if yol == "/ilac/liste":
+                return self._cevap(
+                    200, ulgen.zamanlayici.ilac.liste_json())
             if yol == "/ilac/bugun":
                 return self._cevap(
                     200, ulgen.zamanlayici.ilac.bugun_json())
@@ -558,6 +561,13 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
                     "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path == "/ilac/sil":
+                kimlik = veri.get("id")
+                if not isinstance(kimlik, int) or isinstance(kimlik, bool) \
+                        or veri.get("onay") is not True:
+                    return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici.ilac
+                                         .sil(kimlik)})
             if urlparse(self.path).path == "/ilac/duzelt":
                 doz, yanit = veri.get("doz"), veri.get("yanit")
                 if not isinstance(doz, int) or isinstance(doz, bool) \

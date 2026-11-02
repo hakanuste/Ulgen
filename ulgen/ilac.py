@@ -107,6 +107,57 @@ class Ilac:
         return ("%s planını durdurdum; kayıtlar duruyor. (Doz değişikliğini "
                 "hekiminizle yapın.)" % satirlar[0]["ad"])
 
+    def liste_json(self):
+        """Panel için tüm ilaçlar (durdurulanlar dahil), saatleriyle."""
+        return [{"id": i["id"], "ad": i["ad"], "doz_notu": i["doz_notu"],
+                 "aktif": bool(i["aktif"]), "saatler": i["saatler"] or ""}
+                for i in veritabani.sorgu(
+                    "SELECT i.id, i.ad, i.doz_notu, i.aktif, "
+                    "GROUP_CONCAT(p.saat, ' ') AS saatler FROM ilac i "
+                    "LEFT JOIN ilac_plan p ON p.ilac_id=i.id "
+                    "GROUP BY i.id ORDER BY i.aktif DESC, i.ad", (), True)]
+
+    def sil(self, ilac_id):
+        """HATALI girilen ilacı kalıcı siler: plan, doz ve doz geçmişiyle.
+
+        Geri alınamaz; çağıran (arayüz/sohbet) önce onay almalıdır. Yalnızca
+        ad ve saatler günlüğe yazılır (sağlık içeriği değil)."""
+        satir = veritabani.sorgu("SELECT * FROM ilac WHERE id=?",
+                                 (int(ilac_id),), True)
+        if not satir:
+            return "Bu numarada ilaç yok."
+        ad = satir[0]["ad"]
+        saatler = " ".join(p["saat"] for p in veritabani.sorgu(
+            "SELECT saat FROM ilac_plan WHERE ilac_id=?", (int(ilac_id),),
+            True))
+        with veritabani.islem():
+            veritabani.sorgu(
+                "DELETE FROM doz_gecmis WHERE doz_id IN "
+                "(SELECT id FROM doz WHERE ilac_id=?)", (int(ilac_id),))
+            veritabani.sorgu("DELETE FROM doz WHERE ilac_id=?",
+                             (int(ilac_id),))
+            veritabani.sorgu("DELETE FROM ilac_plan WHERE ilac_id=?",
+                             (int(ilac_id),))
+            veritabani.sorgu("DELETE FROM ilac WHERE id=?", (int(ilac_id),))
+        veritabani.gunluge_yaz("bilgi", "ilac",
+                               "%s silindi (saatler: %s)" % (ad, saatler))
+        return "%s ve tüm kayıtları silindi." % ad
+
+    def silme_istegi(self, ad, onay=False):
+        """Sohbetten: 'ilaç sil: Ad' önce sorar; sonda 'onay' varsa siler."""
+        bulunan = [i for i in self.liste_json() if _norm(ad) in _norm(i["ad"])]
+        if not bulunan:
+            return "Bu adla ilaç bulamadım."
+        if len(bulunan) > 1:
+            return "Birden çok ilaç eşleşti: %s. Tam adı yazın." % ", ".join(
+                i["ad"] for i in bulunan)
+        i = bulunan[0]
+        if not onay:
+            return ("%s (%s) silinecek; doz geçmişi de gider ve geri "
+                    "alınamaz. Onaylıyorsanız şunu yazın: ilaç sil: %s onay"
+                    % (i["ad"], i["saatler"] or "saat yok", i["ad"]))
+        return self.sil(i["id"])
+
     def listele(self):
         satirlar = veritabani.sorgu(
             "SELECT i.ad, i.doz_notu, GROUP_CONCAT(p.saat, ' ') AS saatler "

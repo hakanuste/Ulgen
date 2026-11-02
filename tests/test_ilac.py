@@ -378,3 +378,38 @@ class PanelUcNoktalariTesti(Taban):
         finally:
             srv.shutdown()
             srv.server_close()
+
+
+class IlacSilmeTesti(TemizVeri):
+
+    def test_hatali_ilaci_siler_digerine_dokunmaz(self):
+        import json
+        from datetime import datetime
+        from ulgen import sunucu
+        from ulgen.cekirdek import Ulgen
+        from .test_sunucu import istek, JSON
+        u = Ulgen()
+        u.sohbet_isle("ilaç ekle: Yanlis 10:00 22:00")
+        u.sohbet_isle("ilaç ekle: Dogru 10:00")
+        u.zamanlayici.ilac.doz_uret((datetime.now() + timedelta(days=1)).replace(hour=10, minute=1))
+        # sohbet: önce sorar, 'onay' olmadan silmez
+        yanit = u.sohbet_isle("ilaç sil: Yanlis")["yanit"]
+        self.assertIn("onay", yanit)
+        self.assertEqual(len(u.zamanlayici.ilac.liste_json()), 2)
+        self.assertIn("silindi", u.sohbet_isle("ilaç sil: Yanlis onay")["yanit"])
+        kalan = u.zamanlayici.ilac.liste_json()
+        self.assertEqual([i["ad"] for i in kalan], ["Dogru"])
+        self.assertEqual(veritabani.sorgu(
+            "SELECT COUNT(*) c FROM doz WHERE ilac_ad LIKE 'yanlis'", (), True)[0]["c"], 0)
+        self.assertGreaterEqual(veritabani.sorgu(
+            "SELECT COUNT(*) c FROM doz WHERE ilac_ad LIKE 'dogru'", (), True)[0]["c"], 1)
+        # HTTP: onay şart
+        srv = sunucu.yerel_sunucu(u, 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        p = srv.server_address[1]
+        kid = kalan[0]["id"]
+        self.assertEqual(istek(p, "/ilac/sil", "POST", json.dumps({"id": kid}), JSON)[0], 400)
+        self.assertEqual(istek(p, "/ilac/sil", "POST",
+                               json.dumps({"id": kid, "onay": True}), JSON)[0], 200)
+        self.assertEqual(u.zamanlayici.ilac.liste_json(), [])

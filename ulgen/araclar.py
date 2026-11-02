@@ -466,6 +466,10 @@ class Araclar:
                      re.IGNORECASE)
         if e:
             return z.ilac.durdur(e.group(1))
+        e = re.match(r"^ila[çc] sil[:,]?\s+(.+?)(\s+onay)?[.!? ]*$", m,
+                     re.IGNORECASE)
+        if e:
+            return z.ilac.silme_istegi(e.group(1).strip(), bool(e.group(2)))
         if re.fullmatch(r"ila[çc]lar[ıi]m", k):
             return z.ilac.listele()
         if re.fullmatch(r"(bug[üu]nk[üu] )?ila[çc]lar(?: ne durumda)?|"
