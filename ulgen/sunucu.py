@@ -22,7 +22,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, takvim,
+from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
+               takvim, webauthn,
                tls, veritabani, yedek)
 from .arayuz import SAYFA
 
@@ -136,7 +137,17 @@ def host_gecerli_mi(baslik):
         ipaddress.ip_address(ad)
         return True
     except ValueError:
-        return False
+        pass
+    # Face ID için: <ip-tireli>.sslip.io yalnız KENDİ dinlediğimiz adreslerden
+    if ad.endswith(".sslip.io"):
+        try:
+            ip = ad[:-len(".sslip.io")].replace("-", ".")
+            ipaddress.IPv4Address(ip)
+        except ValueError:
+            return False
+        ayarli = ayar.yukle().get("dinleme_adresleri") or []
+        return ip in (ayarli or zerotier_adresleri())
+    return False
 
 
 def origin_gecerli_mi(origin, host, fetch_site):
@@ -310,6 +321,8 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": str(hata)})
             if yol == "/gorevler":
                 return self._cevap(200, _gorevler_json())
+            if yol == "/kasa/durum":
+                return self._cevap(200, self._kasa_durum())
             if yol == "/sistem":
                 return self._cevap(200, _sistem_json(ulgen))
             if yol == "/ilac/bugun":
@@ -354,8 +367,118 @@ def istek_sinifi(ulgen, limit):
                                          .bitir(kimlik)})
             if urlparse(self.path).path == "/ilac/yanit":
                 return self._doz_yanit(veri)
+            if urlparse(self.path).path.startswith("/kasa/"):
+                return self._kasa(urlparse(self.path).path, veri)
             if urlparse(self.path).path.startswith("/kod/"):
                 return self._kod(urlparse(self.path).path, veri)
+            return self._cevap(404, {"hata": "bulunamadı"})
+
+        # ------------------------------------------------------ Özel Kasa
+        def _rp(self):
+            host = (self.headers.get("Host") or "").lower()
+            ad = _host_adi(host)
+            sema = "https" if isinstance(self.connection, ssl.SSLSocket) \
+                else "http"
+            return ad, sema + "://" + host
+
+        def _kasa_durum(self):
+            ad, _ = self._rp()
+            return {"kurulu": ozelkasa.kurulu_mu(),
+                    "passkey": ozelkasa.passkey_sayisi(),
+                    "adlar": ozelkasa.adlar() if ozelkasa.kurulu_mu() else [],
+                    "istekler": ozelkasa.bekleyen_istekler(),
+                    "rp": ad, "rp_onerisi": ozelkasa.rp_onerisi(ad)}
+
+        def _acma(self, veri, kapsam):
+            """Gövdeden açma yöntemini çıkarır; Face ID ise imzayı doğrular."""
+            yontem = veri.get("yontem")
+            if yontem == "parola":
+                return {"parola": str(veri.get("parola", ""))}
+            if yontem == "kod":
+                return {"kod": str(veri.get("kod", ""))}
+            if yontem == "passkey":
+                ad, origin = self._rp()
+                cred = ozelkasa.passkey_dogrula(
+                    str(veri.get("kimlik", "")), veri.get("veri") or {},
+                    ad, origin, kapsam)
+                try:
+                    prf = webauthn.b64coz(str(veri.get("prf", "")))
+                except ValueError:
+                    prf = b""
+                return {"prf": prf, "cred": cred} if len(prf) == 32 else \
+                    {"yalniz_dogrulama": True, "cred": cred}
+            raise ozelkasa.KasaHatasi("açma yöntemi: parola | passkey | kod")
+
+        def _kasa(self, yol, veri):
+            try:
+                return self._kasa_isle(yol, veri)
+            except ozelkasa.KasaHatasi as hata:
+                return self._cevap(400, {"hata": str(hata)})
+            except webauthn.Hata as hata:
+                return self._cevap(400, {"hata": str(hata)})
+
+        def _kasa_isle(self, yol, veri):
+            ad = str(veri.get("ad", ""))
+            if yol == "/kasa/kur":
+                return self._cevap(200, {"kurtarma_kodu": ozelkasa.kur(
+                    str(veri.get("parola", "")))})
+            if not ozelkasa.kurulu_mu():
+                return self._cevap(400, {"hata": "Özel Kasa kurulu değil"})
+            if yol == "/kasa/passkey/kayit-baslat":
+                return self._cevap(200, ozelkasa.kayit_baslat())
+            if yol == "/kasa/passkey/kayit-bitir":
+                ho, origin = self._rp()
+                return self._cevap(200, {"cred": ozelkasa.kayit_bitir(
+                    str(veri.get("kimlik", "")), veri.get("veri") or {},
+                    ho, origin, str(veri.get("ad", "iPhone"))[:40])})
+            if yol == "/kasa/passkey/bagla":
+                prf = webauthn.b64coz(str(veri.get("prf", "")))
+                if len(prf) != 32:
+                    return self._cevap(400, {"hata": "PRF çıktısı yok"})
+                ozelkasa.prf_bagla(str(veri.get("cred", "")), prf,
+                                   {"parola": str(veri.get("parola", ""))})
+                return self._cevap(200, {"yanit": "Face ID kasaya bağlandı."})
+            if yol == "/kasa/passkey/giris-baslat":
+                kapsam = str(veri.get("kapsam", ""))
+                if not re.fullmatch(r"(oku|sil|ekle):.{1,80}|parola-sifirla|"
+                                    r"yedek-al", kapsam):
+                    return self._cevap(400, {"hata": "kapsam geçersiz"})
+                return self._cevap(200, ozelkasa.giris_baslat(kapsam))
+            if yol == "/kasa/oku":
+                istek = veri.get("istek")
+                acma = self._acma(veri, "oku:" + ad)
+                if istek is not None:
+                    if not isinstance(istek, int) or isinstance(istek, bool) \
+                            or not ozelkasa.istek_tuket(istek, ad):
+                        return self._cevap(400, {"hata": "istek geçersiz, "
+                                                 "süresi dolmuş ya da "
+                                                 "kullanılmış"})
+                if "yalniz_dogrulama" in acma:
+                    return self._cevap(400, {"hata": "PRF yok; parolayla açın"})
+                return self._cevap(200, {"ad": ad, "icerik": ozelkasa
+                                         .oge_oku(ad, acma)})
+            if yol == "/kasa/ekle":
+                acma = self._acma(veri, "ekle:" + ad)
+                ozelkasa.oge_ekle(ad, str(veri.get("icerik", "")), acma)
+                return self._cevap(200, {"yanit": "Kasaya eklendi."})
+            if yol == "/kasa/sil":
+                acma = self._acma(veri, "sil:" + ad)
+                return self._cevap(200, {"silinen": ozelkasa.oge_sil(ad,
+                                                                     acma)})
+            if yol == "/kasa/parola-sifirla":
+                acma = self._acma(veri, "parola-sifirla")
+                ozelkasa.parola_degistir(acma, str(veri.get("yeni", "")))
+                return self._cevap(200, {"yanit": "Yeni parola kuruldu."})
+            if yol == "/kasa/yedek":
+                # Face ID ile: parolayı unuttuysanız YENİ parolayla taze yedek
+                self._acma({"yontem": "passkey", **veri}, "yedek-al")
+                from . import yedek
+                import os
+                hedef = os.path.join(ayar.KLASOR, "yedekler", "faceid-%d.ulgenyedek"
+                                     % int(time.time()))
+                os.makedirs(os.path.dirname(hedef), exist_ok=True)
+                return self._cevap(200, {"dosya": yedek.al(
+                    hedef, str(veri.get("yeni", "")))})
             return self._cevap(404, {"hata": "bulunamadı"})
 
         def _giris(self, anahtar):

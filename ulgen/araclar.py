@@ -21,6 +21,7 @@ from datetime import datetime
 
 from . import ayar, kota, kuyruk, veritabani
 from .ajanlar import DosyaAjani
+from . import ozelkasa
 from .baglam import kasa_alintilari
 from .beyin import BeyinHatasi, GeminiBeyin
 from .guvenlik import komut_analiz
@@ -590,6 +591,11 @@ class Araclar:
         yanit = self._plan_komutu(m, k)
         if yanit is not None:
             return yanit
+        kasa_m = re.match(r"^[öo]zel kasa(?:'?dan|dan)?[:,]?\s+(.+?)"
+                          r"(?:\s+(?:getir|g[öo]ster|oku|ver))?[.!? ]*$", m,
+                          re.IGNORECASE)
+        if kasa_m:       # yalnız İSTEK açar; içeriği asla görmez/döndürmez
+            return ozelkasa.istek_olustur(kasa_m.group(1).strip())
         if re.search(r"saat ka[çc]|g[üu]n(?:lerden)? ne|bug[üu]n.*tarih|"
                      r"tarih ne", k):
             return self.saat_tarih()

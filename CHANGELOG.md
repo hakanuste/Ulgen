@@ -76,3 +76,6 @@
 - Kurulum betiği: `rm -rf` kaldırıldı; kurulum öncesi veri yedeği, geçici dizinde hazırlık, eski sürümler `~/Ülgen/eski` altına taşınır, sağlık denetimi başarısızsa geri alma.
 - Yerel 127.0.0.1 erişimi yetki ister (tek kullanımlık giriş + çerez); `yerel_yetki:false` ile eski kip.
 - `--tani`, `--takvim-deneme`, TEST_DEVICE.md. Durum tablosu PROJECT_STATUS.md'de birleştirildi.
+
+## 2.6 — Aşama 6: Özel Kasa
+- ozelkasa.py, webauthn.py, cbor.py; Kasa sekmesi; kurtarma kodu/paketi; `--ana-anahtar-kurtar`; sslip.io Host/SAN desteği; veritabanı göçü 6.

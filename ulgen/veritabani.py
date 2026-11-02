@@ -35,7 +35,7 @@ class VeriTabaniHatasi(Exception):
 DB_HATALARI = (sqlite3.DatabaseError,) + (
     (_sc.DatabaseError,) if _sc is not None else ())
 
-SURUM = 5
+SURUM = 6
 FTS_VAR = False
 
 _KILIT = threading.RLock()
@@ -447,7 +447,22 @@ def _goc_5():
         kullanildi INTEGER NOT NULL DEFAULT 0)""")
 
 
-GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5}
+def _goc_6():
+    """Özel Kasa: sarılı anahtarlar, şifreli öğeler, Face ID anahtarları."""
+    sorgu("CREATE TABLE IF NOT EXISTS kasa_meta (ad TEXT PRIMARY KEY, "
+          "deger BLOB NOT NULL)")
+    sorgu("CREATE TABLE IF NOT EXISTS kasa_oge (ad TEXT PRIMARY KEY, "
+          "veri BLOB NOT NULL, olusturma REAL NOT NULL)")
+    sorgu("""CREATE TABLE IF NOT EXISTS kasa_anahtar (
+        kimlik TEXT PRIMARY KEY, ad TEXT, x BLOB NOT NULL, y BLOB NOT NULL,
+        rp TEXT NOT NULL, sayac INTEGER NOT NULL DEFAULT 0, sarmali BLOB,
+        olusturma REAL NOT NULL)""")
+    sorgu("""CREATE TABLE IF NOT EXISTS kasa_istek (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, kapsam TEXT NOT NULL,
+        bitis REAL NOT NULL, durum TEXT NOT NULL DEFAULT 'bekliyor')""")
+
+
+GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5, 6: _goc_6}
 
 
 def surum():

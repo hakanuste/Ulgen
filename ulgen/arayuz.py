@@ -113,11 +113,13 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
   <button data-s="gorevler" onclick="sekme('gorevler')">Görevler</button>
   <button data-s="ilac" onclick="sekme('ilac')">İlaç</button>
   <button data-s="bildirim" onclick="sekme('bildirim')">Bildirim</button>
+  <button data-s="kasa" onclick="sekme('kasa')">Kasa</button>
   <button data-s="sistem" onclick="sekme('sistem')">Sistem</button>
 </div>
 <div id="pGorevler" class="panel"></div>
 <div id="pIlac" class="panel"></div>
 <div id="pBildirim" class="panel"></div>
+<div id="pKasa" class="panel"></div>
 <div id="pSistem" class="panel"></div>
 <div id="yaklasan"></div>
 <div id="beyin" style="font-size:12px;color:var(--soluk);padding:2px 16px"></div>
@@ -157,6 +159,9 @@ async function istek(yol, veri) {
   if (anahtar) s.headers["Authorization"] = "Bearer " + anahtar;
   if (veri) { s.headers["Content-Type"] = "application/json"; s.body = JSON.stringify(veri); }
   const c = await fetch(yol, s);
+  if (c.status === 401 && yerel) {
+    throw new Error("Oturum yok: Launchpad'deki Ülgen simgesiyle açın.");
+  }
   if (c.status === 401) {
     localStorage.removeItem("asistan_anahtar");
     anahtar = "";
@@ -342,8 +347,110 @@ async function ozetYukle() {
   }
 }
 
+
+// ---- Özel Kasa (Face ID) -------------------------------------------------
+const b64u = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64coz = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+const PRF_TUZ = new TextEncoder().encode("ulgen-kasa-prf-v1-tuz-32-bayt-uzun!!").slice(0, 32);
+
+async function faceIdAl(kapsam, cred) {
+  const g = await istek("/kasa/passkey/giris-baslat", { kapsam });
+  if (g.hata) throw new Error(g.hata);
+  const a = await navigator.credentials.get({ publicKey: {
+    challenge: b64coz(g.challenge), rpId: location.hostname, userVerification: "required",
+    allowCredentials: g.izinli.map(i => ({ type: "public-key", id: b64coz(i) })),
+    extensions: { prf: { eval: { first: PRF_TUZ } } } } });
+  const prf = (a.getClientExtensionResults().prf || {}).results;
+  return { yontem: "passkey", kimlik: g.kimlik, prf: prf ? b64u(prf.first) : "",
+    veri: { id: b64u(a.rawId), clientDataJSON: b64u(a.response.clientDataJSON),
+      authenticatorData: b64u(a.response.authenticatorData), signature: b64u(a.response.signature) } };
+}
+
+async function faceIdKaydet(parola) {
+  const k = await istek("/kasa/passkey/kayit-baslat", {});
+  const c = await navigator.credentials.create({ publicKey: {
+    rp: { name: "Ülgen", id: location.hostname },
+    user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "ulgen", displayName: "Ülgen" },
+    challenge: b64coz(k.challenge), pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+    authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "required", userVerification: "required" },
+    extensions: { prf: {} } } });
+  const r = await istek("/kasa/passkey/kayit-bitir", { kimlik: k.kimlik, veri: {
+    clientDataJSON: b64u(c.response.clientDataJSON), attestationObject: b64u(c.response.attestationObject) } });
+  if (r.hata) throw new Error(r.hata);
+  const a = await faceIdAl("oku:__bagla__");  // PRF çıktısını almak için ikinci Face ID
+  if (!a.prf) throw new Error("Bu cihaz/tarayıcı PRF'yi desteklemiyor; Face ID yalnız onay verir.");
+  const b = await istek("/kasa/passkey/bagla", { cred: r.cred, prf: a.prf, parola });
+  if (b.hata) throw new Error(b.hata);
+}
+
+let kasaGoster = null;
+async function kasaCiz() {
+  const p = document.getElementById("pKasa");
+  const d = await istek("/kasa/durum");
+  p.replaceChildren();
+  baslik(p, "Özel Kasa");
+  const not = (m) => ekle(p, m);
+  const girdi = (tip, yer) => { const i = document.createElement("input"); i.type = tip; i.placeholder = yer; i.style.cssText = "width:100%;margin:4px 0"; p.appendChild(i); return i; };
+  const dugme = (m, f) => { const b = document.createElement("button"); b.className = "dugme"; b.textContent = m; b.style.margin = "4px 4px 4px 0";
+    b.onclick = async () => { try { await f(); } catch (e) { alert(e.message || e); } }; p.appendChild(b); return b; };
+  if (!d.kurulu) {
+    not("Kasa henüz kurulu değil. Parolanız en az 8 karakter olmalı.");
+    const pr = girdi("password", "Kasa parolası");
+    dugme("Kasayı kur", async () => { const r = await istek("/kasa/kur", { parola: pr.value });
+      if (r.hata) throw new Error(r.hata);
+      alert("KURTARMA KODUNUZ (bir kez gösterilir, yazıp saklayın):\n\n" + r.kurtarma_kodu +
+        "\n\nMac'teki ~/ÜlgenVeri/kurtarma.paket dosyasını da Mac dışında saklayın."); kasaCiz(); });
+    return;
+  }
+  not("Yapay zekâ kasanın içeriğini göremez; yalnız istek açabilir. Açma için Face ID ya da parola gerekir.");
+  if (location.hostname.match(/^[0-9.]+$/) && d.passkey >= 0) {
+    ekle(p, "Face ID için alan adı gerekir. Şu adresten açın:", "https://" + d.rp_onerisi + ":" + (location.port || 8443));
+  }
+  ekle(p, "Face ID anahtarı: " + (d.passkey ? d.passkey + " kayıtlı" : "yok"));
+  const pw = girdi("password", "Kasa parolası (ekleme/bağlama için)");
+  if (!d.passkey) dugme("Face ID'yi bağla", async () => { await faceIdKaydet(pw.value); kasaCiz(); });
+  baslik(p, "Bekleyen istekler");
+  if (!d.istekler.length) ekle(p, "Yok");
+  for (const i of d.istekler) {
+    const ad = i.kapsam.replace(/^oku:/, "");
+    const e = ekle(p, "#" + i.id + " · " + ad + " isteniyor");
+    const b = document.createElement("button"); b.className = "dugme aktif"; b.textContent = "Face ID ile onayla";
+    b.onclick = async () => { try { await kasaOku(ad, await faceIdAl("oku:" + ad), i.id); } catch (x) { alert(x.message || x); } };
+    e.appendChild(b);
+  }
+  baslik(p, "Öğeler");
+  if (!d.adlar.length) ekle(p, "Kasada öğe yok");
+  for (const ad of d.adlar) {
+    const e = ekle(p, ad);
+    const f = document.createElement("button"); f.className = "dugme"; f.textContent = "Face ID";
+    f.onclick = async () => { try { await kasaOku(ad, await faceIdAl("oku:" + ad)); } catch (x) { alert(x.message || x); } };
+    const q = document.createElement("button"); q.className = "dugme"; q.textContent = "Parola";
+    q.onclick = async () => { try { await kasaOku(ad, { yontem: "parola", parola: pw.value }); } catch (x) { alert(x.message || x); } };
+    e.appendChild(f); e.appendChild(q);
+  }
+  kasaGoster = document.createElement("pre"); kasaGoster.style.whiteSpace = "pre-wrap"; p.appendChild(kasaGoster);
+  baslik(p, "Yeni öğe");
+  const ad = girdi("text", "Ad (şifresiz saklanır; gizli bilgi yazmayın)");
+  const ic = document.createElement("textarea"); ic.placeholder = "İçerik"; ic.rows = 3; ic.style.cssText = "width:100%"; p.appendChild(ic);
+  dugme("Kasaya ekle", async () => { const r = await istek("/kasa/ekle", { ad: ad.value, icerik: ic.value, yontem: "parola", parola: pw.value });
+    if (r.hata) throw new Error(r.hata); ic.value = ""; pw.value = ""; kasaCiz(); });
+  baslik(p, "Parolamı unuttum");
+  const yeni = girdi("password", "Yeni parola (en az 8)");
+  dugme("Face ID ile parolayı sıfırla", async () => { const a = await faceIdAl("parola-sifirla"); a.yeni = yeni.value;
+    const r = await istek("/kasa/parola-sifirla", a); if (r.hata) throw new Error(r.hata); alert(r.yanit); yeni.value = ""; });
+  dugme("Face ID ile yeni parolalı yedek al", async () => { const a = await faceIdAl("yedek-al"); a.yeni = yeni.value;
+    const r = await istek("/kasa/yedek", a); if (r.hata) throw new Error(r.hata); alert("Yedek: " + r.dosya); });
+}
+
+async function kasaOku(ad, acma, istekNo) {
+  const r = await istek("/kasa/oku", Object.assign({ ad }, acma, istekNo ? { istek: istekNo } : {}));
+  if (r.hata) throw new Error(r.hata);
+  kasaGoster.textContent = ad + ":\n" + r.icerik;   // yalnız ekranda; 20 sn sonra silinir
+  setTimeout(() => { kasaGoster.textContent = ""; }, 20000);
+}
+
 // ---- sekmeler ------------------------------------------------------------
-const paneller = { gorevler: "pGorevler", ilac: "pIlac", bildirim: "pBildirim", sistem: "pSistem" };
+const paneller = { gorevler: "pGorevler", ilac: "pIlac", bildirim: "pBildirim", kasa: "pKasa", sistem: "pSistem" };
 const gecmisBildirim = [];
 let aktifSekme = "sohbet";
 
@@ -369,6 +476,7 @@ function baslik(kap, m) { const h = document.createElement("h3"); h.textContent 
 
 async function panelYenile(ad) {
   try {
+    if (ad === "kasa") await kasaCiz();
     if (ad === "gorevler") await gorevlerCiz();
     else if (ad === "ilac") await ilacCiz();
     else if (ad === "bildirim") bildirimCiz();

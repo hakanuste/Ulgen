@@ -15,6 +15,7 @@ Kullanım:
                                    (gemini, groq, mistral, openrouter)
   python -m ulgen --yedek-al DOSYA        şifreli yedek alır
   python -m ulgen --yedek-yukle DOSYA     yedekten geri yükler
+  python -m ulgen --ana-anahtar-kurtar kurtarma.paket   yeni Mac'te anahtarı geri getirir
 """
 
 import sys
@@ -144,6 +145,17 @@ def yonetim(argv):
         return 0
     if "--ac" in argv or "--giris-adresi" in argv:
         return yerel_giris_ac("--ac" in argv)
+    if "--ana-anahtar-kurtar" in argv:
+        import getpass
+        from . import ozelkasa
+        try:
+            ozelkasa.ana_anahtar_kurtar(_deger(argv, "--ana-anahtar-kurtar"),
+                                        getpass.getpass("Kurtarma kodu: "))
+        except (ozelkasa.KasaHatasi, OSError) as hata:
+            print("Hata:", hata)
+            return 1
+        print("Ana anahtar bu Mac'e yüklendi.")
+        return 0
     if "--takvim-deneme" in argv:
         from . import tani
         return tani.takvim_deneme()

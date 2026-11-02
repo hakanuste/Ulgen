@@ -95,6 +95,10 @@ def _san_listesi(adresler):
     san = [x509.DNSName("localhost")]
     for adres in sorted(set(adresler) | {"127.0.0.1", "::1"}):
         san.append(x509.IPAddress(ipaddress.ip_address(adres)))
+    # WebAuthn (Face ID) alan adı ister: 10.1.2.3 -> 10-1-2-3.sslip.io
+    for adres in sorted(set(adresler)):
+        if ":" not in adres:
+            san.append(x509.DNSName(adres.replace(".", "-") + ".sslip.io"))
     return san
 
 
