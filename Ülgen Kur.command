@@ -178,6 +178,10 @@ end run
 ASEOF
   if osacompile -o "$YENIUYG" "$TMPAS"; then
     [ -e "$UYGULAMA" ] && mv "$UYGULAMA" "$ESKI/Ülgen.app-$ZAMAN"
+    if [ -f "$HEDEF/ulgen/varlik/ulgen.icns" ]; then    # Ülgen simgesi
+      cp "$HEDEF/ulgen/varlik/ulgen.icns" "$YENIUYG/Contents/Resources/applet.icns" 2>/dev/null
+      touch "$YENIUYG"
+    fi
     mv "$YENIUYG" "$UYGULAMA" && echo "Uygulama: $UYGULAMA" \
       || { [ -e "$ESKI/Ülgen.app-$ZAMAN" ] && mv "$ESKI/Ülgen.app-$ZAMAN" "$UYGULAMA"; echo "Uyarı: uygulama yerleştirilemedi, eskisi geri konuldu."; }
   else
