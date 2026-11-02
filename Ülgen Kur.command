@@ -182,6 +182,9 @@ ASEOF
       cp "$HEDEF/ulgen/varlik/ulgen.icns" "$YENIUYG/Contents/Resources/applet.icns" 2>/dev/null
       touch "$YENIUYG"
     fi
+    # Simge eklenince imza bozulur; macOS "açılamıyor" demesin diye yeniden imzala
+    /usr/bin/codesign --force --deep --sign - "$YENIUYG" >/dev/null 2>&1 || true
+    /usr/bin/xattr -cr "$YENIUYG" 2>/dev/null || true
     mv "$YENIUYG" "$UYGULAMA" && echo "Uygulama: $UYGULAMA" \
       || { [ -e "$ESKI/Ülgen.app-$ZAMAN" ] && mv "$ESKI/Ülgen.app-$ZAMAN" "$UYGULAMA"; echo "Uyarı: uygulama yerleştirilemedi, eskisi geri konuldu."; }
   else
