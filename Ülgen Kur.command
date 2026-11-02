@@ -199,9 +199,9 @@ fi
 
 printf '\n==================================================\n'
 echo "Kurulum tamam."
-echo "Mac'te: Launchpad > Ülgen   (tek kullanımlık giriş bağlantısıyla açar)
+echo "Mac'te: Launchpad > Ülgen   (tek kullanımlık giriş bağlantısıyla açar)"
 echo "Eski sürümler silinmedi: $ESKI   |   Veri yedeği: $YEDEK"
-echo "Durum denetimi: $HEDEF/ortam/bin/python -m ulgen --tani""
+echo "Durum denetimi: $HEDEF/ortam/bin/python -m ulgen --tani"
 echo
 echo "iPhone için (bir kez):"
 echo "  1. Cihaz belirteci üretin:"
