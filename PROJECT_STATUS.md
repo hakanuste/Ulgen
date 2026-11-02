@@ -38,3 +38,7 @@ Not: ilaç dozunu Ülgen değiştirmez; ilaç eklemek/durdurmak yalnızca sizin 
 Tamamlandı ve test edildi (benzetim + Chromium): sekmeler, paneller, yeniden bağlanma.
 Kodlandı, gerçek cihaz testi bekliyor: iPhone Safari/ana ekran görünümü.
 Geliştirilmedi: arayüzden ayar değiştirme, belirteç üretme/iptal, geçmiş sohbet ve hafıza sayfaları, anlık bildirim (push; Safari için yerel uygulama gerekir).
+
+## Mac kapalıyken hatırlatma
+Kodlandı, gerçek cihaz testi bekliyor: iPhone takvimine .ics aktarımı (alarm iPhone'da çalar). Sınırlar: yalnızca çalar, "aldım" yanıtı Ülgen'e dönmez; Ülgen'de "aldım" deyince iPhone tekrarları durmaz; plan değişince yeniden aktarılır, silinen planın eski olayı iPhone'da elle silinir; Rahatsız Etme kipi alarmı susturabilir.
+Yerel iOS uygulaması: yazılmadı. Not: Mac 12.7.6'da en yeni Xcode sürümü (14.2) yeni iOS'lara derleme/yükleme için yetersiz olabilir; iPhone'un iOS sürümü öğrenilmeli. Ücretsiz Apple kimliğiyle yüklenen uygulama 7 günde süresi dolar.

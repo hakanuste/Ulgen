@@ -84,3 +84,5 @@ Kural: önce güvenlik ve veri bütünlüğü; her aşama testi geçmeden sonrak
 ## Güncelleme: Aşama 4 bitti (benzetimde). Sıradaki: Aşama 5 (iPhone arayüzü sekmeleri, ilaç/görev/kota panelleri, yeniden bağlanma).
 
 ## Güncelleme: Aşama 5 bitti (benzetimde). Sıradaki: Aşama 6 (Özel Kasa + Face ID/WebAuthn onayı).
+
+## Güncelleme: Mac kapalıyken hatırlatma için iPhone takvim aktarımı (kullanıcı: "iPhone'da olmalı") kodlandı; cihaz testi bekliyor. Yerel iOS uygulaması için iPhone iOS sürümü gerekli.

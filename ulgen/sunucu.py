@@ -22,8 +22,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, tls,
-               veritabani, yedek)
+from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, takvim,
+               tls, veritabani, yedek)
 from .arayuz import SAYFA
 
 YEREL_AD = "localhost"
@@ -249,6 +249,25 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, SAYFA, "text/html; charset=utf-8")
             if yol == "/saglik":
                 return self._cevap(200, {"durum": "tamam"})
+            if yol == "/takvim.ics":
+                # Link tıklanınca başlık gönderilemez: kısa ömürlü TEK
+                # KULLANIMLIK anahtar (cihaz belirteci değil) kabul edilir.
+                if not takvim.anahtar_tuket(
+                        parse_qs(adres.query).get("t", [""])[0]):
+                    return self._cevap(403, {"hata": "bağlantı geçersiz ya da "
+                                                     "kullanılmış"})
+                veri = takvim.olustur().encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type",
+                                 "text/calendar; charset=utf-8")
+                self.send_header("Content-Disposition",
+                                 'attachment; filename="ulgen.ics"')
+                self.send_header("Content-Length", str(len(veri)))
+                for ad, deger in GUVENLIK_BASLIKLARI.items():
+                    self.send_header(ad, deger)
+                self.end_headers()
+                self.wfile.write(veri)
+                return
             if not self._yetkili():
                 return
             if yol == "/bildirimler":
@@ -303,6 +322,17 @@ def istek_sinifi(ulgen, limit):
             if urlparse(self.path).path == "/sohbet":
                 return self._cevap(
                     200, ulgen.sohbet_isle(str(veri.get("metin", ""))))
+            if urlparse(self.path).path == "/takvim/baglanti":
+                return self._cevap(200, {
+                    "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
+                    "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path == "/ilac/duzelt":
+                doz, yanit = veri.get("doz"), veri.get("yanit")
+                if not isinstance(doz, int) or isinstance(doz, bool) \
+                        or not isinstance(yanit, str):
+                    return self._cevap(400, {"hata": "doz(int), yanit"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici.ilac
+                                         .duzelt(doz, yanit)})
             if urlparse(self.path).path == "/gorev/bitir":
                 kimlik = veri.get("id")
                 if not isinstance(kimlik, int) or isinstance(kimlik, bool):

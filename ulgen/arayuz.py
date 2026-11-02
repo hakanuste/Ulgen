@@ -415,6 +415,16 @@ async function ilacCiz() {
     const n = document.createElement("span"); n.className = "durumNokta d-" + x.durum; d.appendChild(n);
     d.appendChild(document.createTextNode("D" + x.id + "  " + x.planli.slice(11) + "  " + x.ilac_ad +
       (x.doz_notu ? " (" + x.doz_notu + ")" : "") + " — " + durumYazi[x.durum]));
+    if (x.durum === "yanitsiz") {
+      const du = document.createElement("div");
+      d.appendChild(du);
+      [["Aldım (kaydı düzelt)", "alindi"], ["Almadım", "almadi"]].forEach(([a, y]) => {
+        const b = document.createElement("button");
+        b.className = "dugme"; b.style.margin = "6px 4px 0 0"; b.textContent = a;
+        b.onclick = async () => { b.disabled = true; await istek("/ilac/duzelt", { doz: x.id, yanit: y }); ilacCiz(); };
+        du.appendChild(b);
+      });
+    }
     if (x.durum === "bekliyor" || x.durum === "ertelendi") {
       const dugmeler = document.createElement("div");
       d.appendChild(dugmeler);
@@ -434,6 +444,16 @@ async function ilacCiz() {
   n.style.cssText = "color:var(--soluk);font-size:12px;margin-top:12px";
   n.textContent = "Her düğme yalnızca kendi dozunu değiştirir. Ülgen dozu değiştirmez ve tıbbi öneri vermez.";
   k.appendChild(n);
+  baslik(k, "Mac kapalıyken de çalsın");
+  const t = ekle(k, "İlaç, randevu ve rutin alarmlarını iPhone takvimine aktarın; Mac uykudayken ya da kapalıyken de çalar.",
+    "Alarm yalnızca çalar; 'aldım' yanıtı Ülgen'e ulaşabildiğinizde verilir. Plan değişince yeniden aktarın.");
+  const tb = document.createElement("button");
+  tb.className = "dugme aktif"; tb.style.marginTop = "8px"; tb.textContent = "iPhone takvimine aktar";
+  tb.onclick = async () => {
+    const c = await istek("/takvim/baglanti", {});
+    location.href = c.adres;
+  };
+  t.appendChild(tb);
 }
 
 function bildirimCiz() {

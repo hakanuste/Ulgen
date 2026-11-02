@@ -55,3 +55,7 @@ Denenmedi: gerçek iPhone'da bildirim (Safari/PWA kapalıyken yerel bildirim pla
 ## Aşama 5 (benzetim, Chromium 390 px)
 Her sekme verilerle çizildi; ilaç ve görev düğmeleri gerçek arka uçta yalnızca ilgili kaydı değiştirdi; bağlantı koparılıp (istek engellenerek) geri verildi: uyarı çıktı ve kendiliğinden kapandı; sayfa hatası yok.
 Denenmedi: gerçek iPhone/Safari, ana ekran uygulaması, uzun süreli bağlantı, ZeroTier ağı üzerinden.
+
+## Takvim aktarımı (benzetim)
+.ics, `icalendar` kütüphanesiyle ayrıştırıldı: olay sayısı, RRULE (günlük/hafta içi), alarmlar, 75 sekizli satır katlama, genel başlıklar, tek kullanımlık bağlantı, uzak sunucuda belirteç zorunluluğu. 150 test geçti.
+DENENMEDİ (iPhone gerekir): Apple Takvim'in dosyayı içe aktarması, "Tüm Olayları Ekle", alarmın kilit ekranında çalması, Rahatsız Etme/Odak kipinde davranış, yinelenen olayların UID ile güncellenmesi.

@@ -57,3 +57,10 @@
 - Uç noktalar: `/gorevler`, `/gorev/bitir`, `/sistem` (salt okunur; belirteç/özet sızdırmaz).
 - Cihaz iptali arayüzden DEĞİL, Mac'te `--cihaz-iptal` ile (uzaktaki cihaz kendi yetkisini kaldırmasın diye).
 - Testler 138 → 139.
+
+## iPhone takvim aktarımı (Mac kapalıyken alarm)
+- Kullanıcı kararı: kritik hatırlatmalar iPhone'da olmalı. `takvim.py` ilaç planlarını, randevuları, saatli görevleri ve rutinleri `.ics`'e çevirir; iPhone'un kendi takvimi Mac'siz ve ağsız alarm çalar. İlaç saati başına 6 ayrı olay (5 dk arayla) = tekrar alarmı.
+- İlaç sekmesinde "iPhone takvimine aktar" düğmesi: tek kullanımlık, 2 dakikalık bağlantı (cihaz belirteci URL'ye girmez).
+- Başlıklar varsayılan GENEL ("Ülgen: ilaç zamanı"; takvim iCloud'a eşlenirse ilaç adı bulutta görünmesin). `takvim_ayrintili: true` ile ad yazılır.
+- Kapalıyken kaçan "yanıtsız" dozlar için arayüzde "Aldım (kaydı düzelt)/Almadım" düğmeleri (`/ilac/duzelt`).
+- Testler 139 → 150.
