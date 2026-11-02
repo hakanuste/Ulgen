@@ -1001,7 +1001,13 @@ function saatYaz() {
 }
 async function havaYukle() {
   try {
-    const h = await istek("/hava");
+    // Cihazın konumu (izin verilirse); olmazsa ayardaki varsayılan yer kullanılır.
+    const konum = await new Promise(coz => {
+      if (!navigator.geolocation) { coz(null); return; }
+      navigator.geolocation.getCurrentPosition(p => coz(p.coords), () => coz(null),
+        { timeout: 8000, maximumAge: 1800000, enableHighAccuracy: false });
+    });
+    const h = await istek(konum ? "/hava?enlem=" + konum.latitude.toFixed(2) + "&boylam=" + konum.longitude.toFixed(2) : "/hava");
     const k = document.getElementById("havaYazi");
     if (!h || h.sicaklik === undefined) { k.textContent = ""; return; }
     k.innerHTML = '<svg class="i"><use href="#i-gunes"/></svg><div><b></b><span></span></div>';

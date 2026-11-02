@@ -2,6 +2,7 @@
 
 ## [2.7] – 2026-11-02
 - İlaç düzeltme (ad, not, saat) ve silme: arayüzde "Kayıtlı ilaçlar" + Sil (onaylı), sohbette "ilaç sil: Ad" (+ "onay").
+- Hava durumu cihazın konumuna göre (izin verilirse; en yakın il adı çevrimdışı bulunur; son konum raporlarda kullanılır).
 - Ayarlar > "Ses seçimi": okuma sesi (ad, hız, perde) ve sabit cümleler için kendi mp3 dosyalarınızı yükleme.
 - Kendi sesiniz (ElevenLabs): sabit cümleler bir kez üretilip yerelde saklanır (`--ses-uret`); kişisel veri bulutta okutulmaz, aylık karakter sınırı sayılır.
 - Obsidian: kasa otomatik bulunur; erişim/izin hatası açık yazılır. certifi ile TLS (macOS sertifika hatası).

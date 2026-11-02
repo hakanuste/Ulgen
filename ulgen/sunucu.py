@@ -47,8 +47,8 @@ GUVENLIK_BASLIKLARI = {
     "Cross-Origin-Opener-Policy": "same-origin",
     "Cross-Origin-Resource-Policy": "same-origin",
     "Permissions-Policy": (
-        "microphone=(self), publickey-credentials-get=(self), "
-        "publickey-credentials-create=(self), camera=(), geolocation=()"),
+        "microphone=(self), geolocation=(self), publickey-credentials-get=(self), "
+        "publickey-credentials-create=(self), camera=()"),
 }
 
 
@@ -443,7 +443,20 @@ def istek_sinifi(ulgen, limit):
                     "cevrimdisi": ses.CevrimdisiTanima.hazir_mi(),
                     "eksik": ses.CevrimdisiTanima.eksikler()})
             if yol == "/hava":
-                return self._cevap(200, hava.getir() or {})
+                q = parse_qs(adres.query)
+                try:
+                    enlem = float(q["enlem"][0]) if "enlem" in q else None
+                    boylam = float(q["boylam"][0]) if "boylam" in q else None
+                except ValueError:
+                    return self._cevap(400, {"hata": "enlem/boylam sayı olmalı"})
+                if (enlem is None) != (boylam is None) or (
+                        enlem is not None and not (
+                            -90 <= enlem <= 90 and -180 <= boylam <= 180)):
+                    return self._cevap(400, {"hata": "koordinat geçersiz"})
+                if enlem is not None:
+                    hava.son_konum_yaz(enlem, boylam)
+                return self._cevap(200, hava.getir(
+                    enlem=enlem, boylam=boylam) or {})
             if yol == "/raporlar":
                 return self._cevap(200, [
                     {"tur": r["tur"], "anahtar": r["anahtar"],
