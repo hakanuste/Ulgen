@@ -560,7 +560,7 @@ async function konus(metin) {
   for (let i = 0; i < parcalar.length; i++) {
     if (no !== konusmaNo) return;                       // araya "dur" girdi
     if (!(await bulutOku(parcalar[i], true))) {         // kota/ağ/hassas içerik: kalanı yerel sesle
-      if (no === konusmaNo) yedekKonus(parcalar.slice(i).join(" "), true);
+      if (no === konusmaNo) { if (!/hassas/.test(sonBulutNeden)) bulutHataBildir(); yedekKonus(parcalar.slice(i).join(" "), true); }
       return;
     }
   }
@@ -699,20 +699,58 @@ async function sesDurumuYukle() {
   try { bulutSes = !!(await istek("/ses/durum")).bulut; } catch (e) { bulutSes = false; }
 }
 let bulutSes = false;
+// Tek, yeniden kullanılan ses öğesi: Safari/Chrome ilk kullanıcı dokunuşunda "kilidi açılan" öğeyi sonradan,
+// dokunuş olmadan da çalmaya izin verir. Her seferinde yeni Audio() oluşturmak engelleniyordu ve kadın sesine düşülüyordu.
+const sesKap = new Audio();
+let sesKilidiAcik = false, sonBulutNeden = "", sonBulutBildirim = 0;
+function sessizWav() {
+  const n = 800, b = new ArrayBuffer(44 + n * 2), v = new DataView(b);
+  const y = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  y(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); y(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); y(36, "data"); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
+}
+function sesKilidiniAc() {
+  if (sesKilidiAcik) return;
+  try {
+    sesKap.src = sessizWav();
+    const p = sesKap.play();
+    if (p && p.then) p.then(() => { sesKilidiAcik = true; }).catch(() => {});
+  } catch (e) {}
+}
+["pointerdown", "keydown", "touchstart"].forEach(o => document.addEventListener(o, sesKilidiniAc, { passive: true }));
+
+function sesCal(url, bitenKadar) {
+  return new Promise(async (coz) => {
+    klipSes = sesKap;
+    const son = () => { try { URL.revokeObjectURL(url); } catch (e) {} };
+    sesKap.onended = () => { son(); coz(true); };
+    sesKap.onpause = () => { coz(true); };
+    sesKap.onerror = () => { sonBulutNeden = "ses dosyası çalınamadı"; son(); coz(false); };
+    try { sesKap.src = url; await sesKap.play(); if (!bitenKadar) coz(true); }
+    catch (e) { sonBulutNeden = "tarayıcı sesi çalmayı engelledi (" + (e && e.name ? e.name : "hata") + ")"; son(); coz(false); }
+  });
+}
+
+// Kendi sesiniz çalınamayınca nedenini (en çok 10 dakikada bir) sohbette gösterir: sessizce kadın sesine düşülmez.
+function bulutHataBildir() {
+  if (Date.now() - sonBulutBildirim < 600000) return;
+  sonBulutBildirim = Date.now();
+  balonEkle("Kendi sesiniz çalınamadı: " + (sonBulutNeden || "bilinmeyen neden") + (yalnizBenimSes() ? ". Yanıt yazı olarak kaldı." : ". Bu yanıt sistem sesiyle okunuyor."), "asistan");
+}
+
 // Bulut sesi açıksa (ElevenLabs, kendi sesiniz) yanıt metni oraya gider; olmazsa yerel ses okur.
 async function bulutOku(metin, bitenKadar) {
+  sonBulutNeden = "";
   try {
     const h = { "Content-Type": "application/json" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
     const c = await fetch("/ses/oku", { method: "POST", headers: h, body: JSON.stringify({ metin: metin }) });
-    if (!c.ok) return false;
-    const url = URL.createObjectURL(await c.blob());
-    if (klipSes) klipSes.pause();
-    const ses = new Audio(url); klipSes = ses;
-    const bitti = new Promise(coz => { ses.onended = ses.onpause = ses.onerror = () => { URL.revokeObjectURL(url); coz(); }; });
-    await ses.play();
-    if (bitenKadar) await bitti;
-    return true;
-  } catch (e) { return false; }
+    if (!c.ok) {
+      let m = ""; try { m = (await c.json()).hata || ""; } catch (e) {}
+      sonBulutNeden = m || ("sunucu yanıtı " + c.status); return false;
+    }
+    return await sesCal(URL.createObjectURL(await c.blob()), bitenKadar);
+  } catch (e) { sonBulutNeden = "ağ hatası"; return false; }
 }
 // Kendi sesiniz (ElevenLabs'ten bir kez üretilmiş, yerelde saklı) sabit cümleler için çalınır.
 let klipler = {}, klipSes = null;
@@ -721,12 +759,7 @@ async function klipCal(ad) {
     const h = anahtar ? { "Authorization": "Bearer " + anahtar } : {};
     const c = await fetch("/ses/klip/" + ad, { headers: h });
     if (!c.ok) return false;
-    const url = URL.createObjectURL(await c.blob());
-    if (klipSes) klipSes.pause();
-    klipSes = new Audio(url);
-    klipSes.onended = () => URL.revokeObjectURL(url);
-    await klipSes.play();
-    return true;
+    return await sesCal(URL.createObjectURL(await c.blob()), false);
   } catch (e) { return false; }
 }
 async function cevrimdisiKayit() {
@@ -1317,6 +1350,14 @@ async function sesPaneli(k) {
     t.textContent = "Bulut sesi: " + (durum.bulut ? "açık" : "kapalı");
     t.onclick = async () => { await istek("/ses/bulut-ayar", { acik: !durum.bulut }); bulutSes = !durum.bulut; ayarCiz(); };
     b.appendChild(t);
+    const dene2 = document.createElement("button"); dene2.className = "dugme"; dene2.textContent = "Kendi sesimi dene"; dene2.style.cssText = "margin:6px 0 0 8px";
+    dene2.onclick = async () => {
+      sesKilidiniAc(); dene2.disabled = true;
+      const tamam = await bulutOku("Merhaba, ben Ülgen. Bu benim sesim.", true);
+      balonEkle(tamam ? "Kendi sesiniz çalındı." : "Kendi sesiniz çalınamadı: " + (sonBulutNeden || "bilinmeyen neden"), "asistan");
+      dene2.disabled = false;
+    };
+    b.appendChild(dene2);
     const y = ekle(k, "Yalnız benim sesim",
       "Açıkken kendi sesiniz okuyamadığında (ilaç/sağlık gibi hassas yanıtlar, aylık sınır, ağ hatası) kadın sistem sesine geçilmez; yanıt yalnız yazı olarak kalır. Kapalıyken o yanıtları sistem sesi okur (ilaç hatırlatmalarını duymak için kapalı tutabilirsiniz).");
     const yb = document.createElement("button"); yb.style.marginTop = "6px";

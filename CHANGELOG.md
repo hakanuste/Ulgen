@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Kendi sesiniz (bulut) sessizce kadın sesine düşmesin: tek ses öğesi ilk dokunuşta "kilidi açılır" (Safari/Chrome otomatik çalma engeli), çalınamazsa neden sohbette yazılır; Ayarlar > Ses seçimi > "Kendi sesimi dene" düğmesi (2.7.32).
 - API anahtarlarım: GitHub satırının açıklaması netleştirildi (isteğe bağlı; herkese açık depoda gerekmez) (2.7.31).
 - Kılavuzlar → Obsidian: Belgeler/Klavuzlar klasöründeki yeni PDF/md/txt dosyaları 10 dakikada bir kendiliğinden (ya da "Şimdi aktar" ile) kasaya not olarak aktarılır (50 sayfalık parçalar + Dizin notu; artımlı; eski araçla aktarılanlar yeniden yazılmaz). Ayarlar'da durum, klasör ve açma/kapama (2.7.30).
 - Güncelleme deposu varsayılan olarak hakanuste/Ulgen (2.7.29).
