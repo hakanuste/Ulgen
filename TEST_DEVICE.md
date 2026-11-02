@@ -16,3 +16,10 @@
 - [ ] Sohbet, mikrofon, Ana Ekrana Ekle çalışıyor
 - [ ] `--takvim-deneme` alarmı kilit ekranında çaldı (Mac kapalıyken de)
 - [ ] İlaç takvimi aktarıldı, bir doz yanıtı yalnız o dozu etkiledi
+
+## Eklenen cihaz denemeleri (2.7)
+- [ ] `python -m ulgen --dene nvidia` → "ÇALIŞTI" görmeli (anahtar: `--sir-kaydet nvidia`).
+- [ ] `pip install faster-whisper`, `brew install ffmpeg`, `python -m ulgen --ses-modeli-indir`; iPhone'da mikrofon düğmesi → Türkçe cümle; Wi-Fi kapalıyken de çalışmalı.
+- [ ] Kestirme (SAGLIK_KESTIRME.md) → Sağlık sekmesinde değerler.
+- [ ] Safari: Dynamic Island, klavye kayması, CSP hatası yok (Web Denetçisi).
+- [ ] 07:30 / 21:00'de sabah/akşam raporu bildirimi geldi mi.

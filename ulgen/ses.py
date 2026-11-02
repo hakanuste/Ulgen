@@ -153,3 +153,87 @@ class Dinleyici:
 
     def durdur(self):
         self._durdur.set()
+
+
+class CevrimdisiTanima:
+    """İnternetsiz Türkçe konuşma tanıma (faster-whisper, yerel model).
+
+    Ses hiçbir yere gönderilmez. Gerekenler (bir kez, Mac'te):
+      pip install faster-whisper  ve  brew install ffmpeg
+      python -m ulgen --ses-modeli-indir      (tek internet adımı)
+    Model ``~/Ülgen/modeller`` altında durur; sonrası tümüyle çevrimdışı."""
+
+    AZAMI_BAYT = 8 * 1024 * 1024
+    _model = None
+    _kilit = threading.Lock()
+
+    @staticmethod
+    def model_dizini():
+        return os.path.join(os.path.expanduser("~"), "Ülgen", "modeller")
+
+    @classmethod
+    def eksikler(cls):
+        eksik = []
+        try:
+            import faster_whisper  # noqa: F401
+        except ImportError:
+            eksik.append("faster-whisper (pip install faster-whisper)")
+        if not shutil.which("ffmpeg"):
+            eksik.append("ffmpeg (brew install ffmpeg)")
+        return eksik
+
+    @classmethod
+    def model_adi(cls):
+        return ayar.yukle().get("stt_model", "small")
+
+    @classmethod
+    def hazir_mi(cls):
+        if cls.eksikler():
+            return False
+        return os.path.isdir(os.path.join(cls.model_dizini(),
+                                          "yuklendi-" + cls.model_adi()))
+
+    @classmethod
+    def indir(cls):
+        """Modeli bir kez indirir (tek internet gerektiren adım)."""
+        from faster_whisper import WhisperModel
+        os.makedirs(cls.model_dizini(), exist_ok=True)
+        WhisperModel(cls.model_adi(), device="cpu", compute_type="int8",
+                     download_root=cls.model_dizini())
+        os.makedirs(os.path.join(cls.model_dizini(),
+                                 "yuklendi-" + cls.model_adi()),
+                    exist_ok=True)
+
+    @classmethod
+    def _yukle(cls):
+        with cls._kilit:
+            if cls._model is None:
+                from faster_whisper import WhisperModel
+                cls._model = WhisperModel(
+                    cls.model_adi(), device="cpu", compute_type="int8",
+                    download_root=cls.model_dizini(), local_files_only=True)
+            return cls._model
+
+    @classmethod
+    def yaz(cls, ses_baytlari):
+        """Herhangi bir ses biçimini (webm/mp4/wav) Türkçe metne çevirir."""
+        if not ses_baytlari or len(ses_baytlari) > cls.AZAMI_BAYT:
+            raise ValueError("Ses boş ya da çok büyük (en çok 8 MB).")
+        if not cls.hazir_mi():
+            raise RuntimeError("Çevrimdışı ses tanıma kurulu değil: "
+                               + "; ".join(cls.eksikler() or
+                                           ["model indirilmemiş"]))
+        with tempfile.TemporaryDirectory() as klasor:
+            ham = os.path.join(klasor, "ham")
+            wav = os.path.join(klasor, "ses.wav")
+            with open(ham, "wb") as f:
+                f.write(ses_baytlari)
+            sonuc = subprocess.run(
+                ["ffmpeg", "-nostdin", "-y", "-loglevel", "error", "-i", ham,
+                 "-ac", "1", "-ar", "16000", wav],
+                capture_output=True, timeout=60, check=False)
+            if sonuc.returncode != 0:
+                raise ValueError("Ses biçimi çözülemedi.")
+            parcalar, _ = cls._yukle().transcribe(
+                wav, language="tr", vad_filter=True, beam_size=1)
+            return " ".join(p.text.strip() for p in parcalar).strip()

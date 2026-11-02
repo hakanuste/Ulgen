@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timedelta
 
 from . import veritabani
+from .rapor import Raporlar
 from .gorev import Gorevler
 from .ilac import Ilac
 
@@ -38,6 +39,7 @@ class Zamanlayici:
         self._durdur = threading.Event()
         self.ilac = Ilac(bildir)
         self.gorev = Gorevler(bildir)
+        self.rapor = Raporlar(bildir)
 
     # ------------------------------------------------------------ kurma
     def hatirlatici_kur(self, metin, kalici=None, su_an=None):
@@ -139,7 +141,7 @@ class Zamanlayici:
     # -------------------------------------------------------- arka plan
     def adim(self, su_an):
         """Zamanı gelen hatırlatıcıları bildirir; bildirilenleri döndürür."""
-        for motor in (self.ilac, self.gorev):
+        for motor in (self.ilac, self.gorev, self.rapor):
             try:
                 motor.adim(su_an)
             except Exception as hata:   # biri bozulsa diğerleri çalışsın

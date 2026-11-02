@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import hava, obsidyen, saglik_veri
+from . import hava, obsidyen, saglik_veri, ses
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -417,8 +417,17 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/ses/durum":
+                return self._cevap(200, {
+                    "cevrimdisi": ses.CevrimdisiTanima.hazir_mi(),
+                    "eksik": ses.CevrimdisiTanima.eksikler()})
             if yol == "/hava":
                 return self._cevap(200, hava.getir() or {})
+            if yol == "/raporlar":
+                return self._cevap(200, [
+                    {"tur": r["tur"], "anahtar": r["anahtar"],
+                     "metin": r["metin"]}
+                    for r in ulgen.zamanlayici.rapor.son(10)])
             if yol == "/saglik/gecmis":
                 return self._cevap(200, saglik_veri.gunluk())
             if yol == "/saglik/bugun":
@@ -438,10 +447,35 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {"hatirlaticilar": satirlar})
             return self._cevap(404, {"hata": "bulunamadı"})
 
+        def _ses_yaz(self, tur):
+            """Ham ses → metin (yerel, internetsiz). Gövde ≤ 8 MB."""
+            try:
+                uzunluk = int(self.headers.get("Content-Length", 0) or 0)
+            except ValueError:
+                uzunluk = 0
+            if uzunluk <= 0 or uzunluk > ses.CevrimdisiTanima.AZAMI_BAYT:
+                self._cevap(413, {"hata": "ses boş ya da 8 MB'tan büyük"})
+                return
+            if not tur.startswith(("audio/", "video/webm",
+                                   "application/octet-stream")):
+                self._cevap(415, {"hata": "ses dosyası gerekli"})
+                return
+            govde = self.rfile.read(uzunluk)
+            if not self._yetkili():
+                return
+            try:
+                self._cevap(200, {"metin": ses.CevrimdisiTanima.yaz(govde)})
+            except RuntimeError as hata:
+                self._cevap(503, {"hata": str(hata)})
+            except (ValueError, OSError, subprocess.SubprocessError) as hata:
+                self._cevap(400, {"hata": str(hata)[:200]})
+
         def do_POST(self):
             if not self._on_denetim():
                 return
             tur = (self.headers.get("Content-Type") or "").lower()
+            if urlparse(self.path).path == "/ses/yaz":
+                return self._ses_yaz(tur)
             if not tur.startswith("application/json"):
                 return self._cevap(415, {"hata": "application/json gerekli"})
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)

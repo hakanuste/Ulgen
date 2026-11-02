@@ -1,7 +1,7 @@
 # Ülgen — Gerçek Durum Tablosu (TEK KAYNAK)
 
 Bu tablo tek doğru durumdur. CHANGELOG, TEST_REPORT ve ROADMAP buna uyar; çelişirse bu dosya geçerlidir.
-Sürüm 2.5 · Otomatik test: 183 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
+Sürüm 2.7 · Otomatik test: 199 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
 
 Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K** = Kodlandı, gerçek cihaz testi bekliyor ·
 **Kı** = Kısmen · **G** = Geliştirilmedi · **E** = Teknik engel
@@ -19,8 +19,13 @@ Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K**
 | 5b | Kurulum betiği: yedek, güvenli değişim, geri alma | K | Linux kuru çalıştırma + bozuk sürümle geri alma denendi | Hayır (macOS, launchd, osacompile) |
 | 5c | Yeni arayüz teması (taslağa göre: sol menü, özet şeridi, sağ pano, telefonda alt çubuk) + Obsidian arama dizini (md+pdf) | K | test_obsidyen (4), Chromium ekran görüntüsü (tests/e2e_arayuz.py) | Hayır (iPhone Safari) |
 | 6 | Özel Kasa (AES-256-GCM), Face ID/WebAuthn+PRF, tek kullanımlık kapsamlı onay, parola unutunca Face ID kurtarma, kurtarma kodu/paketi | K | test_ozelkasa (12) + Chromium sanal Face ID (tests/e2e_kasa.py) | Hayır (gerçek Face ID, sslip.io adı, iOS 27.2 PRF) |
-| 7 | Çevrimdışı ses, sağlık köprüsü | G | — | — |
-| 8 | Raporlar, 16 senaryolu bütünleşik test | G | — | — |
+| 5d | Resmî renk standardı (`--ulgen-*` değişkenleri, tek merkez) masaüstü + iPhone; yatay taşma denetimi (360/430/1672 px) | K | Chromium: renk kodları ve taşma ölçümü | Hayır (Safari, Dynamic Island) |
+| 5e | SQLCipher zorunlu (yoksa Ülgen başlamaz), kurulum yedeği tutarlılığı (`--kurulum-yedegi`), CSP + çerez oturumu | K | test_db_sifreleme, test_csp, test_yerel_yetki | Hayır (Mac'te SQLCipher kurulumu) |
+| 7a | Sağlık köprüsü: iPhone Kestirmeleri → `/saglik/veri` (adım, nabız, uyku); F800/Joeme Fit → Apple Sağlık → Kestirme | K | test_saglik_veri | Hayır (Kestirme, F800 eşleşmesi) |
+| 7b | Çevrimdışı Türkçe ses tanıma (faster-whisper + ffmpeg, `/ses/yaz`, `--ses-modeli-indir`) | K | test_ses_cevrimdisi (sunucu yolu, sahte tanıma); gerçek model çalıştırılmadı | Hayır (model indirme, Mac hızı, iPhone kaydı) |
+| 8a | Sabah / akşam / haftalık raporlar (yerel veriden; `rapor_saatleri`, `/raporlar`, sohbette "akşam raporu") | K | test_rapor (5) | Hayır (zamanında bildirim) |
+| 2b | NVIDIA gerçek bağlantı denemesi: `python -m ulgen --dene nvidia` | K | test_rapor.DeneTesti (sahte yanıt) | **Hayır — kullanıcı çalıştırmalı** |
+| 8 | 16 senaryolu bütünleşik test | G | — | — |
 | — | Yerel iOS uygulaması | G (iOS sürümü bekleniyor) | — | — |
 
 ## Bilinen sınırlar

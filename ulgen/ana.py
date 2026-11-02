@@ -6,6 +6,8 @@ Kullanım:
   python -m ulgen --ses           mikrofonla 'Ülgen' diyerek konuşma
   python -m ulgen --sabah         sabah raporunu yazdırır
   python -m ulgen --ac             tarayıcıda yerel giriş (tek kullanımlık bağlantı)
+  python -m ulgen --ses-modeli-indir  çevrimdışı Türkçe ses modelini indirir
+  python -m ulgen --dene [nvidia] gerçek bulut isteği dener (süre, kota)
   python -m ulgen --tani           Mac/iPhone cihaz denetimi raporu
   python -m ulgen --modeller [gemini|groq|mistral|openrouter]  modelleri listeler
   python -m ulgen --cihaz-ekle AD  yeni cihaz belirteci üretir (bir kez gösterilir)
@@ -160,6 +162,21 @@ def yonetim(argv):
     if "--takvim-deneme" in argv:
         from . import tani
         return tani.takvim_deneme()
+    if "--ses-modeli-indir" in argv:
+        from .ses import CevrimdisiTanima
+        eksik = CevrimdisiTanima.eksikler()
+        if eksik:
+            print("Önce kurun:", "; ".join(eksik))
+            return 1
+        print("Model indiriliyor (tek seferlik, internet gerekir)...")
+        CevrimdisiTanima.indir()
+        print("Hazır. Bundan sonra ses tanıma internetsiz çalışır.")
+        return 0
+    if "--dene" in argv:
+        from . import tani
+        sira = argv.index("--dene") + 1
+        return tani.dene([argv[sira]] if sira < len(argv)
+                         and not argv[sira].startswith("--") else None)
     if "--tani" in argv:
         from . import tani
         return tani.calistir()

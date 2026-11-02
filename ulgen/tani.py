@@ -211,3 +211,63 @@ def takvim_deneme():
           "iPhone'a AirDrop ile gönderin, açıp 'Tümünü Ekle' deyin; Mac'i "
           "kapatıp alarmı bekleyin." % (yol, t.strftime("%H:%M")))
     return 0
+
+
+def dene(saglayicilar=None):
+    """Anahtarı olan bulut sağlayıcılarına GERÇEK bir istek atar (--dene).
+
+    Tek kısa soru gönderir (özel veri yok); süreyi, token sayısını ve hız
+    sınırı başlıklarını gösterir. Sonucu açıkça yazar: 'çalıştı' ancak
+    gerçekten yanıt gelirse yazılır. Bu Mac'te kendiniz çalıştırın."""
+    import time
+    from . import ayar, beyin as b
+
+    a = ayar.yukle()
+    adaylar = saglayicilar or ["gemini", "nvidia", "groq", "mistral",
+                               "openrouter"]
+    kod = 0
+    for ad in adaylar:
+        anahtar = a.get(ad + "_anahtar")
+        model = a.get(ad + "_model") or ""
+        print("\n== %s  (model: %s)" % (ad, model or "—"))
+        if not anahtar:
+            print("   anahtar yok → atlandı (python -m ulgen --sir-kaydet %s)"
+                  % ad)
+            continue
+        if ad == "gemini":
+            nesne = b.GeminiBeyin(anahtar, model)
+        else:
+            nesne = b.OpenAIUyumluBeyin(ad, anahtar, model)
+        if not nesne.kullanilabilir_mi():
+            print("   KULLANILAMAZ: ücretsiz katman doğrulaması geçmedi "
+                  "(model adı/katman).")
+            kod = 1
+            continue
+        basla = time.time()
+        try:
+            yanit = nesne.yanitla("Kısa Türkçe yanıt ver.",
+                                  [{"role": "user",
+                                    "content": "Tek kelimeyle yanıtla: "
+                                               "merhaba de."}], 30)
+        except b.KotaHatasi as hata:
+            print("   KOTA/429: %s (bekleme %s sn)" % (hata, hata.bekle_sn))
+            kod = 1
+            continue
+        except b.BeyinHatasi as hata:
+            s = str(hata)
+            ipucu = ("anahtar geçersiz/yetkisiz" if "401" in s or "403" in s
+                     else "model adı yanlış olabilir: python -m ulgen "
+                          "--modeller %s" % ad if "404" in s or "400" in s
+                     else "ağ/sunucu sorunu")
+            print("   HATA: %s\n   olası neden: %s" % (s[:200], ipucu))
+            kod = 1
+            continue
+        ms = int((time.time() - basla) * 1000)
+        print("   ÇALIŞTI — yanıt: %r, süre: %d ms" % (yanit[:60], ms))
+        kul = getattr(nesne, "son_kullanim", None)
+        if kul:
+            print("   token: giriş %s, çıkış %s" % (
+                kul["giris"], kul["cikis"]))
+    print("\nNot: bu çıktı gerçek bağlantının kanıtıdır; PROJECT_STATUS'ta "
+          "NVIDIA satırını yalnızca 'ÇALIŞTI' gördüğünüzde güncelleyin.")
+    return kod

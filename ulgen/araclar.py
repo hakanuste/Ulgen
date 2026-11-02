@@ -596,6 +596,12 @@ class Araclar:
                           re.IGNORECASE)
         if kasa_m:       # yalnız İSTEK açar; içeriği asla görmez/döndürmez
             return ozelkasa.istek_olustur(kasa_m.group(1).strip())
+        rap = re.fullmatch(r"(sabah|ak[şs]am|haftal[ıi]k) rapor(?:u|um)?"
+                           r"(?: ver| g[öo]ster)?[.!? ]*", k)
+        if rap:
+            tur = {"sabah": "sabah", "haftalık": "haftalik",
+                   "haftalik": "haftalik"}.get(rap.group(1), "aksam")
+            return self.zamanlayici.rapor.uret(tur, bildir=False)
         if re.search(r"saat ka[çc]|g[üu]n(?:lerden)? ne|bug[üu]n.*tarih|"
                      r"tarih ne", k):
             return self.saat_tarih()

@@ -35,7 +35,7 @@ class VeriTabaniHatasi(Exception):
 DB_HATALARI = (sqlite3.DatabaseError,) + (
     (_sc.DatabaseError,) if _sc is not None else ())
 
-SURUM = 8
+SURUM = 9
 FTS_VAR = False
 
 _KILIT = threading.RLock()
@@ -487,7 +487,15 @@ def _goc_8():
         kaynak TEXT, PRIMARY KEY (tur, zaman))""")
 
 
-GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5, 6: _goc_6, 7: _goc_7, 8: _goc_8}
+def _goc_9():
+    """Üretilmiş sabah/akşam/haftalık raporlar (günde/haftada bir kez)."""
+    sorgu("""CREATE TABLE IF NOT EXISTS rapor (
+        tur TEXT NOT NULL, anahtar TEXT NOT NULL, zaman REAL NOT NULL,
+        metin TEXT NOT NULL, PRIMARY KEY (tur, anahtar))""")
+
+
+GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5, 6: _goc_6,
+          7: _goc_7, 8: _goc_8, 9: _goc_9}
 
 
 def surum():

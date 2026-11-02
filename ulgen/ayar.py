@@ -94,6 +94,7 @@ SABLON = {
     "kasa": "~/Documents/Obsidyen",
     "sabah_ozeti_dakika": 10,
     "hava_acik": True,
+    "rapor_acik": True,
     "hava_konum": {"ad": "Aydın", "enlem": 37.85, "boylam": 27.84},
 }
 

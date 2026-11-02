@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## [2.7] – 2026-11-02
+- Raporlar: sabah/akşam/haftalık (`ulgen/rapor.py`, göç 9, `rapor_acik`, `rapor_saatleri`).
+- `--dene [sağlayıcı]`: gerçek bulut isteği, süre/token/hata ipucu.
+- Çevrimdışı ses: `CevrimdisiTanima`, `/ses/yaz`, `/ses/durum`, `--ses-modeli-indir`.
+- Resmî renk standardı: `--ulgen-*` değişkenleri; eski renkler bunlara bağlandı.
+- Kurulum yedeği tutarlılığı, SQLCipher zorunluluğu, CSP, sağlık köprüsü, hava (önceki sürümlerden).
+
 ## [2.1-aşama1] – 2026-11-02
 ### Güvenlik
 - Terminal aracı: kara liste yerine izin listesi.
