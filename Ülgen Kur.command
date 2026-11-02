@@ -24,13 +24,58 @@ done
 [ -n "$PY" ] || dur "Python 3.8 ya da üstü bulunamadı. Terminal'de 'brew install python' yazıp kurulumu yeniden çalıştırın."
 echo "Python: $PY ($("$PY" -V 2>&1))"
 
-adim "2/6  Dosyalar kopyalanıyor ($HEDEF)"
-mkdir -p "$HEDEF" "$VERI" || dur "Klasörler oluşturulamadı."
+adim "2/6  Yedek alınıyor, dosyalar güvenle değiştiriliyor ($HEDEF)"
+ZAMAN="$(date +%Y%m%d-%H%M%S)"
+ESKI="$HEDEF/eski"                      # eski sürümler SİLİNMEZ, buraya taşınır
+mkdir -p "$HEDEF" "$VERI" "$ESKI" || dur "Klasörler oluşturulamadı."
 chmod 700 "$VERI"
-rm -rf "$HEDEF/ulgen"
-cp -R "$KAYNAK/ulgen" "$HEDEF/ulgen" || dur "Dosyalar kopyalanamadı."
-cp "$KAYNAK/requirements.txt" "$KAYNAK/requirements-ses.txt" "$HEDEF/" 2>/dev/null
-find "$HEDEF/ulgen" -name '__pycache__' -type d -prune -exec rm -rf {} +
+
+# 2a) Kurulumdan ÖNCE verinin yedeği (hiçbir şey silinmez, yalnız kopyalanır)
+YEDEK="$VERI/yedekler/kurulum-$ZAMAN"
+mkdir -p "$YEDEK" && chmod 700 "$VERI/yedekler" "$YEDEK" 2>/dev/null
+for f in "$VERI"/veri.db* "$VERI"/*.json "$VERI"/*.anahtar "$VERI"/*.key "$VERI"/*.sifreli; do
+  [ -f "$f" ] && cp -p "$f" "$YEDEK/" 2>/dev/null
+done
+[ -d "$VERI/kod" ] && cp -Rp "$VERI/kod" "$YEDEK/kod" 2>/dev/null
+echo "Veri yedeği: $YEDEK"
+if [ -f "$VERI/veri.db" ] && [ ! -f "$YEDEK/veri.db" ]; then
+  dur "Veritabanı yedeklenemedi; kurulum DURDURULDU, hiçbir şey değişmedi."
+fi
+
+# 2b) Yeni sürüm önce GEÇİCİ klasöre hazırlanır
+YENI="$HEDEF/.yeni-$ZAMAN"
+mkdir -p "$YENI" || dur "Geçici klasör oluşturulamadı."
+cp -R "$KAYNAK/ulgen" "$YENI/ulgen" || { rmdir "$YENI" 2>/dev/null; dur "Dosyalar kopyalanamadı; mevcut kurulum değişmedi."; }
+cp "$KAYNAK/requirements.txt" "$KAYNAK/requirements-ses.txt" "$YENI/" 2>/dev/null
+find "$YENI/ulgen" -name '*.pyc' -delete 2>/dev/null
+
+# 2c) Eski sürüm taşınır (silinmez), yeni sürüm yerine konur
+ESKI_SURUM=""
+if [ -d "$HEDEF/ulgen" ]; then
+  ESKI_SURUM="$ESKI/ulgen-$ZAMAN"
+  mv "$HEDEF/ulgen" "$ESKI_SURUM" || dur "Eski sürüm taşınamadı; mevcut kurulum değişmedi."
+fi
+if ! mv "$YENI/ulgen" "$HEDEF/ulgen"; then
+  [ -n "$ESKI_SURUM" ] && mv "$ESKI_SURUM" "$HEDEF/ulgen"
+  dur "Yeni sürüm yerleştirilemedi; eski sürüm geri konuldu."
+fi
+cp "$YENI/requirements.txt" "$YENI/requirements-ses.txt" "$HEDEF/" 2>/dev/null
+rmdir "$YENI" 2>/dev/null
+
+# Başarısızlıkta eski sürümü geri koyar (veri yedeği de yukarıda duruyor)
+geri_al() {
+  printf '\nGERİ ALINIYOR...\n'
+  if [ -n "$ESKI_SURUM" ] && [ -d "$ESKI_SURUM" ]; then
+    mv "$HEDEF/ulgen" "$ESKI/basarisiz-$ZAMAN" 2>/dev/null
+    mv "$ESKI_SURUM" "$HEDEF/ulgen" && echo "Eski sürüm geri konuldu."
+  else
+    echo "Önceki sürüm yoktu; yarım kurulum $HEDEF/ulgen altında duruyor."
+  fi
+  if [ "$MAC" = "1" ] && [ -f "$AJAN" ]; then
+    launchctl unload "$AJAN" 2>/dev/null; launchctl load "$AJAN" 2>/dev/null
+  fi
+  echo "Verileriniz değişmedi; yedek: $YEDEK"
+}
 
 adim "3/6  Sanal ortam ve kütüphaneler (birkaç dakika sürebilir)"
 if [ ! -x "$HEDEF/ortam/bin/python" ]; then
@@ -38,9 +83,16 @@ if [ ! -x "$HEDEF/ortam/bin/python" ]; then
 fi
 "$HEDEF/ortam/bin/python" -m pip install --quiet --upgrade pip
 "$HEDEF/ortam/bin/python" -m pip install --quiet -r "$HEDEF/requirements.txt" \
-  || dur "Kütüphaneler yüklenemedi. İnternet bağlantınızı denetleyip yeniden çalıştırın."
+  || { geri_al; dur "Kütüphaneler yüklenemedi. İnternet bağlantınızı denetleyip yeniden çalıştırın."; }
 "$HEDEF/ortam/bin/python" -c 'import sys; sys.path.insert(0, "'"$HEDEF"'"); import ulgen.cekirdek' \
-  || dur "Ülgen yüklenemedi."
+  || { geri_al; dur "Ülgen yüklenemedi."; }
+# Veritabanı şifrelemesi (SQLCipher). Yüklenemezse kurulum sürer ama veritabanı
+# diskte ŞİFRESİZ kalır; bu açıkça söylenir ve tanı raporunda HATA görünür.
+if ! "$HEDEF/ortam/bin/python" -m pip install --quiet sqlcipher3-wheels; then
+  printf '\n!!! UYARI: sqlcipher3-wheels yüklenemedi. Veritabanınız diskte ŞİFRESİZ kalacak.\n'
+  echo "    Sonra deneyin: $HEDEF/ortam/bin/python -m pip install sqlcipher3-wheels"
+  echo "    ve '$HEDEF/ortam/bin/python -m ulgen --tani' ile denetleyin."
+fi
 "$HEDEF/ortam/bin/python" -m ulgen --anahtar >/dev/null
 
 adim "4/6  Beyin (ücretsiz)"
@@ -90,7 +142,7 @@ if [ "$MAC" = "1" ]; then
   UYGULAMA_KLASORU="/Applications"
   [ -w "$UYGULAMA_KLASORU" ] || { UYGULAMA_KLASORU="$HOME/Applications"; mkdir -p "$UYGULAMA_KLASORU"; }
   UYGULAMA="$UYGULAMA_KLASORU/Ülgen.app"
-  rm -rf "$UYGULAMA"
+  YENIUYG="$HEDEF/.yeni-Ülgen-$ZAMAN.app"
   TMPAS="$(mktemp -t ulgen).applescript"
   cat > "$TMPAS" <<ASEOF
 on run
@@ -100,17 +152,26 @@ on run
     do shell script "/bin/launchctl load $AJAN >/dev/null 2>&1 || true"
     delay 4
   end try
-  open location "http://127.0.0.1:8765"
+  -- Tek kullanımlık giriş bağlantısı üretip tarayıcıyı açar
+  do shell script "'$HEDEF/ortam/bin/python' -m ulgen --ac >/dev/null 2>&1 &"
 end run
 ASEOF
-  osacompile -o "$UYGULAMA" "$TMPAS" && echo "Uygulama: $UYGULAMA" || echo "Uyarı: uygulama oluşturulamadı."
+  if osacompile -o "$YENIUYG" "$TMPAS"; then
+    [ -e "$UYGULAMA" ] && mv "$UYGULAMA" "$ESKI/Ülgen.app-$ZAMAN"
+    mv "$YENIUYG" "$UYGULAMA" && echo "Uygulama: $UYGULAMA" \
+      || { [ -e "$ESKI/Ülgen.app-$ZAMAN" ] && mv "$ESKI/Ülgen.app-$ZAMAN" "$UYGULAMA"; echo "Uyarı: uygulama yerleştirilemedi, eskisi geri konuldu."; }
+  else
+    echo "Uyarı: uygulama oluşturulamadı; eskisi (varsa) yerinde."
+  fi
   rm -f "$TMPAS"
   sleep 3
   if curl -s -m 3 http://127.0.0.1:8765/saglik | grep -q tamam; then
     echo "Ülgen çalışıyor."
-    open "http://127.0.0.1:8765"
+    "$HEDEF/ortam/bin/python" -m ulgen --ac >/dev/null 2>&1 || true
   else
-    echo "Sunucu henüz yanıt vermedi; günlük: $VERI/ulgen.log"
+    echo "Sunucu yanıt vermedi; sağlık denetimi başarısız."
+    geri_al
+    echo "Günlük: $VERI/ulgen.log"
   fi
 else
   echo "(Mac dışı ortam: uygulama atlandı)"
@@ -118,7 +179,9 @@ fi
 
 printf '\n==================================================\n'
 echo "Kurulum tamam."
-echo "Mac'te: Launchpad > Ülgen   (ya da http://127.0.0.1:8765)"
+echo "Mac'te: Launchpad > Ülgen   (tek kullanımlık giriş bağlantısıyla açar)
+echo "Eski sürümler silinmedi: $ESKI   |   Veri yedeği: $YEDEK"
+echo "Durum denetimi: $HEDEF/ortam/bin/python -m ulgen --tani""
 echo
 echo "iPhone için (bir kez):"
 echo "  1. Cihaz belirteci üretin:"

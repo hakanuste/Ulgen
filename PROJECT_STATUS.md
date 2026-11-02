@@ -1,44 +1,30 @@
-# Proje Durumu
+# Ülgen — Gerçek Durum Tablosu (TEK KAYNAK)
 
-Son güncelleme: Aşama 1 sonu + ek şartname birleştirmesi (2026-11-02).
-Durum sözlüğü ve tüm özellik matrisi: **ROADMAP.md** (tek ana plan).
+Bu tablo tek doğru durumdur. CHANGELOG, TEST_REPORT ve ROADMAP buna uyar; çelişirse bu dosya geçerlidir.
+Sürüm 2.5 · Otomatik test: 167 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
 
-| Aşama | Durum |
-|-------|-------|
-| 0 Denetim | tamamlandı |
-| 1 Kritik güvenlik | tamamlandı, 49 test yeşil; Mac/iPhone adımları gerçek cihaz testi bekliyor |
-| 2 Veritabanı + gelişmiş hafıza | geliştirilmedi (sırada) |
-| 3 Sağlayıcılar, kota, kuyruk | geliştirilmedi |
-| 4 Görev + doz başına ilaç takibi | geliştirilmedi — **ilaç onayı hâlâ toplu (bilinen hata)** |
-| 5 iPhone arayüzü + yönetim paneli | kısmen (yalnızca sohbet) |
-| 6 Özel Kasa + Face ID | geliştirilmedi; Face ID için teknik engel (PWA/native) |
-| 7 Ses + sağlık köprüsü | kısmen (elle dışa aktarılan sağlık verisi okunuyor; çevrimdışı STT yok) |
-| 8 Raporlar + bütünleşik test | kısmen (yalnızca sabah haber+sağlık özeti) |
+Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K** = Kodlandı, gerçek cihaz testi bekliyor ·
+**Kı** = Kısmen · **G** = Geliştirilmedi · **E** = Teknik engel
 
-Bekleyen kararlar: ROADMAP.md sonu.
+| Aşama | Konu | Durum | Kanıt (otomatik) | Gerçek cihazda doğrulandı |
+|---|---|---|---|---|
+| 0 | Denetim, git, yedek, plan | T | AUDIT_REPORT | — |
+| 1 | Güvenlik çekirdeği (AES-GCM, cihaz belirteci, izin listesi, ONAY, HTTPS, hız sınırı) | K | test_guvenlik, test_sunucu, test_sifreleme | Hayır (Anahtar Zinciri, TLS/iPhone) |
+| 1b | Canlı veritabanı şifreleme (SQLCipher) + göç + yedek | K | test_db_sifreleme (11) | Hayır (Mac'te wheel çalışması) |
+| 1c | Yerel erişim yetkisi (tek kullanımlık giriş, çerez) | K | test_yerel_yetki | Hayır (Launchpad akışı) |
+| 2 | Çoklu ücretsiz yapay zekâ, kota, kuyruk (Gemini/Groq/Mistral/OpenRouter/NVIDIA/Ollama/llama.cpp) | K | test_saglayici | Hayır (gerçek hesaplar) |
+| 3 | Hafıza, FTS5, SQLite bütünlük/yedek | T | test_hafiza, test_veritabani | — |
+| 4 | Zamanlayıcı, doz bazlı ilaç takibi, görevler | K | test_ilac | Hayır (iPhone bildirimi) |
+| 5 | iPhone arayüzü, Kod penceresi, Takvim (.ics) hatırlatma | K | test_kodpenceresi, test_takvim, Chromium | Hayır (Safari, Takvim alarmı) |
+| 5b | Kurulum betiği: yedek, güvenli değişim, geri alma | K | Linux kuru çalıştırma + bozuk sürümle geri alma denendi | Hayır (macOS, launchd, osacompile) |
+| 6 | Özel Kasa + Face ID (WebAuthn) + kurtarma | G | — | — |
+| 7 | Çevrimdışı ses, sağlık köprüsü | G | — | — |
+| 8 | Raporlar, 16 senaryolu bütünleşik test | G | — | — |
+| — | Yerel iOS uygulaması | G (iOS sürümü bekleniyor) | — | — |
 
-## Aşama 2 durumu
-Tamamlandı ve test edildi (benzetim): veritabanı göç/işlem/bütünlük/yedek-kurtarma, hafıza modeli, duyarlı depo ayrımı.
-Kısmen: iPhone arayüzünde geçmiş/hafıza sayfaları geliştirilmedi (Aşama 5); `veri.db` diskte şifresiz (yedekleri şifreli).
-
-## Aşama 3 durumu
-Kodlandı, benzetimde test edildi: sağlayıcı yöneticisi, kota sayacı, kuyruk. Gerçek hesaplarla denenmedi (anahtar gerekir).
-Kısmen: iPhone arayüzünde kota paneli yok (yalnızca `kota` komutu ve `/kota` JSON; panel Aşama 5).
-Not: Groq/Mistral/Gemini'de "ücretsiz" hesap düzeyindedir; anahtarınıza fatura kartı eklemeyin. Ülgen bunu ağdan doğrulayamaz.
-
-Kod penceresi: tamamlandı ve test edildi (benzetim + Chromium ekran denemesi). iPhone'da denenmedi; telefon klavyesinde uzun kod yazımı rahat olmayabilir.
-
-## Aşama 4 durumu
-Tamamlandı ve test edildi (benzetim): doz başına onay, hatırlatma döngüsü, yanıtsız kaydı, görev/randevu/rutin.
-Kodlandı, gerçek cihaz testi bekliyor: arayüz düğmeleri iPhone'da.
-Geliştirilmedi / teknik engel: Mac uykudayken ya da kapalıyken hatırlatma (Mac kapalıyken hiçbir kod çalışmaz). Çözüm seçenekleri A/B/C kararınızı bekliyor.
-Not: ilaç dozunu Ülgen değiştirmez; ilaç eklemek/durdurmak yalnızca sizin yazdığınız komutla olur. Tıbbi öneri vermez.
-
-## Aşama 5 durumu
-Tamamlandı ve test edildi (benzetim + Chromium): sekmeler, paneller, yeniden bağlanma.
-Kodlandı, gerçek cihaz testi bekliyor: iPhone Safari/ana ekran görünümü.
-Geliştirilmedi: arayüzden ayar değiştirme, belirteç üretme/iptal, geçmiş sohbet ve hafıza sayfaları, anlık bildirim (push; Safari için yerel uygulama gerekir).
-
-## Mac kapalıyken hatırlatma
-Kodlandı, gerçek cihaz testi bekliyor: iPhone takvimine .ics aktarımı (alarm iPhone'da çalar). Sınırlar: yalnızca çalar, "aldım" yanıtı Ülgen'e dönmez; Ülgen'de "aldım" deyince iPhone tekrarları durmaz; plan değişince yeniden aktarılır, silinen planın eski olayı iPhone'da elle silinir; Rahatsız Etme kipi alarmı susturabilir.
-Yerel iOS uygulaması: yazılmadı. Not: Mac 12.7.6'da en yeni Xcode sürümü (14.2) yeni iOS'lara derleme/yükleme için yetersiz olabilir; iPhone'un iOS sürümü öğrenilmeli. Ücretsiz Apple kimliğiyle yüklenen uygulama 7 günde süresi dolar.
+## Bilinen sınırlar
+- Otomatik yedekler ana anahtarla şifrelidir; anahtar kaybolursa yalnız parolalı yedek (`--yedek-al`) kurtarır.
+- SSD/APFS'te eski düz dosyanın sıfırlanması kalıntıyı kesin silmez; FileVault açık olmalı.
+- Takvim alarmı yalnız çalar; "aldım" geri bildirimi yoktur.
+- Kod penceresi sandbox değildir.
+- Gerçek cihaz kontrol listesi: TEST_DEVICE.md ve `python -m ulgen --tani`.

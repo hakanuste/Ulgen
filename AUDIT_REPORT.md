@@ -109,3 +109,6 @@ Belgeler (her aşamada güncellenir): `PROJECT_STATUS.md`, `AUDIT_REPORT.md`, `S
 Ek şartname "mevcut ayrı ilaç onay arayüzünü koru" diyor. **Kod incelemesi:** bu pakette böyle bir arayüz yoktur — `arayuz.py` içinde "ilaç" geçmez, veritabanında ilaç/doz tablosu yoktur, yalnızca "kalıcı hatırlatıcı" vardır ve `Zamanlayici.onayla()` bekleyen **tüm** kalıcı hatırlatmaları tek sorguda onaylar. Yani istenen davranış (ayrı onay) şu an **mevcut değil**; "koru" yerine **sıfırdan geliştirilecek** (Aşama 4). Başka bir ortamda ayrı bir ilaç arayüzü kullandıysanız o kod bu paketin parçası değildir.
 
 Diğer doğrulamalar için ROADMAP.md özellik matrisine bakın (her satır gerçek koddan doğrulandı).
+
+## İkinci inceleme (5 madde) — sonuç
+1 Kritik DB şifreleme: giderildi (K). 2 Kritik kurulum silme: giderildi (K). 3 Yerel yetki: giderildi (K). 4 Cihaz testi: yapılmadı, yol hazır (TEST_DEVICE.md, --tani). 5 Doküman: PROJECT_STATUS.md tek tablo.

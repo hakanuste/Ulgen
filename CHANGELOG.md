@@ -70,3 +70,9 @@
 - Kota: resmi sayı yok; yerel sınır 40 istek/dk (üçüncü taraf bildirimi, ayardan düzeltilir). 429'da diğer sağlayıcıya geçer.
 - Uyarı: NVIDIA deneme uç noktaları "araştırma, geliştirme ve test" lisansıyla verilir, üretim için değildir; kişisel kullanımın bu kapsama girip girmediğini lisans metninden siz değerlendirin. Veri bulut sayılır: kişisel mesajlar gitmez.
 - Testler 150 → 151.
+
+## 2.5 — İnceleme düzeltmeleri
+- Canlı veritabanı SQLCipher ile şifreli; düz dosyadan güvenli göç.
+- Kurulum betiği: `rm -rf` kaldırıldı; kurulum öncesi veri yedeği, geçici dizinde hazırlık, eski sürümler `~/Ülgen/eski` altına taşınır, sağlık denetimi başarısızsa geri alma.
+- Yerel 127.0.0.1 erişimi yetki ister (tek kullanımlık giriş + çerez); `yerel_yetki:false` ile eski kip.
+- `--tani`, `--takvim-deneme`, TEST_DEVICE.md. Durum tablosu PROJECT_STATUS.md'de birleştirildi.

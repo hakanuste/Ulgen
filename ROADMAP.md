@@ -1,3 +1,5 @@
+> Güncel durum için PROJECT_STATUS.md tek kaynaktır; bu dosya yalnız plandır.
+
 # ÜLGEN – TEK ANA GELİŞTİRME PLANI
 
 Ana şartname + Ek şartname (2026-11-02) birleştirildi; tekrar eden maddeler tek satırda.
@@ -86,3 +88,8 @@ Kural: önce güvenlik ve veri bütünlüğü; her aşama testi geçmeden sonrak
 ## Güncelleme: Aşama 5 bitti (benzetimde). Sıradaki: Aşama 6 (Özel Kasa + Face ID/WebAuthn onayı).
 
 ## Güncelleme: Mac kapalıyken hatırlatma için iPhone takvim aktarımı (kullanıcı: "iPhone'da olmalı") kodlandı; cihaz testi bekliyor. Yerel iOS uygulaması için iPhone iOS sürümü gerekli.
+
+## Aşama 6 tasarım notu: parola unutulursa iPhone Face ID ile kurtarma
+- Veritabanı anahtarı bir parola değil, Mac'teki ana anahtardan türer; "unutulacak parola" yalnız parolalı yedekte vardır.
+- Plan: Face ID (WebAuthn, ağda tek kullanımlık, kapsamlı onay) ile (a) yedek parolasını sıfırlama ve (b) taze parolalı yedek çıkarma yetkisi.
+- Mac diski/anahtarı tümden kaybolursa Face ID tek başına yetmez: kurtarma anahtarı iPhone'da (WebAuthn PRF, iOS 18+ gerekir) saklanmalıdır. iOS sürümü öğrenilince karar verilecek.
