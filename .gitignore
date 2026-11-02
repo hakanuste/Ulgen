@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+ortam/
+*.db
+memory.json*
+anahtar*
+bellek.anahtar

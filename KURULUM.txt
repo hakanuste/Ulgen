@@ -1,0 +1,85 @@
+ÜLGEN 2.0 - KURULUM VE KULLANIM
+================================
+
+GEREKEN KÜTÜPHANELER (requirements.txt - hepsi ücretsiz, kurulum betiği kendisi yükler)
+    requests, beautifulsoup4, pandas, ddgs, pypdf, cryptography
+İsteğe bağlı ses (requirements-ses.txt):
+    SpeechRecognition, pyttsx3, gTTS, PyAudio
+
+KURULUM (Mac)
+    1. Zip'i açın.
+    2. "Ülgen Kur.command" dosyasına çift tıklayın.
+       (İlk seferde "açılamıyor" derse: dosyaya sağ tık > Aç > Aç.)
+    3. Betik Python'u bulur, ~/Ülgen klasörüne kurar, kütüphaneleri yükler,
+       açılışta kendiliğinden başlatır, Launchpad'e "Ülgen" koyar.
+    4. Launchpad > Ülgen. Tarayıcıda açılır.
+Python yoksa: Terminal'de "brew install python", sonra betiği yeniden çalıştırın.
+
+iPHONE (ZeroTier ağınız zaten kurulu)
+    Safari: http://<Mac'in ZeroTier adresi>:8765
+    İstenen anahtarı Mac'te şu komutla alın:
+    ~/Ülgen/ortam/bin/python -m ulgen --anahtar
+    Paylaş > Ana Ekrana Ekle ile uygulama gibi kullanın.
+    Not: iPhone'da mikrofon, adres https değilse çalışmayabilir (denenmedi).
+    Çalışmazsa yazarak kullanın.
+
+5. BEYİN (ücretsiz) - üçünden biri yeter
+    a) Ollama: ollama.com'dan kurun, "ollama pull llama3.2:3b".
+       DİKKAT: güncel Ollama macOS 14+ ister; sizin Mac 12.7.6 olduğundan
+       büyük olasılıkla çalışmaz.
+    b) llama.cpp: llama-server'ı 8080 kapısında, bir GGUF modelle başlatın
+       (UMAY'da kullandığınız gibi). Ülgen kendisi bulur.
+    c) Google Gemini (bulut, ücretsiz katman): aistudio.google.com'dan anahtar
+       alın, kurulum sırasında sorulunca yapıştırın (ya da ~/ÜlgenVeri/ayar.json).
+       UYARI: ücretsiz katmanda metinler Google'ca ürün geliştirmede kullanılabilir.
+       Bu yüzden hafıza, sağlık verisi ve kasa notları varsayılan olarak buluta
+       GİTMEZ ("bulut_kisisel_veri": false). Günlük kota da sınırlıdır.
+    Beyin yokken saat, ses, hatırlatıcı, not gibi hızlı komutlar yine çalışır.
+
+NE YAPAR
+    - Kişilik: "Ülgen"; yerel/bulut beyin seçimi kendiliğinden.
+    - Hafıza: ~/ÜlgenVeri/memory.json (kendiliğinden öğrenir; "unut: ..." ile silinir).
+    - Bağlam yöneticisi: uzun konuşmalar özetlenip sıkıştırılır.
+    - Güvenlik duvarı: rm/del/format, sistem dosyaları, dosya ezme vb. kendiliğinden
+      çalışmaz; "ONAY 1234" biçiminde tek kullanımlık kod ister (kodu yalnızca
+      siz yazarsınız).
+    - Hatırlatıcılar: "14:30 ilaç al diye hatırlat". Önemli olanlar "tamam"
+      diyene kadar 5 dakikada bir uyarır (en çok 2 saat).
+    - Araştırma: "araştır: konu" (DuckDuckGo + sayfa okuma, kaynaklı).
+    - Sağlık: iPhone Sağlık > Tüm verileri dışa aktar; export.xml'i
+      ~/ÜlgenVeri/saglik klasörüne koyun. "sağlık raporu" deyin.
+      (Tıbbi değerlendirme değildir.)
+    - Sabah raporu: "sabah özeti" (en çok 30 dk, ayar: sabah_ozeti_dakika).
+      Süre yerel modelin hızına bağlıdır; küçük modelde yavaş olabilir.
+    - Dosya ajanı: yalnızca ayar.json "izinli_klasorler" içinde. PDF, DOCX ve metin
+      dosyalarını okur, adda ve içerikte arar, en yeniyi bulur, özetler.
+      Örnek: "dosya ara: finans raporu", "en son finans raporunu özetle".
+      Taranmış (resim) PDF'ler okunamaz; OCR yoktur.
+    - Hafıza şifreli: memory.json diskte şifreli tutulur (AES/Fernet). Anahtar Mac
+      Anahtar Zinciri'nde, olmazsa ~/ÜlgenVeri/bellek.anahtar dosyasındadır.
+      Anahtarı kaybederseniz dosya çözülemez (eskisi .bozuk adıyla saklanır).
+      Bilgisayarınıza girmiş birine karşı tam koruma değildir.
+    - Müzik: "müziği duraklat", "müziğe devam", "sonraki şarkı" (Müzik ya da Spotify açıkken).
+    - Ekran çözümleme: "ekranda ne var?" Görüntü Google Gemini'ye gider; bu yüzden
+      kapalıdır. Açmak için ayar.json içinde "ekran_buluta_gonder": true ve
+      gemini_anahtar gerekir. Görüntü geçici dosyada tutulur, sonra silinir.
+    - Mac komutları: "sesi 40 yap", "Safari aç", "pil durumu", "ekran görüntüsü".
+    - Terminal modu: ~/Ülgen/ortam/bin/python -m ulgen --terminal
+    - Sesli mod (uyandırma sözcüğü "Ülgen"):
+      ~/Ülgen/ortam/bin/pip install -r ~/Ülgen/requirements-ses.txt
+      (Mac'te önce: brew install portaudio), sonra  python -m ulgen --ses
+
+DENENMEMİŞ / SINIRLAR
+    - Gerçek Ollama/llama.cpp/Gemini bağlantısı bu pakette sahte sunucularla
+      denendi; Mac'inizde ilk çalıştırmada ayar gerekebilir.
+    - Mac komutları (ses, pil, ekran, müzik, ekran çözümleme) ve Launchpad uygulaması Mac dışında denenemedi.
+    - BBC Türkçe ve DW haber adresleri doğrulanamadı; çalışmazsa atlanır
+      (AA adresleri doğrulandı). Adresler ayar.json "rss" ile değişir.
+    - 3B'lik küçük modeller Türkçede ve araç kullanımında hata yapabilir.
+    - ayar.json ve ~/ÜlgenVeri klasörünü yalnızca kendiniz erişilebilir tutun
+      (kurulum 700/600 izni verir).
+
+SORUN GİDERME
+    Günlük: ~/ÜlgenVeri/ulgen.log
+    Yeniden başlat: launchctl unload ~/Library/LaunchAgents/com.ulgen.sunucu.plist
+                    launchctl load   ~/Library/LaunchAgents/com.ulgen.sunucu.plist

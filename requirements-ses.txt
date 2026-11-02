@@ -1,0 +1,5 @@
+# İsteğe bağlı ses özellikleri (Mac'te önce: brew install portaudio)
+SpeechRecognition>=3.10
+pyttsx3>=2.90
+gTTS>=2.5
+PyAudio>=0.2.13

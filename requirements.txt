@@ -1,0 +1,7 @@
+# Ülgen - ücretsiz ve açık kaynaklı bağımlılıklar
+requests>=2.31
+beautifulsoup4>=4.12
+pandas>=2.0
+ddgs>=9.0
+pypdf>=4.0
+cryptography>=42

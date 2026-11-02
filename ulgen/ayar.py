@@ -1,0 +1,124 @@
+"""Ülgen ayarları.
+
+Bu modül dosya yollarını, varsayılan ayarları ve ``ayar.json`` okuma/yazma
+işlerini barındırır. Tüm veriler kullanıcının ev klasöründeki ``ÜlgenVeri``
+dizininde tutulur; kullanıcı açıkça bulut beynini seçmedikçe cihazdan
+dışarı çıkmaz.
+"""
+
+import copy
+import json
+import os
+import secrets
+
+EV = os.path.expanduser("~")
+KLASOR = os.path.join(EV, "ÜlgenVeri")
+AYAR_DOSYASI = os.path.join(KLASOR, "ayar.json")
+ANAHTAR_DOSYASI = os.path.join(KLASOR, "anahtar.txt")
+VERI_TABANI = os.path.join(KLASOR, "veri.db")
+HAFIZA_DOSYASI = os.path.join(KLASOR, "memory.json")
+PORT = 8765
+
+# Varsayılan ayarlar. ayar.json içindeki değerler bunların üzerine yazılır.
+VARSAYILAN = {
+    # Beyin seçimi: "otomatik" (önce yerel, olmazsa bulut), "yerel", "bulut"
+    "beyin": "otomatik",
+    # Yerel beyin türü: "otomatik", "ollama" ya da "llamacpp"
+    "yerel_tur": "otomatik",
+    "ollama_adres": "http://127.0.0.1:11434",
+    "ollama_model": "llama3.2:3b",
+    "llamacpp_adres": "http://127.0.0.1:8080",
+    # Google AI Studio'dan alınan ücretsiz anahtar (isteğe bağlı)
+    "gemini_anahtar": "",
+    "gemini_model": "gemini-3.5-flash-lite",
+    # Ücretsiz Gemini katmanında gönderilen metinler Google tarafından
+    # ürün geliştirmede kullanılabilir. Bu yüzden hafıza, sağlık verisi ve
+    # kasa notları varsayılan olarak buluta GİTMEZ.
+    "bulut_kisisel_veri": False,
+    # Ekran çözümleme için ekran görüntüsünü Gemini'ye göndermeye izin
+    "ekran_buluta_gonder": False,
+    # Konuşma
+    "ses": "Yelda",
+    "tts_motor": "otomatik",
+    "uyandirma_sozcukleri": ["ülgen", "ulgen", "ülgün", "ulgun"],
+    # Dosya ve veri klasörleri
+    "kasa": "~/Documents/Obsidyen",
+    "izinli_klasorler": [
+        "~/Documents/Obsidyen",
+        "~/Documents/Ülgen Genel Asistan",
+        "~/ÜlgenVeri/dosyalar",
+    ],
+    "saglik_klasoru": "~/ÜlgenVeri/saglik",
+    # Sabah özeti
+    "sabah_ozeti_dakika": 10,
+    "rss": [
+        {"ad": "AA Güncel", "bolum": "Türkiye",
+         "adres": "https://www.aa.com.tr/tr/rss/default?cat=guncel"},
+        {"ad": "AA Dünya", "bolum": "Dünya",
+         "adres": "https://www.aa.com.tr/tr/rss/default?cat=dunya"},
+        {"ad": "AA Ekonomi", "bolum": "Ekonomi",
+         "adres": "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"},
+        {"ad": "BBC Türkçe", "bolum": "Dünya",
+         "adres": "https://feeds.bbci.co.uk/turkce/rss.xml"},
+        {"ad": "DW Türkçe", "bolum": "Dünya",
+         "adres": "https://rss.dw.com/rdf/rss-tur-all"},
+    ],
+}
+
+# ayar.json ilk kez yazılırken kullanılan sade şablon
+SABLON = {
+    "beyin": "otomatik",
+    "yerel_tur": "otomatik",
+    "ollama_model": "llama3.2:3b",
+    "llamacpp_adres": "http://127.0.0.1:8080",
+    "gemini_anahtar": "",
+    "gemini_model": "gemini-3.5-flash-lite",
+    "bulut_kisisel_veri": False,
+    "ses": "Yelda",
+    "kasa": "~/Documents/Obsidyen",
+    "sabah_ozeti_dakika": 10,
+}
+
+
+def yol_ac(yol):
+    """``~`` işaretini ev klasörüne çevirip mutlak yol döndürür."""
+    return os.path.expanduser(yol)
+
+
+def klasor_hazirla():
+    """ÜlgenVeri klasörünü (yalnızca kullanıcıya açık) oluşturur."""
+    os.makedirs(KLASOR, mode=0o700, exist_ok=True)
+
+
+def yukle():
+    """Varsayılanları ayar.json ile birleştirip ayar sözlüğünü döndürür."""
+    sonuc = copy.deepcopy(VARSAYILAN)
+    try:
+        with open(AYAR_DOSYASI, "r", encoding="utf-8") as dosya:
+            kullanici = json.load(dosya)
+        if isinstance(kullanici, dict):
+            sonuc.update(kullanici)
+    except (OSError, ValueError):
+        pass
+    return sonuc
+
+
+def sablon_olustur():
+    """ayar.json yoksa sade bir şablonla oluşturur."""
+    klasor_hazirla()
+    if os.path.exists(AYAR_DOSYASI):
+        return
+    with open(AYAR_DOSYASI, "w", encoding="utf-8") as dosya:
+        json.dump(SABLON, dosya, ensure_ascii=False, indent=2)
+    os.chmod(AYAR_DOSYASI, 0o600)
+
+
+def anahtar_al():
+    """Uzaktan (iPhone) bağlantı anahtarını döndürür; yoksa üretir."""
+    klasor_hazirla()
+    if not os.path.exists(ANAHTAR_DOSYASI):
+        with open(ANAHTAR_DOSYASI, "w", encoding="utf-8") as dosya:
+            dosya.write(secrets.token_urlsafe(32))
+        os.chmod(ANAHTAR_DOSYASI, 0o600)
+    with open(ANAHTAR_DOSYASI, "r", encoding="utf-8") as dosya:
+        return dosya.read().strip()
