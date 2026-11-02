@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Launchpad'de çoğalan Ülgen simgeleri: kurulum sonunda eski/yinelenen kayıtlar silinir (`ulgen/varlik/simge_temizle.sh`; dosya ve veriye dokunmaz).
 - Görev, randevu ve rutin: Düzelt ve Sil (onaylı) arayüzde; sohbette "görev|randevu|rutin düzelt #N: …" ve "… sil N [onay]". Zaman/gün doğrulaması, düzeltince bildirim aşaması sıfırlanır.
 - Yapay zekâ kipi varsayılan olarak "yalnız yerel" (sabit). Eski kurulumlar bir kez yerele alınır; Ayarlar > Yapay Zekâ'dan (yalnız Mac'in kendi tarayıcısı, onaylı) "önce yerel, sonra bulut" ya da "yalnız bulut" seçilebilir.
 - İlaç düzeltme (ad, not, saat) ve silme: arayüzde "Kayıtlı ilaçlar" + Sil (onaylı), sohbette "ilaç sil: Ad" (+ "onay").

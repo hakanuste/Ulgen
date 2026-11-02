@@ -214,6 +214,7 @@ ASEOF
   sleep 3
   if curl -s -m 3 http://127.0.0.1:8765/saglik | grep -q tamam; then
     echo "Ülgen çalışıyor."
+    bash "$HEDEF/ulgen/varlik/simge_temizle.sh" "$UYGULAMA" || true
     eskileri_temizle
     "$HEDEF/ortam/bin/python" -m ulgen --ac >/dev/null 2>&1 || true
   else
