@@ -116,3 +116,6 @@
 
 ## 2.6 (devam)
 - Obsidian arama dizini (not_fts, artımlı, yalnız okuma, PDF dahil); yeni arayüz teması ve pano; /sistem'e donanım ölçümü; veritabanı göçü 7.
+
+## 2.7.33
+- Ana sayfa panosu yüklenemezse artık sessizce boş kalmaz; hata nedeni kartta görünür.

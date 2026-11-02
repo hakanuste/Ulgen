@@ -1100,7 +1100,13 @@ async function panoYenile() {
     if (d.disk_toplam) { satirS(k4, "Disk", d.disk_kullanilan + " / " + d.disk_toplam + " GB (%" + Math.round(100 * d.disk_kullanilan / d.disk_toplam) + ")"); k4.appendChild(cubuk(100 * d.disk_kullanilan / d.disk_toplam, "mor")); }
     const ok = document.createElement("div"); ok.style.cssText = "margin-top:8px;color:var(--yesil);font-size:13px";
     ok.textContent = sis.butunluk.saglam ? "✓ Tüm sistemler normal çalışıyor." : "! Veritabanı bütünlüğü sorunlu"; k4.appendChild(ok);
-  } catch (e) { /* oturum yoksa istek() zaten bildirir */ }
+  } catch (e) {
+    console.error("panoYenile", e);
+    const kutu = document.getElementById("serit") || document.getElementById("mobilOzet");
+    if (kutu) { kutu.replaceChildren(); const d = document.createElement("div"); d.className = "kart";
+      d.style.cssText = "padding:14px;color:var(--ulgen-danger)";
+      d.textContent = "Pano yüklenemedi: " + (e && e.message ? e.message : e) + " — Launchpad'deki Ülgen simgesiyle yeniden açın."; kutu.appendChild(d); }
+  }
 }
 function saatYaz() {
   const d = new Date();
