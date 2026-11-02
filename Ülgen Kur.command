@@ -47,19 +47,8 @@ adim "4/6  Beyin (ücretsiz)"
 if [ "$MAC" = "1" ]; then
   ANAHTAR="$(osascript -e 'text returned of (display dialog "İsteğe bağlı: ücretsiz Gemini anahtarınız varsa yapıştırın (aistudio.google.com). Yoksa boş bırakıp Tamam deyin.\n\nNot: ücretsiz katmanda gönderilen metinler Google tarafından ürün geliştirmede kullanılabilir. Ülgen kişisel verilerinizi (hafıza, sağlık, notlar) bulutta VARSAYILAN olarak göndermez." default answer "" with title "Ülgen")' 2>/dev/null || true)"
   if [ -n "$ANAHTAR" ]; then
-    ULGEN_ANAHTAR="$ANAHTAR" "$HEDEF/ortam/bin/python" - <<'PYEOF'
-import json, os, sys
-sys.path.insert(0, os.path.expanduser("~/Ülgen"))
-from ulgen import ayar
-ayar.sablon_olustur()
-with open(ayar.AYAR_DOSYASI, encoding="utf-8") as f:
-    a = json.load(f)
-a["gemini_anahtar"] = os.environ["ULGEN_ANAHTAR"].strip()
-with open(ayar.AYAR_DOSYASI, "w", encoding="utf-8") as f:
-    json.dump(a, f, ensure_ascii=False, indent=2)
-os.chmod(ayar.AYAR_DOSYASI, 0o600)
-print("Gemini anahtarı kaydedildi.")
-PYEOF
+    printf '%s' "$ANAHTAR" | "$HEDEF/ortam/bin/python" -m ulgen --sir-kaydet gemini \
+      || echo "Uyarı: Gemini anahtarı kaydedilemedi."
   fi
 fi
 if command -v ollama >/dev/null 2>&1; then
@@ -127,12 +116,16 @@ else
   echo "(Mac dışı ortam: uygulama atlandı)"
 fi
 
-IP="$(ipconfig getifaddr en0 2>/dev/null || true)"
 printf '\n==================================================\n'
 echo "Kurulum tamam."
 echo "Mac'te: Launchpad > Ülgen   (ya da http://127.0.0.1:8765)"
-echo "iPhone: Safari'de http://<ZeroTier-IP>:8765 ; anahtar için Mac'te:"
-echo "  $HEDEF/ortam/bin/python -m ulgen --anahtar"
-[ -n "$IP" ] && echo "(Bu Mac'in yerel ağ adresi: $IP)"
+echo
+echo "iPhone için (bir kez):"
+echo "  1. Cihaz belirteci üretin:"
+echo "     $HEDEF/ortam/bin/python -m ulgen --cihaz-ekle iPhone"
+echo "     (belirteç yalnızca bir kez gösterilir; iPhone'da isteyince yapıştırın)"
+echo "  2. iPhone Safari: http://<Mac'in ZeroTier adresi>:8766  > sertifikayı yükleyin"
+echo "  3. Sonra: https://<Mac'in ZeroTier adresi>:8443"
+echo "Adresi görmek için günlük: $VERI/ulgen.log"
 echo "=================================================="
 read -r -p "Kapatmak için Enter'a basın." _

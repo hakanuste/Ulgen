@@ -70,3 +70,12 @@ def kur():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         metin TEXT NOT NULL,
         zaman TEXT NOT NULL)""")
+
+    sorgu("""CREATE TABLE IF NOT EXISTS cihazlar (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ad TEXT NOT NULL,
+        ozet TEXT NOT NULL UNIQUE,
+        olusturma TEXT NOT NULL,
+        son_gecerlilik TEXT,
+        son_kullanim TEXT,
+        iptal INTEGER NOT NULL DEFAULT 0)""")

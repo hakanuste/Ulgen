@@ -13,7 +13,7 @@ import re
 import threading
 from datetime import datetime
 
-from . import ayar, kisilik, veritabani
+from . import ayar, cihazlar, kisilik, veritabani
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
@@ -54,6 +54,7 @@ class Ulgen:
     def __init__(self):
         ayar.sablon_olustur()
         veritabani.kur()
+        cihazlar.eski_anahtari_tasi()
         self.yonlendirici = BeyinYonlendirici(ayar.yukle)
         sec = self.yonlendirici.sec
         self.baglam = BaglamYoneticisi(sec)

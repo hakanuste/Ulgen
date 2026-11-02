@@ -9,7 +9,6 @@ dışarı çıkmaz.
 import copy
 import json
 import os
-import secrets
 
 EV = os.path.expanduser("~")
 KLASOR = os.path.join(EV, "ÜlgenVeri")
@@ -37,6 +36,11 @@ VARSAYILAN = {
     "bulut_kisisel_veri": False,
     # Ekran çözümleme için ekran görüntüsünü Gemini'ye göndermeye izin
     "ekran_buluta_gonder": False,
+    # Ağ: Mac'te http://127.0.0.1:8765, iPhone'da ZeroTier üzerinden HTTPS
+    "https_port": 8443,
+    "ca_port": 8766,
+    "dinleme_adresleri": [],       # boşsa ZeroTier (zt*) adresleri bulunur
+    "izinli_hostlar": [],          # IP dışında kabul edilen adlar
     # Konuşma
     "ses": "Yelda",
     "tts_motor": "otomatik",
@@ -80,6 +84,11 @@ SABLON = {
 }
 
 
+# Sır adı -> ayar alanı (Anahtar Zinciri'nden okunur)
+SIRLAR = {"gemini": "gemini_anahtar", "groq": "groq_anahtar",
+          "mistral": "mistral_anahtar", "openrouter": "openrouter_anahtar"}
+
+
 def yol_ac(yol):
     """``~`` işaretini ev klasörüne çevirip mutlak yol döndürür."""
     return os.path.expanduser(yol)
@@ -100,6 +109,11 @@ def yukle():
             sonuc.update(kullanici)
     except (OSError, ValueError):
         pass
+    # API anahtarları ayar.json yerine Anahtar Zinciri'nde tutulur
+    from . import gizli
+    for ad, alan in SIRLAR.items():
+        if not sonuc.get(alan):
+            sonuc[alan] = gizli.sir_oku(ad)
     return sonuc
 
 
@@ -111,14 +125,3 @@ def sablon_olustur():
     with open(AYAR_DOSYASI, "w", encoding="utf-8") as dosya:
         json.dump(SABLON, dosya, ensure_ascii=False, indent=2)
     os.chmod(AYAR_DOSYASI, 0o600)
-
-
-def anahtar_al():
-    """Uzaktan (iPhone) bağlantı anahtarını döndürür; yoksa üretir."""
-    klasor_hazirla()
-    if not os.path.exists(ANAHTAR_DOSYASI):
-        with open(ANAHTAR_DOSYASI, "w", encoding="utf-8") as dosya:
-            dosya.write(secrets.token_urlsafe(32))
-        os.chmod(ANAHTAR_DOSYASI, 0o600)
-    with open(ANAHTAR_DOSYASI, "r", encoding="utf-8") as dosya:
-        return dosya.read().strip()

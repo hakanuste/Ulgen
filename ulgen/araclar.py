@@ -268,9 +268,8 @@ class Araclar:
                                else "Bu bilgi zaten kayıtlı."),
                 ("metin",)),
             "hafiza_unut": (
-                "Anahtar sözcüğü içeren hafıza kayıtlarını siler",
-                lambda anahtar: "%d kayıt silindi." % h.unut(anahtar),
-                ("anahtar",)),
+                "Anahtar sözcüğü içeren hafıza kayıtlarını siler "
+                "(kullanıcı ONAY'ı ister)", self.unut_onayli, ("anahtar",)),
             "internette_ara": (
                 "İnternette arar, sayfaları okur ve kaynaklı özet verir",
                 self.arastirma.arastir, ("sorgu",)),
@@ -324,6 +323,15 @@ class Araclar:
         return "%s, %d %s %d, saat %s" % (
             GUNLER[su.weekday()], su.day, AYLAR[su.month - 1], su.year,
             su.strftime("%H:%M"))
+
+    def unut_onayli(self, anahtar):
+        """Hafıza kaydı silmeyi kullanıcı ONAY'ına bağlar."""
+        sayi = self.hafiza.eslesen_sayisi(anahtar)
+        if sayi == 0:
+            return "Eşleşen (en az 3 harflik) hafıza kaydı bulunamadı."
+        return self.onay.iste(
+            "%d hafıza kaydı silinecek (anahtar: '%s')" % (sayi, anahtar),
+            lambda: "%d kayıt silindi." % self.hafiza.unut(anahtar))
 
     @staticmethod
     def not_ekle(metin):
@@ -411,7 +419,7 @@ class Araclar:
             return self.not_ekle(eslesme.group(1))
         eslesme = re.match(r"^(?:unut|sil)[:,]\s*(.+)$", m, re.IGNORECASE)
         if eslesme:
-            return "%d kayıt silindi." % self.hafiza.unut(eslesme.group(1))
+            return self.unut_onayli(eslesme.group(1))
         if re.search(r"pil(?:im)?\b.*(ne kadar|kaç|kac|durum)|şarj", k):
             return self.sistem.pil()
         eslesme = re.search(r"ses(?:i)?\s*(?:%|yüzde\s*)?(\d{1,3})", k)

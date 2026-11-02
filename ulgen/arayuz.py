@@ -70,9 +70,9 @@ header h1 { font-size: 17px; margin: 0; letter-spacing: 2px; }
 </div>
 <div id="anahtarKutu">
   <div class="kart">
-    <b>Bağlantı anahtarı</b>
-    <p style="color:var(--soluk);font-size:14px">Uzaktan bağlanıyorsunuz. Mac'teki anahtarı girin.</p>
-    <input id="anahtarGiris" type="password" placeholder="Anahtar">
+    <b>Cihaz belirteci</b>
+    <p style="color:var(--soluk);font-size:14px">Uzaktan bağlanıyorsunuz. Mac'te üretilen cihaz belirtecini girin.</p>
+    <input id="anahtarGiris" type="password" placeholder="Belirteç">
     <button class="dugme aktif" style="width:100%" onclick="anahtarKaydet()">Kaydet</button>
   </div>
 </div>
@@ -102,7 +102,7 @@ async function istek(yol, veri) {
     localStorage.removeItem("asistan_anahtar");
     anahtar = "";
     anahtarIste();
-    throw new Error("Anahtar hatalı ya da eksik.");
+    throw new Error("Belirteç hatalı, iptal edilmiş ya da eksik.");
   }
   return c.json();
 }

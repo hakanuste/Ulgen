@@ -67,7 +67,7 @@ class HafizaYoneticisi:
         if isinstance(veri, dict):
             veri.setdefault("ogeler", [])
             veri.setdefault("saglik", {})
-            if not ham.startswith(gizli.ONEK) and gizli.kullanilabilir_mi():
+            if not gizli.sifreli_mi(ham) and gizli.kullanilabilir_mi():
                 self._yaz(veri)  # eski düz yazı dosyayı şifrele
             return veri
         return {"surum": 1, "ogeler": [], "saglik": {}}
@@ -99,6 +99,15 @@ class HafizaYoneticisi:
             veri["ogeler"] = veri["ogeler"][-self.AZAMI_OGE:]
             self._yaz(veri)
         return True
+
+    def eslesen_sayisi(self, anahtar):
+        """İçinde anahtar geçen kayıt sayısını verir (silmeden)."""
+        anahtar = anahtar.strip().lower()
+        if len(anahtar) < 3:
+            return 0
+        with self._kilit:
+            return sum(1 for o in self._oku()["ogeler"]
+                       if anahtar in o["metin"].lower())
 
     def unut(self, anahtar):
         """İçinde anahtar geçen bilgileri siler; silinen sayısını döndürür."""

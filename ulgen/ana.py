@@ -6,12 +6,18 @@ Kullanım:
   python -m ulgen --ses           mikrofonla 'Ülgen' diyerek konuşma
   python -m ulgen --sabah         sabah raporunu yazdırır
   python -m ulgen --modeller      Gemini'de kullanılabilir modelleri listeler
-  python -m ulgen --anahtar       iPhone için bağlantı anahtarını yazdırır
+  python -m ulgen --cihaz-ekle AD  yeni cihaz belirteci üretir (bir kez gösterilir)
+  python -m ulgen --cihazlar       kayıtlı cihazları listeler
+  python -m ulgen --cihaz-iptal N  cihazı iptal eder
+  python -m ulgen --sir-kaydet AD  API anahtarını Anahtar Zinciri'ne yazar
+                                   (gemini, groq, mistral, openrouter)
+  python -m ulgen --yedek-al DOSYA        şifreli yedek alır
+  python -m ulgen --yedek-yukle DOSYA     yedekten geri yükler
 """
 
 import sys
 
-from . import __surum__, ayar, sunucu
+from . import __surum__, ayar, cihazlar, gizli, sunucu, veritabani, yedek
 from .beyin import BeyinHatasi, GeminiBeyin
 from .cekirdek import Ulgen
 
@@ -58,25 +64,95 @@ def modelleri_goster():
 
 def sunucuyu_calistir(ulgen):
     ulgen.arka_plani_baslat()
+    dinleme = sunucu.Dinleme(ulgen)
     try:
-        http = sunucu.baslat(ulgen)
+        dinleme.yerel_baslat()
     except OSError:
         print("Port %d dolu. Ülgen zaten çalışıyor olabilir." % ayar.PORT,
               flush=True)
         return 1
+    import threading
+    threading.Thread(target=dinleme.dongu, daemon=True).start()
     print("Ülgen çalışıyor: http://127.0.0.1:%d" % ayar.PORT, flush=True)
     try:
-        http.serve_forever()
+        dinleme.servis()
     except KeyboardInterrupt:
         pass
     return 0
 
 
+def _deger(argv, bayrak):
+    i = argv.index(bayrak)
+    return argv[i + 1] if i + 1 < len(argv) else ""
+
+
+def _parola(yeni):
+    import getpass
+    ilk = getpass.getpass("Yedek parolası: ")
+    if yeni and getpass.getpass("Parola (yeniden): ") != ilk:
+        raise yedek.YedekHatasi("Parolalar eşleşmedi.")
+    return ilk
+
+
+def yonetim(argv):
+    """Sunucu açmayan yönetim komutları. İşlenmediyse None döndürür."""
+    if "--cihaz-ekle" in argv or "--anahtar" in argv:
+        veritabani.kur()
+        ad = _deger(argv, "--cihaz-ekle") if "--cihaz-ekle" in argv else ""
+        kimlik, belirtec = cihazlar.olustur(ad or "iPhone")
+        print("Cihaz #%d oluşturuldu. Belirteç (yalnızca şimdi gösterilir):"
+              % kimlik)
+        print(belirtec)
+        return 0
+    if "--cihazlar" in argv:
+        veritabani.kur()
+        for c in cihazlar.listele():
+            print("#%d %s | oluşturma %s | son kullanım %s%s" % (
+                c["id"], c["ad"], c["olusturma"], c["son_kullanim"] or "-",
+                " | İPTAL" if c["iptal"] else ""))
+        return 0
+    if "--cihaz-iptal" in argv:
+        veritabani.kur()
+        print("İptal edildi." if cihazlar.iptal(_deger(argv, "--cihaz-iptal"))
+              else "Cihaz bulunamadı.")
+        return 0
+    if "--sir-kaydet" in argv:
+        ad = _deger(argv, "--sir-kaydet")
+        if ad not in ayar.SIRLAR:
+            print("Ad şunlardan biri olmalı:", ", ".join(ayar.SIRLAR))
+            return 1
+        if sys.stdin.isatty():
+            import getpass
+            deger = getpass.getpass("%s anahtarı: " % ad)
+        else:
+            deger = sys.stdin.read()
+        if not deger.strip():
+            print("Boş anahtar kaydedilmedi.")
+            return 1
+        print("Kaydedildi (%s)." % gizli.sir_yaz(ad, deger.strip()))
+        return 0
+    try:
+        if "--yedek-al" in argv:
+            veritabani.kur()
+            print("Yedek yazıldı:", yedek.al(_deger(argv, "--yedek-al"),
+                                             _parola(True)))
+            return 0
+        if "--yedek-yukle" in argv:
+            onceki = yedek.geri_yukle(_deger(argv, "--yedek-yukle"),
+                                      _parola(False))
+            print("Geri yüklendi. Önceki dosyalar şurada: %s" % onceki)
+            return 0
+    except yedek.YedekHatasi as hata:
+        print("Hata:", hata)
+        return 1
+    return None
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    if "--anahtar" in argv:
-        print(ayar.anahtar_al())
-        return 0
+    sonuc = yonetim(argv)
+    if sonuc is not None:
+        return sonuc
     if "--modeller" in argv:
         return modelleri_goster()
     ulgen = Ulgen()

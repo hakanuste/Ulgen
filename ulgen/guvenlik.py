@@ -16,23 +16,31 @@ import time
 
 from . import ayar
 
-# Çalıştırılması onay gerektiren komut adları
-TEHLIKELI_KOMUTLAR = frozenset({
-    "rm", "rmdir", "unlink", "del", "erase", "srm", "shred", "format",
-    "mkfs", "newfs", "fdisk", "diskutil", "dd", "sudo", "su", "doas",
-    "chmod", "chown", "chgrp", "mv", "kill", "killall", "pkill",
-    "shutdown", "reboot", "halt", "launchctl", "crontab", "osascript",
-    "defaults", "csrutil", "nvram", "tmutil", "ln", "truncate", "sh",
-    "bash", "zsh", "eval", "exec", "curl", "wget", "scp", "ssh", "nc",
+# İZİN LİSTESİ: yalnızca bu komutlar (ve güvenli bağımsız değişkenleri)
+# onaysız çalışır. Listede olmayan HER komut ONAY ister. Kara liste yöntemi
+# atlatılabildiği için (python -c, find -delete, git clean...) bırakıldı.
+SALT_OKUNUR = frozenset({
+    "ls", "pwd", "date", "whoami", "uname", "df", "du", "uptime", "wc",
+    "head", "tail", "cat", "grep", "file", "stat", "echo", "which",
+    "sw_vers", "hostname", "id", "ps", "pmset", "cal",
 })
 
-# Erişimi onay gerektiren kritik yollar
+# Argüman olarak yol alan komutlar (yollar kritik yol denetiminden geçer)
+YOL_ALAN = frozenset({"ls", "du", "wc", "head", "tail", "cat", "grep",
+                      "file", "stat"})
+
+# Gizli ya da kritik yollar
 KRITIK_YOLLAR = (
     "/etc", "/system", "/library", "/usr", "/bin", "/sbin", "/private",
     "/var", "/dev", "/volumes", "/applications",
 )
 
-KRITIK_ONEKLER = (".ssh", ".gnupg", ".aws", ".config/gcloud", ".kube")
+KRITIK_ONEKLER = (".ssh", ".gnupg", ".aws", ".config", ".kube", ".netrc",
+                  ".zsh_history", ".bash_history", "library/keychains",
+                  "library/cookies", "library/safari")
+
+# ~/ÜlgenVeri içinde okumaya açık alt klasörler
+ACIK_ALT_KLASORLER = ("dosyalar", "saglik")
 
 BIRLESIK_KOMUT = re.compile(r"[;&|`><]|\$\(")
 
@@ -44,7 +52,7 @@ SAYI_SOZCUKLERI = {
 
 
 def _kritik_yol_mu(parca):
-    """Bir komut argümanı kritik bir yolu gösteriyor mu?"""
+    """Bir komut argümanı kritik ya da gizli bir yolu gösteriyor mu?"""
     if not parca or parca.startswith("-"):
         return False
     yol = os.path.realpath(os.path.expanduser(parca))
@@ -52,16 +60,31 @@ def _kritik_yol_mu(parca):
     for kritik in KRITIK_YOLLAR:
         if kucuk == kritik or kucuk.startswith(kritik + "/"):
             return True
-    ev = ayar.EV.lower()
+    ev = os.path.realpath(ayar.EV).lower()
     for onek in KRITIK_ONEKLER:
         if kucuk.startswith(os.path.join(ev, onek)):
             return True
-    gizli = (ayar.ANAHTAR_DOSYASI, ayar.AYAR_DOSYASI, ayar.HAFIZA_DOSYASI)
-    return any(yol == os.path.realpath(g) for g in gizli)
+    veri = os.path.realpath(ayar.KLASOR)
+    if yol == veri or yol.startswith(veri + os.sep):
+        for acik in ACIK_ALT_KLASORLER:
+            alt = os.path.join(veri, acik)
+            if yol == alt or yol.startswith(alt + os.sep):
+                return False
+        return True
+    return False
+
+
+def _kapsayici_mi(parca):
+    """Yol, ÜlgenVeri klasörünü içine alan bir üst klasör mü? (grep -r gibi)"""
+    if not parca or parca.startswith("-"):
+        return False
+    yol = os.path.realpath(os.path.expanduser(parca))
+    veri = os.path.realpath(ayar.KLASOR)
+    return veri == yol or veri.startswith(yol.rstrip(os.sep) + os.sep)
 
 
 def komut_analiz(komut):
-    """Komutu inceler. (tehlikeli_mi, neden) çifti döndürür."""
+    """Komutu inceler. (onay_gerekli_mi, neden) çifti döndürür."""
     if BIRLESIK_KOMUT.search(komut):
         return True, "birleşik komut, yönlendirme ya da alt komut içeriyor"
     try:
@@ -70,12 +93,19 @@ def komut_analiz(komut):
         return True, "komut ayrıştırılamadı"
     if not parcalar:
         return True, "boş komut"
-    ad = os.path.basename(parcalar[0]).lower()
-    if ad in TEHLIKELI_KOMUTLAR:
-        return True, "'%s' tehlikeli bir komut" % ad
-    for parca in parcalar[1:]:
-        if _kritik_yol_mu(parca):
-            return True, "kritik bir sistem yoluna erişiyor"
+    ad = parcalar[0]
+    if os.sep in ad or ad not in SALT_OKUNUR:
+        return True, "'%s' izin listesinde değil" % os.path.basename(ad)
+    args = parcalar[1:]
+    if ad == "date" and any(not a.startswith("+") for a in args):
+        return True, "'date' yalnızca biçim (+...) bağımsız değişkeniyle"
+    if ad == "pmset" and (not args or args[0] != "-g"):
+        return True, "'pmset' yalnızca -g (okuma) ile"
+    for arg in args:
+        if ad in YOL_ALAN and _kritik_yol_mu(arg):
+            return True, "gizli ya da kritik bir yola erişiyor"
+        if ad == "grep" and _kapsayici_mi(arg):
+            return True, "gizli verileri de kapsayan bir klasörde arıyor"
     return False, ""
 
 
