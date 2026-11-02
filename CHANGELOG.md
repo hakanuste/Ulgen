@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Kılavuzlar → Obsidian: Belgeler/Klavuzlar klasöründeki yeni PDF/md/txt dosyaları 10 dakikada bir kendiliğinden (ya da "Şimdi aktar" ile) kasaya not olarak aktarılır (50 sayfalık parçalar + Dizin notu; artımlı; eski araçla aktarılanlar yeniden yazılmaz). Ayarlar'da durum, klasör ve açma/kapama (2.7.30).
 - Güncelleme deposu varsayılan olarak hakanuste/Ulgen (2.7.29).
 - Kendini güncelleme: Ayarlar > Güncelleme (GitHub deposundan; `--guncelle`, `--guncelle-zip`, `--guncelle-geri-al`). Yalnız kod değişir; ortam, veri, anahtarlar korunur; eski kod yedeklenir ve geri alınabilir; bozuk/güvensiz zip reddedilir.
 - Ses seçimi > "Yalnız benim sesim": kendi sesiniz (bulut) okuyamazsa kadın sistem sesine geçmez, yanıt yazı olarak kalır (varsayılan kapalı).

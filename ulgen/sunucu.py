@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import gizli, guncelle, hava, iptal, obsidyen, saglik_veri, ses, ses_klip
+from . import gizli, guncelle, hava, iptal, kilavuz, obsidyen, saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -416,6 +416,11 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/kilavuz/durum":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                return self._cevap(200, kilavuz.durum())
             if yol == "/guncelle/durum":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
@@ -767,6 +772,22 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
                 return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
                                          .sil(kimlik)})
+            if urlparse(self.path).path in ("/kilavuz/aktar", "/kilavuz/ayar"):
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                if urlparse(self.path).path == "/kilavuz/aktar":
+                    return self._cevap(200, {"basladi":
+                                             kilavuz.arka_planda_aktar()})
+                klasor = veri.get("klasor")
+                if isinstance(klasor, str):
+                    klasor = klasor.strip()
+                    if klasor and not os.path.isdir(ayar.yol_ac(klasor)):
+                        return self._cevap(400, {"hata": "klasör bulunamadı"})
+                    ayar.guncelle("kilavuz_klasoru", klasor)
+                if isinstance(veri.get("otomatik"), bool):
+                    ayar.guncelle("kilavuz_otomatik", veri["otomatik"])
+                return self._cevap(200, kilavuz.durum())
             if urlparse(self.path).path.startswith("/guncelle/"):
                 return self._guncelle(urlparse(self.path).path, veri)
             if urlparse(self.path).path == "/yz/anahtar-sil":

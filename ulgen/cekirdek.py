@@ -13,7 +13,7 @@ import re
 import threading
 from datetime import datetime
 
-from . import ayar, cihazlar, iptal, kisilik, kota, kuyruk, veritabani, yedek
+from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
@@ -315,3 +315,5 @@ class Ulgen:
         threading.Thread(target=yedek.otomatik_dongu, args=(self._durdur,),
                          daemon=True).start()
         threading.Thread(target=self.kuyruk_dongusu, daemon=True).start()
+        threading.Thread(target=kilavuz.otomatik_dongu, args=(self._durdur,),
+                         daemon=True).start()

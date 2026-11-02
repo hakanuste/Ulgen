@@ -1386,8 +1386,34 @@ async function guncellemePaneli(k) {
   }
 }
 
+// Kılavuz klasöründeki PDF/metin dosyalarını Obsidian kasasına not olarak aktarır (yeni dosyalar kendiliğinden).
+async function kilavuzPaneli(k) {
+  baslik(k, "Kılavuzlar → Obsidian");
+  let d;
+  try { d = await istek("/kilavuz/durum"); } catch (e) { ekle(k, "Kılavuz durumu okunamadı."); return; }
+  const kap = ekle(k, "Klasör: " + d.kaynak + (d.klasor_var ? "" : "  (BULUNAMADI)"),
+    "Kasa: " + d.kasa + "  ·  aktarılmayı bekleyen: " + d.bekleyen +
+    (d.calisiyor ? "  ·  ŞİMDİ AKTARILIYOR: " + d.dosya + " (" + d.bitti + "/" + d.toplam + ")" : "") +
+    (d.hata && d.hata.length ? "  ·  Hata: " + d.hata.join("; ") : ""));
+  const dug = (yazi, ac) => { const b = document.createElement("button"); b.className = "dugme" + (ac ? " aktif" : ""); b.textContent = yazi; b.style.cssText = "margin:6px 6px 0 0"; kap.appendChild(b); return b; };
+  const sim = dug("Şimdi aktar", true);
+  sim.onclick = async () => {
+    sim.disabled = true; await istek("/kilavuz/aktar", {});
+    balonEkle("Kılavuzlar Obsidian'a aktarılıyor; büyük PDF'ler birkaç dakika sürebilir. Ayarlar sayfasını yenileyerek ilerlemeyi görebilirsiniz.", "asistan");
+    const bekle = async () => { const g = await istek("/kilavuz/durum"); if (g.calisiyor) setTimeout(bekle, 3000); else ayarCiz(); };
+    setTimeout(bekle, 2000);
+  };
+  const oto = dug("Kendiliğinden aktar: " + (d.otomatik ? "açık" : "kapalı"), d.otomatik);
+  oto.onclick = async () => { await istek("/kilavuz/ayar", { otomatik: !d.otomatik }); ayarCiz(); };
+  const gir = document.createElement("input"); gir.placeholder = "Klasörü değiştir (örn. ~/Documents/Klavuzlar)"; gir.autocomplete = "off";
+  gir.style.cssText = "width:100%;margin:6px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)"; kap.appendChild(gir);
+  const kay = dug("Klasörü kaydet");
+  kay.onclick = async () => { const c = await istek("/kilavuz/ayar", { klasor: gir.value }); balonEkle(c.hata ? c.hata : "Kılavuz klasörü: " + c.kaynak, "asistan"); ayarCiz(); };
+}
+
 async function ayarCiz() {
   const a = await istek("/ayar/ozet"); const k = document.getElementById("pAyarlar"); k.innerHTML = "";
+  if (yerel) await kilavuzPaneli(k);
   if (yerel) await guncellemePaneli(k);
   await sesPaneli(k);
   baslik(k, "Ayarlar (salt okunur; API anahtarları gösterilmez)");

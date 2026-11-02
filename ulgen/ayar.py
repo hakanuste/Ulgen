@@ -62,6 +62,9 @@ VARSAYILAN = {
     "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
     "elevenlabs_ses_kimligi": "J17lijyP1BHYcM7ld0Rg",  # "dede korkut" (Voices > Copy Voice ID)
     # Kendini güncelleme: "kullanici/depo" (GitHub); özel depo için "github" anahtarı
+    # Kılavuzlar: boşsa Belgeler/Masaüstü'nde "klavuz" adlı klasör aranır
+    "kilavuz_klasoru": "",
+    "kilavuz_otomatik": True,        # yeni PDF'ler 10 dakikada bir Obsidian'a aktarılır
     "guncelleme_depo": "hakanuste/Ulgen",
     "guncelleme_dal": "main",
     "elevenlabs_bulut_ses": False,  # True: yanıt metinleri ElevenLabs'e gider (isteğe bağlı)
