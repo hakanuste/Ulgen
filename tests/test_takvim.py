@@ -101,11 +101,11 @@ class TakvimSunucuTesti(TemizVeri):
         sunucu.arka_planda_calistir(srv)
         try:
             port = srv.server_address[1]
-            self.assertEqual(istek(port, "/takvim.ics")[0], 403)       # anahtarsız
-            self.assertEqual(istek(port, "/takvim.ics?t=uydurma")[0], 403)
+            self.assertEqual(istek(port, "/takvim.ics", yetkisiz=True)[0], 403)       # anahtarsız
+            self.assertEqual(istek(port, "/takvim.ics?t=uydurma", yetkisiz=True)[0], 403)
             kod, ham = istek(port, "/takvim/baglanti", "POST", "{}", JSON)
             adres = json.loads(ham)["adres"]
-            kod, ics = istek(port, adres)
+            kod, ics = istek(port, adres, yetkisiz=True)
             self.assertEqual(kod, 200)
             self.assertIn(b"BEGIN:VCALENDAR", ics)
             self.assertEqual(istek(port, adres)[0], 403)               # tekrar yok

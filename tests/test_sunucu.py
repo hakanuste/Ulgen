@@ -10,13 +10,19 @@ from ulgen import cihazlar, sunucu, tls
 from ulgen.cekirdek import Ulgen
 
 
-def istek(port, yol, yontem="GET", govde=None, basliklar=None, baglam=None):
+def istek(port, yol, yontem="GET", govde=None, basliklar=None, baglam=None,
+          yetkisiz=False):
+    basliklar = dict(basliklar or {})
+    if baglam is None and not yetkisiz and "Authorization" not in basliklar \
+            and "Cookie" not in basliklar:
+        basliklar["Authorization"] = "Bearer " + cihazlar.olustur(
+            "test-yerel", 1)[1]
     if baglam is not None:
         c = http.client.HTTPSConnection("127.0.0.1", port, context=baglam,
                                         timeout=10)
     else:
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
-    c.request(yontem, yol, body=govde, headers=basliklar or {})
+    c.request(yontem, yol, body=govde, headers=basliklar)
     r = c.getresponse()
     veri = r.read()
     c.close()

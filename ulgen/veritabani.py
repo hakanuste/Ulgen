@@ -8,14 +8,34 @@
 """
 
 import contextlib
+import hashlib
 import os
 import re
+import shutil
 import sqlite3
 import threading
+import time
 
 from . import ayar
 
-SURUM = 4
+try:                                   # SQLCipher: şeffaf, tam dosya şifreleme
+    import sqlcipher3.dbapi2 as _sc
+except Exception:                      # kurulu değilse şifresiz çalışılır
+    _sc = None
+
+DUZ_BASLIK = b"SQLite format 3\x00"
+SIFRELI = False        # şu anki bağlantı şifreli mi (panelde gösterilir)
+GOC_NOTU = ""          # açılışta şifrelemeye geçildiyse kullanıcıya not
+
+
+class VeriTabaniHatasi(Exception):
+    """Anahtar yanlış/eksik ya da SQLCipher yok: dosyaya DOKUNULMAZ."""
+
+
+DB_HATALARI = (sqlite3.DatabaseError,) + (
+    (_sc.DatabaseError,) if _sc is not None else ())
+
+SURUM = 5
 FTS_VAR = False
 
 _KILIT = threading.RLock()
@@ -24,9 +44,143 @@ _YOL = None
 _DERINLIK = 0
 
 
+def sifreleme_var():
+    return _sc is not None
+
+
+def _anahtar_hex():
+    """Ana anahtardan veritabanı anahtarı türetir (ham 256 bit)."""
+    from . import gizli
+    return hashlib.sha256(b"ulgen-veritabani-v1" + gizli.ana_anahtar()
+                          ).hexdigest()
+
+
+def _anahtar_sql():
+    return "x'%s'" % _anahtar_hex()
+
+
+def dosya_turu(yol):
+    """'yok' | 'duz' (şifresiz SQLite) | 'sifreli' (başlık SQLite değil)."""
+    if not os.path.exists(yol) or os.path.getsize(yol) == 0:
+        return "yok"
+    with open(yol, "rb") as f:
+        return "duz" if f.read(16) == DUZ_BASLIK else "sifreli"
+
+
+def _sifreli_ac(yol):
+    baglanti = _sc.connect(yol, check_same_thread=False,
+                           isolation_level=None)
+    baglanti.execute("PRAGMA key = \"%s\"" % _anahtar_sql())
+    try:
+        baglanti.execute("SELECT count(*) FROM sqlite_master").fetchone()
+    except _sc.DatabaseError as hata:
+        baglanti.close()
+        raise VeriTabaniHatasi(
+            "Veritabanı açılamadı: anahtar yanlış/eksik ya da dosya bozuk. "
+            "Dosyaya dokunulmadı.") from hata
+    return baglanti
+
+
+def _sifirla_dosya(yol):
+    """Dosyanın içeriğini sıfırlayıp siler (SSD'de kesin silmeyi garanti
+    etmez; APFS anlık görüntüleri/aşınma dengeleme eski blokları tutabilir)."""
+    try:
+        boyut = os.path.getsize(yol)
+        with open(yol, "r+b") as f:
+            for _ in range(0, boyut, 1 << 20):
+                f.write(b"\0" * min(1 << 20, boyut))
+            f.flush()
+            os.fsync(f.fileno())
+    finally:
+        try:
+            os.remove(yol)
+        except OSError:
+            pass
+
+
+def _duzden_sifrele(yol):
+    """Şifresiz veritabanını şifreliye çevirir.
+
+    Sıra: (1) şifreli kopya üret + doğrula, (2) eski şifresiz dosyayı AES-GCM
+    ile ŞİFRELİ arşive al ve geri çözülebildiğini doğrula, (3) dosyaları
+    değiştir, (4) eski düz dosyayı sıfırla. Her adım hata verirse eski dosya
+    yerinde kalır."""
+    global GOC_NOTU
+    from . import gizli
+    yeni = yol + ".yeni"
+    for ek in ("", "-wal", "-shm"):
+        if os.path.exists(yeni + ek):
+            os.remove(yeni + ek)
+    kaynak = _sc.connect(yol)
+    try:
+        kaynak.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        sonuc = kaynak.execute("PRAGMA integrity_check").fetchone()[0]
+        if sonuc != "ok":
+            raise VeriTabaniHatasi("Şifresiz veritabanı bozuk (%s); "
+                                   "şifreleme yapılmadı." % sonuc[:60])
+        surum = kaynak.execute("PRAGMA user_version").fetchone()[0]
+        kaynak.execute("ATTACH DATABASE '%s' AS enc KEY \"%s\""
+                       % (yeni.replace("'", "''"), _anahtar_sql()))
+        kaynak.execute("SELECT sqlcipher_export('enc')")
+        kaynak.execute("PRAGMA enc.user_version = %d" % int(surum))
+        kaynak.execute("DETACH DATABASE enc")
+        tablolar = [r[0] for r in kaynak.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name "
+            "NOT LIKE 'sqlite_%'").fetchall()]
+        say = {t: kaynak.execute('SELECT COUNT(*) FROM "%s"' % t)
+               .fetchone()[0] for t in tablolar}
+    finally:
+        kaynak.close()
+    hedef = _sifreli_ac(yeni)
+    try:
+        if hedef.execute("PRAGMA integrity_check").fetchone()[0] != "ok" \
+                or hedef.execute("PRAGMA user_version").fetchone()[0] != surum:
+            raise VeriTabaniHatasi("Şifreli kopya doğrulanamadı.")
+        for t, n in say.items():
+            if hedef.execute('SELECT COUNT(*) FROM "%s"' % t).fetchone()[0] \
+                    != n:
+                raise VeriTabaniHatasi("Şifreli kopyada satır sayısı "
+                                       "tutmuyor (%s)." % t)
+    finally:
+        hedef.close()
+    # eski düz dosyanın ŞİFRELİ arşivi
+    with open(yol, "rb") as f:
+        ham = f.read()
+    arsiv_dizini = os.path.join(ayar.KLASOR, "yedekler")
+    os.makedirs(arsiv_dizini, mode=0o700, exist_ok=True)
+    arsiv = os.path.join(arsiv_dizini, "onceki-sifresiz-%s.db.sifreli"
+                         % time.strftime("%Y%m%d_%H%M%S"))
+    anahtar = gizli.ana_anahtar()
+    with open(arsiv, "wb") as f:
+        f.write(gizli.aes_sifrele(anahtar, ham, b"ULGENDBDUZ1"))
+    os.chmod(arsiv, 0o600)
+    with open(arsiv, "rb") as f:
+        if gizli.aes_coz(anahtar, f.read(), b"ULGENDBDUZ1") != ham:
+            raise VeriTabaniHatasi("Şifreli arşiv doğrulanamadı.")
+    # değiştir
+    eski = yol + ".eski"
+    os.replace(yol, eski)
+    try:
+        os.replace(yeni, yol)
+        os.chmod(yol, 0o600)
+    except OSError:
+        os.replace(eski, yol)
+        raise
+    for ek in ("-wal", "-shm"):
+        if os.path.exists(yol + ek):
+            os.remove(yol + ek)
+    _sifirla_dosya(eski)
+    GOC_NOTU = ("Veritabanı şifrelendi (SQLCipher). Eski şifresiz kopya "
+                "yalnızca şifreli arşiv olarak saklandı: %s" % arsiv)
+
+
 def _baglan():
-    """Kalıcı bağlantıyı verir; veritabanı yolu değiştiyse yeniden açar."""
-    global _BAGLANTI, _YOL
+    """Kalıcı bağlantıyı verir; veritabanı yolu değiştiyse yeniden açar.
+
+    SQLCipher kuruluysa dosya TAM şifrelidir (tablolar, dizinler, WAL, FTS).
+    Eski şifresiz dosya ilk açılışta doğrulanarak şifreliye çevrilir. Anahtar
+    yanlışsa ya da SQLCipher yokken şifreli dosya varsa dosyaya dokunulmaz."""
+    global _BAGLANTI, _YOL, SIFRELI
     yol = ayar.VERI_TABANI
     if _BAGLANTI is not None and _YOL == yol:
         return _BAGLANTI
@@ -34,9 +188,22 @@ def _baglan():
         _BAGLANTI.close()
         _BAGLANTI = None
     ayar.klasor_hazirla()
-    baglanti = sqlite3.connect(yol, check_same_thread=False,
-                               isolation_level=None)
-    baglanti.row_factory = sqlite3.Row
+    tur = dosya_turu(yol)
+    if _sc is not None:
+        if tur == "duz":
+            _duzden_sifrele(yol)
+        baglanti = _sifreli_ac(yol)
+        baglanti.row_factory = _sc.Row
+        SIFRELI = True
+    else:
+        if tur == "sifreli":
+            raise VeriTabaniHatasi(
+                "Veritabanı şifreli ama SQLCipher kurulu değil: "
+                "pip install sqlcipher3-wheels")
+        baglanti = sqlite3.connect(yol, check_same_thread=False,
+                                   isolation_level=None)
+        baglanti.row_factory = sqlite3.Row
+        SIFRELI = False
     baglanti.execute("PRAGMA busy_timeout=5000")
     baglanti.execute("PRAGMA journal_mode=WAL")
     baglanti.execute("PRAGMA synchronous=NORMAL")
@@ -47,6 +214,28 @@ def _baglan():
         pass
     _BAGLANTI, _YOL = baglanti, yol
     return baglanti
+
+
+def duz_kopya(hedef):
+    """Canlı veritabanının ŞİFRESİZ ve tutarlı bir kopyasını ``hedef``e yazar
+    (parola korumalı taşınabilir yedek için; geçici dosyayı çağıran siler)."""
+    with _KILIT:
+        baglanti = _baglan()
+        if not SIFRELI:
+            hedef_b = sqlite3.connect(hedef)
+            try:
+                baglanti.backup(hedef_b)
+            finally:
+                hedef_b.close()
+            return
+        surum = baglanti.execute("PRAGMA user_version").fetchone()[0]
+        baglanti.execute("ATTACH DATABASE '%s' AS duz KEY ''"
+                         % hedef.replace("'", "''"))
+        try:
+            baglanti.execute("SELECT sqlcipher_export('duz')")
+            baglanti.execute("PRAGMA duz.user_version = %d" % int(surum))
+        finally:
+            baglanti.execute("DETACH DATABASE duz")
 
 
 def kapat():
@@ -250,7 +439,15 @@ def _goc_4():
         olusturma REAL NOT NULL)""")
 
 
-GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4}
+def _goc_5():
+    """Yerel tarayıcı girişi için tek kullanımlık, kısa ömürlü anahtarlar."""
+    sorgu("""CREATE TABLE IF NOT EXISTS giris_anahtari (
+        ozet TEXT PRIMARY KEY,
+        bitis REAL NOT NULL,
+        kullanildi INTEGER NOT NULL DEFAULT 0)""")
+
+
+GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5}
 
 
 def surum():
@@ -275,20 +472,27 @@ def kur():
 # ------------------------------------------------------ bütünlük ve günlük
 
 def butunluk_denetimi(yol=None):
-    """(sorunsuz_mu, ayrıntı). ``yol`` verilirse o dosya ayrıca denetlenir."""
+    """(sorunsuz_mu, ayrıntı). Canlı dosya (yol yok ya da canlı yol) anahtarla,
+    başka dosyalar (yedek/geçici) şifresiz ya da anahtarla denetlenir."""
     try:
-        if yol is None:
+        if yol is None or os.path.abspath(yol) == os.path.abspath(
+                ayar.VERI_TABANI):
             with _KILIT:
                 satirlar = _baglan().execute(
                     "PRAGMA integrity_check").fetchall()
         else:
-            baglanti = sqlite3.connect(yol)
+            if dosya_turu(yol) == "sifreli" and _sc is not None:
+                baglanti = _sifreli_ac(yol)
+            else:
+                baglanti = sqlite3.connect(yol)
             try:
                 satirlar = baglanti.execute(
                     "PRAGMA integrity_check").fetchall()
             finally:
                 baglanti.close()
-    except sqlite3.DatabaseError as hata:
+    except VeriTabaniHatasi as hata:
+        return False, str(hata)
+    except DB_HATALARI as hata:
         return False, str(hata)
     ilk = satirlar[0][0] if satirlar else "bos"
     return ilk == "ok", "; ".join(str(s[0]) for s in satirlar[:5])

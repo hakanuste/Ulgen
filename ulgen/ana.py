@@ -5,6 +5,8 @@ Kullanım:
   python -m ulgen --terminal      terminalde yazışma
   python -m ulgen --ses           mikrofonla 'Ülgen' diyerek konuşma
   python -m ulgen --sabah         sabah raporunu yazdırır
+  python -m ulgen --ac             tarayıcıda yerel giriş (tek kullanımlık bağlantı)
+  python -m ulgen --tani           Mac/iPhone cihaz denetimi raporu
   python -m ulgen --modeller [gemini|groq|mistral|openrouter]  modelleri listeler
   python -m ulgen --cihaz-ekle AD  yeni cihaz belirteci üretir (bir kez gösterilir)
   python -m ulgen --cihazlar       kayıtlı cihazları listeler
@@ -72,6 +74,20 @@ def modelleri_goster(saglayici="gemini"):
     return 0
 
 
+def yerel_giris_ac(tarayici_ac):
+    """Tek kullanımlık giriş bağlantısı üretir ve tarayıcıda açar."""
+    veritabani.kur()
+    adres = "http://127.0.0.1:%d/giris?t=%s" % (
+        ayar.PORT, cihazlar.giris_anahtari_uret())
+    if tarayici_ac:
+        import webbrowser
+        webbrowser.open(adres)
+        print("Tarayıcıda açılıyor (bağlantı 60 sn geçerli, tek kullanımlık).")
+    else:
+        print(adres)
+    return 0
+
+
 def sunucuyu_calistir(ulgen):
     ulgen.arka_plani_baslat()
     dinleme = sunucu.Dinleme(ulgen)
@@ -126,6 +142,14 @@ def yonetim(argv):
         print("İptal edildi." if cihazlar.iptal(_deger(argv, "--cihaz-iptal"))
               else "Cihaz bulunamadı.")
         return 0
+    if "--ac" in argv or "--giris-adresi" in argv:
+        return yerel_giris_ac("--ac" in argv)
+    if "--takvim-deneme" in argv:
+        from . import tani
+        return tani.takvim_deneme()
+    if "--tani" in argv:
+        from . import tani
+        return tani.calistir()
     if "--sir-kaydet" in argv:
         ad = _deger(argv, "--sir-kaydet")
         if ad not in ayar.SIRLAR:

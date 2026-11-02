@@ -75,6 +75,12 @@ class Ulgen:
         self._sohbet_kilit = threading.Lock()
         self._duyarli_tur = False
         self._durdur = threading.Event()
+        if veritabani.GOC_NOTU:
+            veritabani.gunluge_yaz("bilgi", "veritabani", veritabani.GOC_NOTU)
+            self.bildir(veritabani.GOC_NOTU)
+        if not veritabani.SIFRELI:
+            self.bildir("UYARI: veritabanı diskte ŞİFRESİZ (SQLCipher yok). "
+                        "Kurulum: pip install sqlcipher3-wheels")
         if self._kurtarma_mesaji:
             veritabani.gunluge_yaz("uyari", "veritabani",
                                    self._kurtarma_mesaji)

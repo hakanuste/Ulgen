@@ -170,6 +170,9 @@ def _sistem_json(ulgen):
         "cihazlar": [{"id": c["id"], "ad": c["ad"],
                       "son_kullanim": c["son_kullanim"],
                       "iptal": bool(c["iptal"])} for c in cihazlar.listele()],
+        "veritabani_sifreli": veritabani.SIFRELI,
+        "sqlcipher_kurulu": veritabani.sifreleme_var(),
+        "yerel_yetki": bool(ayar.yukle().get("yerel_yetki", True)),
         "beyin": ulgen.yonlendirici.durum(),
         "kuyruk": len(kuyruk.bekleyenler()),
         "kota": kota.tablo(),
@@ -211,20 +214,28 @@ def istek_sinifi(ulgen, limit):
                 return False
             return True
 
+        def _belirtec(self):
+            baslik = self.headers.get("Authorization", "")
+            if baslik.startswith("Bearer "):
+                return baslik[7:]
+            for parca in (self.headers.get("Cookie") or "").split(";"):
+                ad, _, deger = parca.strip().partition("=")
+                if ad == "ulgen_oturum":
+                    return deger
+            return ""
+
         def _yetkili(self):
-            if self.server.yerel:
-                return True
+            if self.server.yerel and not ayar.yukle().get("yerel_yetki", True):
+                return True          # eski davranış (önerilmez; panelde uyarılır)
             ip = self.client_address[0]
             if limit.kilitli_mi(ip):
                 self._cevap(429, {"hata": "çok fazla yanlış deneme"})
                 return False
-            baslik = self.headers.get("Authorization", "")
-            belirtec = baslik[7:] if baslik.startswith("Bearer ") else ""
-            if cihazlar.dogrula(belirtec):
+            if cihazlar.dogrula(self._belirtec()):
                 limit.basarili(ip)
                 return True
             limit.hata(ip)
-            self._cevap(401, {"hata": "yetkisiz"})
+            self._cevap(401, {"hata": "yetkisiz", "giris": self.server.yerel})
             return False
 
         def _govde(self):
@@ -249,6 +260,8 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, SAYFA, "text/html; charset=utf-8")
             if yol == "/saglik":
                 return self._cevap(200, {"durum": "tamam"})
+            if yol == "/giris" and self.server.yerel:
+                return self._giris(parse_qs(adres.query).get("t", [""])[0])
             if yol == "/takvim.ics":
                 # Link tıklanınca başlık gönderilemez: kısa ömürlü TEK
                 # KULLANIMLIK anahtar (cihaz belirteci değil) kabul edilir.
@@ -344,6 +357,29 @@ def istek_sinifi(ulgen, limit):
             if urlparse(self.path).path.startswith("/kod/"):
                 return self._kod(urlparse(self.path).path, veri)
             return self._cevap(404, {"hata": "bulunamadı"})
+
+        def _giris(self, anahtar):
+            """Tek kullanımlık anahtarı oturum çerezine çevirir (yalnızca
+            127.0.0.1). Çerez: HttpOnly, SameSite=Strict, 30 gün."""
+            ip = self.client_address[0]
+            if limit.kilitli_mi(ip):
+                return self._cevap(429, {"hata": "çok fazla yanlış deneme"})
+            belirtec = cihazlar.giris_anahtari_tuket(anahtar)
+            if not belirtec:
+                limit.hata(ip)
+                return self._cevap(403, {"hata": "giriş bağlantısı geçersiz "
+                                                 "ya da kullanılmış; "
+                                                 "Launchpad'den Ülgen'i açın"})
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.send_header(
+                "Set-Cookie", "ulgen_oturum=%s; Path=/; HttpOnly; "
+                "SameSite=Strict; Max-Age=%d"
+                % (belirtec, cihazlar.OTURUM_GUN * 86400))
+            self.send_header("Content-Length", "0")
+            for ad, deger in GUVENLIK_BASLIKLARI.items():
+                self.send_header(ad, deger)
+            self.end_headers()
 
         def _doz_yanit(self, veri):
             """TEK doz: {"doz": 12, "yanit": "alindi|ertele|almadi|atlandi",

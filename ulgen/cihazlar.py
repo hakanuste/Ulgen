@@ -9,6 +9,7 @@ isteğe bağlı olarak süresi dolar.
 import hashlib
 import os
 import secrets
+import time
 from datetime import datetime, timedelta
 
 from . import ayar, veritabani
@@ -89,3 +90,36 @@ def eski_anahtari_tasi():
                                  _simdi()))
     os.remove(ayar.ANAHTAR_DOSYASI)
     return True
+
+
+# ------------------------------------------- yerel tarayıcı girişi (127.0.0.1)
+GIRIS_OMRU_SN = 60
+OTURUM_GUN = 30
+
+
+def giris_anahtari_uret():
+    """Tek kullanımlık, 60 sn ömürlü giriş anahtarı (yalnızca özeti saklanır).
+
+    Yalnızca Ülgen'in veritabanı anahtarına erişebilen (aynı kullanıcı) bir
+    süreç üretebilir: ``python -m ulgen --ac``."""
+    anahtar = secrets.token_urlsafe(32)
+    veritabani.sorgu("DELETE FROM giris_anahtari WHERE bitis < ?",
+                     (time.time(),))
+    veritabani.sorgu(
+        "INSERT INTO giris_anahtari (ozet, bitis) VALUES (?, ?)",
+        (_ozet(anahtar), time.time() + GIRIS_OMRU_SN))
+    return anahtar
+
+
+def giris_anahtari_tuket(anahtar):
+    """Geçerliyse tarayıcı oturum belirteci (30 gün, iptal edilebilir) üretir;
+    anahtar yakılır. Geçersiz/kullanılmış/süresi dolmuşsa None."""
+    if not anahtar or len(anahtar) > 200:
+        return None
+    adet = veritabani.sorgu(
+        "UPDATE giris_anahtari SET kullanildi=1 WHERE ozet=? AND "
+        "kullanildi=0 AND bitis>=?", (_ozet(anahtar), time.time()),
+        sayi=True)
+    if not adet:
+        return None
+    return olustur("Mac tarayıcı", OTURUM_GUN)[1]

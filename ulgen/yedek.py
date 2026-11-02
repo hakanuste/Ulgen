@@ -40,15 +40,7 @@ def _anahtar(parola, tuz):
 
 
 def _tutarli_veritabani(hedef):
-    kaynak = sqlite3.connect(ayar.VERI_TABANI)
-    try:
-        yedek = sqlite3.connect(hedef)
-        try:
-            kaynak.backup(yedek)
-        finally:
-            yedek.close()
-    finally:
-        kaynak.close()
+    veritabani.duz_kopya(hedef)
 
 
 def al(hedef, parola):
