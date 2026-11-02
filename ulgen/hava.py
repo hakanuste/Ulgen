@@ -12,7 +12,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from . import ayar
+from . import ag, ayar
 
 ONBELLEK_SN = 1800
 _KILIT = threading.Lock()
@@ -47,7 +47,7 @@ def getir(zorla=False):
         {"latitude": enlem, "longitude": boylam, "timezone": "auto",
          "current": "temperature_2m,weather_code"})
     try:
-        with urllib.request.urlopen(adres, timeout=6) as r:
+        with urllib.request.urlopen(adres, timeout=6, context=ag.baglam()) as r:
             j = json.loads(r.read(20000).decode("utf-8"))
         o = j["current"]
         veri = {"ad": ad, "sicaklik": round(float(o["temperature_2m"])),

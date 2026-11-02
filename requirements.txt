@@ -5,3 +5,4 @@ pandas>=2.0
 ddgs>=9.0
 pypdf>=4.0
 cryptography>=42
+certifi>=2024.2.2

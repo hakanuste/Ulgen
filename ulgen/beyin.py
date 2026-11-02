@@ -15,6 +15,8 @@ import time
 import urllib.error
 import urllib.request
 
+from . import ag
+
 GEMINI_TABAN = "https://generativelanguage.googleapis.com/v1beta"
 
 
@@ -44,7 +46,8 @@ def _json_gonder(adres, govde=None, basliklar=None, zaman_asimi=120,
     for ad, deger in (basliklar or {}).items():
         istek.add_header(ad, deger)
     try:
-        with urllib.request.urlopen(istek, timeout=zaman_asimi) as yanit:
+        with urllib.request.urlopen(istek, timeout=zaman_asimi,
+                                    context=ag.baglam()) as yanit:
             veri_ = json.loads(yanit.read().decode("utf-8"))
             if baslik_don:
                 return veri_, {k.lower(): v for k, v in yanit.headers.items()}

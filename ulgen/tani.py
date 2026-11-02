@@ -61,7 +61,8 @@ def calistir():
 
     # ---- kütüphaneler
     for modul, zorunlu in (("cryptography", True), ("requests", True),
-                           ("bs4", True), ("pypdf", True), ("ddgs", False),
+                           ("bs4", True), ("certifi", True), ("pypdf", True),
+                           ("ddgs", False),
                            ("sqlcipher3", False)):
         try:
             __import__(modul)
