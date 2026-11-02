@@ -100,7 +100,7 @@ class SaglayiciTabani(TemizVeri):
         self.ayar_yaz()
 
     def ayar_yaz(self, **ek):
-        a = {"beyin": "bulut", "gemini_anahtar": "g", "groq_anahtar": "k",
+        a = {"beyin": "bulut", "beyin_sabit": True, "gemini_anahtar": "g", "groq_anahtar": "k",
              "mistral_anahtar": "m", "openrouter_anahtar": "o",
              "yerel_tur": "llamacpp",
              "llamacpp_adres": "http://127.0.0.1:1"}

@@ -491,6 +491,16 @@ class Araclar:
         if e:
             return z.gorev.bitir(e.group(2), "iptal" if "iptal" in k
                                  else "tamam")
+        e = re.match(r"^(g[öo]rev|randevu|rutin) d[üu]zelt\s*#?(\d+)[:,]?\s+(.+)$",
+                     m, re.IGNORECASE)
+        if e:
+            return z.gorev.duzenle_metin(e.group(2), e.group(3))
+        e = re.fullmatch(r"(g[öo]rev|randevu|rutin) sil\s*#?(\d+)( onay)?", k)
+        if e:
+            if not e.group(3):
+                return ("#%s kalıcı silinecek. Onaylıyorsanız şunu yazın: "
+                        "%s sil %s onay" % (e.group(2), e.group(1), e.group(2)))
+            return z.gorev.sil(e.group(2))
         if re.fullmatch(r"g[öo]revlerim|g[öo]revler", k):
             return z.gorev.listele("gorev")
         if re.fullmatch(r"randevular[ıi]m|randevular", k):

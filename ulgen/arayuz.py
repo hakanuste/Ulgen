@@ -1125,7 +1125,23 @@ async function yzCiz() {
     ekle(k, t.ad + " — " + (t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir"),
       "bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms + " ms; hata %" + Math.round(t.hata_orani * 100)); });
   if (!yerel) { ekle(k, "Anahtar eklemek güvenlik için yalnızca Mac'in kendi tarayıcısından yapılır."); return; }
+  beyinKipi(k);
   anahtarKutusu(k);
+}
+
+async function beyinKipi(k) {
+  baslik(k, "Yapay zekâ kipi");
+  const a = await istek("/ayar/ozet");
+  const kap = ekle(k, "Şu an: " + ({ yerel: "yalnız yerel (sabit)", otomatik: "önce yerel, olmazsa bulut", bulut: "yalnız bulut" }[a.beyin] || a.beyin),
+    "Yerel kipte hiçbir soru Mac'ten dışarı çıkmaz. Bulut kipleri sorularınızı ücretsiz bulut sağlayıcılarına gönderir.");
+  [["yerel", "Yalnız yerel"], ["otomatik", "Önce yerel, sonra bulut"], ["bulut", "Yalnız bulut"]].forEach(([m, ad]) => {
+    const b = document.createElement("button"); b.className = "dugme" + (a.beyin === m ? " aktif" : ""); b.textContent = ad; b.style.cssText = "margin:6px 6px 0 0";
+    b.onclick = async () => {
+      if (m !== "yerel" && !confirm("Bu kipte sorularınız bulut sağlayıcılarına gidebilir. Onaylıyor musunuz?")) return;
+      const c = await istek("/yz/mod", { mod: m, onay: m !== "yerel" }); balonEkle(c.mod ? "Yapay zekâ kipi: " + ad : (c.hata || "Değişmedi."), "asistan"); ayarCiz();
+    };
+    kap.appendChild(b);
+  });
 }
 
 function anahtarKutusu(k) {
@@ -1217,25 +1233,78 @@ async function ayarCiz() {
   ekle(k, "Değiştirmek için Mac'te ~/ÜlgenVeri/ayar.json dosyasını düzenleyin.", "Güvenlik ayarları (yerel_yetki, sifresiz_veritabani_izni) arayüzden değiştirilemez; bilerek böyle.");
 }
 
+const gunAdlari = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+
+function gorevDuzeltFormu(kap, x) {
+  if (kap.querySelector(".duzeltForm")) return;
+  const f = document.createElement("div"); f.className = "duzeltForm"; f.style.marginTop = "8px";
+  const alan = (tur, yer, deger) => { const e = document.createElement("input"); e.type = tur; e.value = deger; e.placeholder = yer; e.autocomplete = "off";
+    e.style.cssText = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)"; f.appendChild(e); return e; };
+  const ad = alan("text", "Ad", x.baslik);
+  let zaman = null, gunler = [];
+  if (x.tur === "rutin") {
+    zaman = alan("time", "Saat", x.zaman || "");
+    const sar = document.createElement("div"); sar.style.margin = "6px 0";
+    const secili = new Set((x.tekrar || "").split(",").filter(Boolean));
+    gunAdlari.forEach((g, n) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = g; b.style.cssText = "margin:0 4px 4px 0";
+      const boya = () => { b.className = "dugme" + (secili.has(String(n)) ? " aktif" : ""); };
+      boya(); b.onclick = () => { const a = String(n); if (secili.has(a)) secili.delete(a); else secili.add(a); boya(); };
+      sar.appendChild(b);
+    });
+    f.appendChild(sar); gunler = secili;
+  } else {
+    zaman = alan("datetime-local", "Zaman", (x.zaman || "").replace(" ", "T"));
+  }
+  const k = document.createElement("button"); k.className = "dugme aktif"; k.textContent = "Kaydet";
+  const v = document.createElement("button"); v.className = "dugme"; v.textContent = "Vazgeç"; v.style.marginLeft = "8px";
+  v.onclick = () => f.remove();
+  k.onclick = async () => {
+    k.disabled = true;
+    const c = await istek("/gorev/duzenle", { id: x.id, baslik: ad.value, zaman: zaman.value,
+      tekrar: x.tur === "rutin" ? Array.from(gunler).sort().join(",") : "" });
+    balonEkle(c.yanit || c.hata, "asistan");
+    if (/^Düzelttim/.test(c.yanit || "")) gorevlerCiz(); else k.disabled = false;
+  };
+  f.appendChild(k); f.appendChild(v); kap.appendChild(f);
+}
+
+function gorevDugmeleri(d, x, tamamla) {
+  if (tamamla) {
+    const b = document.createElement("button");
+    b.className = "dugme"; b.style.cssText = "margin:6px 6px 0 0"; b.textContent = "Tamamlandı";
+    b.onclick = async () => { b.disabled = true; await istek("/gorev/bitir", { id: x.id }); gorevlerCiz(); };
+    d.appendChild(b);
+  }
+  const du = document.createElement("button");
+  du.className = "dugme"; du.style.cssText = "margin:6px 6px 0 0"; du.textContent = "Düzelt";
+  du.onclick = () => gorevDuzeltFormu(d, x);
+  d.appendChild(du);
+  const si = document.createElement("button");
+  si.className = "dugme"; si.style.cssText = "margin-top:6px;border-color:var(--ulgen-danger);color:var(--ulgen-danger)"; si.textContent = "Sil";
+  si.onclick = async () => {
+    if (!confirm("#" + x.id + " " + x.baslik + " kalıcı silinecek. Emin misiniz?")) return;
+    si.disabled = true;
+    const c = await istek("/gorev/sil", { id: x.id, onay: true });
+    balonEkle(c.yanit || c.hata, "asistan"); gorevlerCiz();
+  };
+  d.appendChild(si);
+}
+
 async function gorevlerCiz() {
   const g = await istek("/gorevler");
   const k = document.getElementById("pGorevler");
   k.innerHTML = "";
   baslik(k, "Görevler");
   if (!g.gorev.length) ekle(k, "Açık görev yok.");
-  g.gorev.forEach(x => {
-    const d = ekle(k, "#" + x.id + " " + x.baslik, x.zaman || "zamansız");
-    const b = document.createElement("button");
-    b.className = "dugme"; b.style.marginTop = "6px"; b.textContent = "Tamamlandı";
-    b.onclick = async () => { b.disabled = true; await istek("/gorev/bitir", { id: x.id }); gorevlerCiz(); };
-    d.appendChild(b);
-  });
+  g.gorev.forEach(x => gorevDugmeleri(ekle(k, "#" + x.id + " " + x.baslik, x.zaman || "zamansız"), x, true));
   baslik(k, "Randevular");
   if (!g.randevu.length) ekle(k, "Randevu yok.");
-  g.randevu.forEach(x => ekle(k, "#" + x.id + " " + x.baslik, x.zaman));
+  g.randevu.forEach(x => gorevDugmeleri(ekle(k, "#" + x.id + " " + x.baslik, x.zaman), x, false));
   baslik(k, "Rutinler");
   if (!g.rutin.length) ekle(k, "Rutin yok.");
-  g.rutin.forEach(x => ekle(k, "#" + x.id + " " + x.baslik, x.zaman + "  (günler: " + x.tekrar + ")"));
+  g.rutin.forEach(x => gorevDugmeleri(ekle(k, "#" + x.id + " " + x.baslik,
+    x.zaman + "  (" + (x.tekrar || "").split(",").filter(Boolean).map(n => gunAdlari[+n]).join(" ") + ")"), x, false));
   const o = await istek("/ozet");
   baslik(k, "Hatırlatıcılar");
   if (!o.hatirlaticilar.length) ekle(k, "Bekleyen hatırlatıcı yok.");

@@ -188,6 +188,93 @@ class Gorevler:
         return "#%s %s olarak işaretlendi." % (
             kimlik, "tamamlandı" if durum == "tamam" else "iptal edildi")
 
+    # ------------------------------------------------- düzenle / sil
+    @staticmethod
+    def _acik(kimlik):
+        try:
+            kimlik = int(kimlik)
+        except (TypeError, ValueError):
+            return None
+        satir = veritabani.sorgu(
+            "SELECT * FROM gorev WHERE id=? AND durum='acik' AND "
+            "tur IN ('gorev','randevu','rutin')", (kimlik,), True)
+        return satir[0] if satir else None
+
+    def liste_json(self):
+        """Arayüz için tüm açık kayıtlar (tür sırasıyla)."""
+        return veritabani.sorgu(
+            "SELECT id, tur, baslik, zaman, tekrar, onceden_dk FROM gorev "
+            "WHERE durum='acik' ORDER BY COALESCE(zaman,'9999'), id", (), True)
+
+    def duzenle(self, kimlik, baslik, zaman="", tekrar="", su_an=None):
+        """Açık bir görev/randevu/rutini düzeltir.
+
+        zaman: görev için '' (zamansız) ya da 'YYYY-MM-DD HH:MM'; randevu için
+        'YYYY-MM-DD HH:MM'; rutin için 'HH:MM'. tekrar yalnız rutin içindir
+        ('0,1,..' hafta günleri, 0=pazartesi)."""
+        su_an = su_an or datetime.now()
+        g = self._acik(kimlik)
+        if g is None:
+            return "#%s numaralı açık kayıt yok." % kimlik
+        baslik = " ".join(str(baslik or "").split())
+        if not baslik or len(baslik) > 200:
+            return "Ad boş olamaz (en çok 200 karakter)."
+        zaman = str(zaman or "").strip().replace("T", " ")
+        yeni_zaman, yeni_tekrar = g["zaman"], g["tekrar"]
+        if g["tur"] == "rutin":
+            if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", zaman):
+                return "Rutin saati SS:DD biçiminde olmalı (örn. 07:30)."
+            gunler = sorted({x for x in str(tekrar).split(",") if x != ""})
+            if not gunler or any(x not in "0123456" or len(x) != 1
+                                 for x in gunler):
+                return "En az bir gün seçin (0=pazartesi … 6=pazar)."
+            yeni_zaman, yeni_tekrar = zaman, ",".join(gunler)
+        else:
+            if zaman == "" and g["tur"] == "gorev":
+                yeni_zaman = None
+            else:
+                try:
+                    z = datetime.strptime(zaman, BICIM)
+                except ValueError:
+                    return "Zaman YYYY-AA-GG SS:DD biçiminde olmalı."
+                if g["tur"] == "randevu" and z <= su_an:
+                    return "Bu zaman geçmişte görünüyor."
+                yeni_zaman = z.strftime(BICIM)
+        veritabani.sorgu(
+            "UPDATE gorev SET baslik=?, zaman=?, tekrar=?, asama=?, "
+            "son_bildirim=? WHERE id=?",
+            (baslik, yeni_zaman, yeni_tekrar,
+             0 if yeni_zaman != g["zaman"] else g["asama"],
+             "" if (yeni_zaman != g["zaman"]
+                    or yeni_tekrar != g["tekrar"]) else g["son_bildirim"],
+             g["id"]))
+        return "Düzelttim: #%d %s." % (g["id"], baslik)
+
+    def sil(self, kimlik):
+        """Kaydı kalıcı siler (arayüz onay ister)."""
+        g = self._acik(kimlik)
+        if g is None:
+            return "#%s numaralı açık kayıt yok." % kimlik
+        veritabani.sorgu("DELETE FROM gorev WHERE id=?", (g["id"],))
+        return "Sildim: #%d %s." % (g["id"], g["baslik"])
+
+    def duzenle_metin(self, kimlik, metin, su_an=None):
+        """Sohbetten: 'görev düzelt #3: yeni ad yarın 10:00' gibi."""
+        su_an = su_an or datetime.now()
+        g = self._acik(kimlik)
+        if g is None:
+            return "#%s numaralı açık kayıt yok." % kimlik
+        if g["tur"] == "rutin":
+            gunler, kalan = tekrar_ayikla(metin)
+            zaman, baslik = zaman_ayikla(kalan, su_an)
+            if not gunler or zaman is None or not SAAT_K.search(kalan):
+                return "Örnek: rutin düzelt #%s: her gün 07:00 yürüyüş" % kimlik
+            return self.duzenle(kimlik, baslik, zaman.strftime("%H:%M"),
+                                gunler, su_an)
+        zaman, baslik = zaman_ayikla(metin, su_an)
+        return self.duzenle(kimlik, baslik,
+                            zaman.strftime(BICIM) if zaman else "", "", su_an)
+
     # ------------------------------------------------------------ listeler
     def listele(self, tur, su_an=None):
         su_an = su_an or datetime.now()

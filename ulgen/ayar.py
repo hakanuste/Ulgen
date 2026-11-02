@@ -21,8 +21,9 @@ PORT = 8765
 
 # Varsayılan ayarlar. ayar.json içindeki değerler bunların üzerine yazılır.
 VARSAYILAN = {
-    # Beyin seçimi: "otomatik" (önce yerel, olmazsa bulut), "yerel", "bulut"
-    "beyin": "otomatik",
+    # Beyin seçimi: "yerel" (varsayılan, sabit), "otomatik" (önce yerel,
+    # olmazsa bulut), "bulut". Bulut yalnız kullanıcı açıkça seçerse kullanılır.
+    "beyin": "yerel",
     # Yerel beyin türü: "otomatik", "ollama" ya da "llamacpp"
     "yerel_tur": "otomatik",
     "ollama_adres": "http://127.0.0.1:11434",
@@ -89,7 +90,8 @@ VARSAYILAN = {
 
 # ayar.json ilk kez yazılırken kullanılan sade şablon
 SABLON = {
-    "beyin": "otomatik",
+    "beyin": "yerel",
+    "beyin_sabit": True,
     "yerel_tur": "otomatik",
     "ollama_model": "llama3.2:3b",
     "llamacpp_adres": "http://127.0.0.1:8080",
@@ -140,10 +142,47 @@ def yukle():
     return sonuc
 
 
+def guncelle(alan, deger):
+    """ayar.json içinde tek bir alanı yazar (diğer alanlara dokunmaz)."""
+    klasor_hazirla()
+    try:
+        with open(AYAR_DOSYASI, "r", encoding="utf-8") as dosya:
+            mevcut = json.load(dosya)
+        if not isinstance(mevcut, dict):
+            mevcut = {}
+    except (OSError, ValueError):
+        mevcut = {}
+    mevcut[alan] = deger
+    with open(AYAR_DOSYASI, "w", encoding="utf-8") as dosya:
+        json.dump(mevcut, dosya, ensure_ascii=False, indent=2)
+    os.chmod(AYAR_DOSYASI, 0o600)
+
+
+def beyni_yerele_sabitle():
+    """Eski kurulumlarda bir kez: beyin seçimini yerele sabitler.
+
+    Kullanıcı sonradan arayüzden başka bir kip seçerse ``beyin_sabit``
+    işareti kalır ve bir daha dokunulmaz."""
+    try:
+        with open(AYAR_DOSYASI, "r", encoding="utf-8") as dosya:
+            mevcut = json.load(dosya)
+    except (OSError, ValueError):
+        return False
+    if not isinstance(mevcut, dict) or mevcut.get("beyin_sabit"):
+        return False
+    mevcut["beyin"] = "yerel"
+    mevcut["beyin_sabit"] = True
+    with open(AYAR_DOSYASI, "w", encoding="utf-8") as dosya:
+        json.dump(mevcut, dosya, ensure_ascii=False, indent=2)
+    os.chmod(AYAR_DOSYASI, 0o600)
+    return True
+
+
 def sablon_olustur():
     """ayar.json yoksa sade bir şablonla oluşturur."""
     klasor_hazirla()
     if os.path.exists(AYAR_DOSYASI):
+        beyni_yerele_sabitle()
         return
     with open(AYAR_DOSYASI, "w", encoding="utf-8") as dosya:
         json.dump(SABLON, dosya, ensure_ascii=False, indent=2)

@@ -671,6 +671,36 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "doz(int), yanit"})
                 return self._cevap(200, {"yanit": ulgen.zamanlayici.ilac
                                          .duzelt(doz, yanit)})
+            if urlparse(self.path).path == "/gorev/duzenle":
+                kimlik = veri.get("id")
+                if (not isinstance(kimlik, int) or isinstance(kimlik, bool)
+                        or not isinstance(veri.get("baslik"), str)):
+                    return self._cevap(400, {"hata": "id, baslik gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
+                                         .duzenle(kimlik, veri["baslik"],
+                                                  str(veri.get("zaman", "")),
+                                                  str(veri.get("tekrar", "")))})
+            if urlparse(self.path).path == "/gorev/sil":
+                kimlik = veri.get("id")
+                if not isinstance(kimlik, int) or isinstance(kimlik, bool) \
+                        or veri.get("onay") is not True:
+                    return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
+                                         .sil(kimlik)})
+            if urlparse(self.path).path == "/yz/mod":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                if veri.get("mod") not in ("yerel", "otomatik", "bulut"):
+                    return self._cevap(400, {"hata": "mod: yerel|otomatik|bulut"})
+                if veri["mod"] != "yerel" and veri.get("onay") is not True:
+                    return self._cevap(400, {"hata": "bulut kipi için onay gerekli"})
+                ayar.guncelle("beyin", veri["mod"])
+                ayar.guncelle("beyin_sabit", True)
+                ulgen.yonlendirici.sifirla()
+                veritabani.gunluge_yaz("bilgi", "ayar", "beyin kipi: %s"
+                                       % veri["mod"])
+                return self._cevap(200, {"mod": veri["mod"]})
             if urlparse(self.path).path == "/gorev/bitir":
                 kimlik = veri.get("id")
                 if not isinstance(kimlik, int) or isinstance(kimlik, bool):
