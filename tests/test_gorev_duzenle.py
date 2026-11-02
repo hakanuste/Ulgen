@@ -110,3 +110,25 @@ class BeyinKipiTesti(TemizVeri):
         self.assertEqual(ayar.yukle()["beyin"], "bulut")
         istek(p, "/yz/mod", "POST", json.dumps({"mod": "yerel"}), JSON)
         self.assertEqual(ayar.yukle()["beyin"], "yerel")
+
+
+class HatirlaticiDuzenleTesti(TemizVeri):
+
+    def test_duzenle_sil_http(self):
+        u = Ulgen()
+        u.sohbet_isle("23:50 su iç diye hatırlat")
+        srv = sunucu.yerel_sunucu(u, 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        p = srv.server_address[1]
+        kod, h = istek(p, "/ozet")
+        kim = json.loads(h)["hatirlaticilar"][0]["id"]
+        kod, h = istek(p, "/hatirlatici/duzenle", "POST", json.dumps(
+            {"id": kim, "mesaj": "Su iç", "zaman": "2030-01-01T10:00"}), JSON)
+        self.assertIn("Düzelttim", json.loads(h)["yanit"])
+        self.assertEqual(istek(p, "/hatirlatici/duzenle", "POST", json.dumps(
+            {"id": kim, "mesaj": "", "zaman": "2030-01-01T10:00"}), JSON)[0], 200)
+        self.assertEqual(istek(p, "/hatirlatici/sil", "POST", json.dumps({"id": kim}), JSON)[0], 400)
+        kod, h = istek(p, "/hatirlatici/sil", "POST", json.dumps({"id": kim, "onay": True}), JSON)
+        self.assertIn("Sildim", json.loads(h)["yanit"])
+        self.assertEqual(json.loads(istek(p, "/ozet")[1])["hatirlaticilar"], [])

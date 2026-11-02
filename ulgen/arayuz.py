@@ -1308,7 +1308,38 @@ async function gorevlerCiz() {
   const o = await istek("/ozet");
   baslik(k, "Hatırlatıcılar");
   if (!o.hatirlaticilar.length) ekle(k, "Bekleyen hatırlatıcı yok.");
-  o.hatirlaticilar.forEach(h => ekle(k, h.mesaj, h.zaman));
+  o.hatirlaticilar.forEach(h => {
+    const d = ekle(k, h.mesaj, h.zaman);
+    const du = document.createElement("button");
+    du.className = "dugme"; du.style.cssText = "margin:6px 6px 0 0"; du.textContent = "Düzelt";
+    du.onclick = () => {
+      if (d.querySelector(".duzeltForm")) return;
+      const f = document.createElement("div"); f.className = "duzeltForm"; f.style.marginTop = "8px";
+      const st = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+      const m = document.createElement("input"); m.value = h.mesaj; m.style.cssText = st;
+      const z = document.createElement("input"); z.type = "datetime-local"; z.value = h.zaman.replace(" ", "T"); z.style.cssText = st;
+      const kay = document.createElement("button"); kay.className = "dugme aktif"; kay.textContent = "Kaydet";
+      const va = document.createElement("button"); va.className = "dugme"; va.textContent = "Vazgeç"; va.style.marginLeft = "8px";
+      va.onclick = () => f.remove();
+      kay.onclick = async () => {
+        kay.disabled = true;
+        const c = await istek("/hatirlatici/duzenle", { id: h.id, mesaj: m.value, zaman: z.value });
+        balonEkle(c.yanit || c.hata, "asistan");
+        if (/^Düzelttim/.test(c.yanit || "")) gorevlerCiz(); else kay.disabled = false;
+      };
+      f.appendChild(m); f.appendChild(z); f.appendChild(kay); f.appendChild(va); d.appendChild(f);
+    };
+    d.appendChild(du);
+    const si = document.createElement("button");
+    si.className = "dugme"; si.style.cssText = "margin-top:6px;border-color:var(--ulgen-danger);color:var(--ulgen-danger)"; si.textContent = "Sil";
+    si.onclick = async () => {
+      if (!confirm("«" + h.mesaj + "» kalıcı silinecek. Emin misiniz?")) return;
+      si.disabled = true;
+      const c = await istek("/hatirlatici/sil", { id: h.id, onay: true });
+      balonEkle(c.yanit || c.hata, "asistan"); gorevlerCiz();
+    };
+    d.appendChild(si);
+  });
 }
 
 const durumYazi = { alindi: "alındı", almadi: "almadı", atlandi: "atlandı", tamamlandi: "tamamlandı",

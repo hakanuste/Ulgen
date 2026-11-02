@@ -483,7 +483,7 @@ def istek_sinifi(ulgen, limit):
                     200, ulgen.zamanlayici.ilac.bugun_json())
             if yol == "/ozet":
                 satirlar = veritabani.sorgu(
-                    "SELECT zaman, mesaj FROM hatirlaticilar WHERE "
+                    "SELECT id, zaman, mesaj FROM hatirlaticilar WHERE "
                     "onaylandi = 0 AND (bildirildi = 0 OR kalici = 1) "
                     "ORDER BY zaman LIMIT 15", (), True)
                 return self._cevap(200, {"hatirlaticilar": satirlar})
@@ -680,6 +680,23 @@ def istek_sinifi(ulgen, limit):
                                          .duzenle(kimlik, veri["baslik"],
                                                   str(veri.get("zaman", "")),
                                                   str(veri.get("tekrar", "")))})
+            if urlparse(self.path).path == "/hatirlatici/duzenle":
+                kimlik = veri.get("id")
+                if (not isinstance(kimlik, int) or isinstance(kimlik, bool)
+                        or not isinstance(veri.get("mesaj"), str)
+                        or not isinstance(veri.get("zaman"), str)):
+                    return self._cevap(400, {"hata": "id, mesaj, zaman gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici
+                                         .hatirlatici_duzenle(
+                                             kimlik, veri["mesaj"],
+                                             veri["zaman"])})
+            if urlparse(self.path).path == "/hatirlatici/sil":
+                kimlik = veri.get("id")
+                if not isinstance(kimlik, int) or isinstance(kimlik, bool) \
+                        or veri.get("onay") is not True:
+                    return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici
+                                         .hatirlatici_sil(kimlik)})
             if urlparse(self.path).path == "/gorev/sil":
                 kimlik = veri.get("id")
                 if not isinstance(kimlik, int) or isinstance(kimlik, bool) \

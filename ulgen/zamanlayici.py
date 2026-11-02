@@ -87,6 +87,27 @@ class Zamanlayici:
                       "deyene) kadar 5 dakikada bir uyaracağım.")
         return sonuc
 
+    def hatirlatici_duzenle(self, kimlik, mesaj, zaman):
+        """Bekleyen hatırlatıcının metnini ve zamanını düzeltir."""
+        mesaj = " ".join(str(mesaj or "").split())
+        if not mesaj or len(mesaj) > 300:
+            return "Mesaj boş olamaz (en çok 300 karakter)."
+        try:
+            z = datetime.strptime(str(zaman).strip().replace("T", " "), BICIM)
+        except ValueError:
+            return "Zaman YYYY-AA-GG SS:DD biçiminde olmalı."
+        adet = veritabani.sorgu(
+            "UPDATE hatirlaticilar SET mesaj=?, zaman=?, bildirildi=0, "
+            "onaylandi=0 WHERE id=? AND onaylandi=0",
+            (mesaj, z.strftime(BICIM), int(kimlik)), sayi=True)
+        return ("Düzelttim: %s, %s." % (mesaj, z.strftime("%d.%m %H:%M"))
+                if adet else "#%s numaralı bekleyen hatırlatıcı yok." % kimlik)
+
+    def hatirlatici_sil(self, kimlik):
+        adet = veritabani.sorgu("DELETE FROM hatirlaticilar WHERE id=?",
+                                (int(kimlik),), sayi=True)
+        return "Sildim." if adet else "#%s numaralı hatırlatıcı yok." % kimlik
+
     # ---------------------------------------------------------- listeleme
     def bekleyenler(self):
         """Bekleyen hatırlatıcıları sözlük listesi olarak döndürür."""
