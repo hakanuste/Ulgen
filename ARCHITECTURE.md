@@ -31,3 +31,8 @@ Veri klasörü `~/ÜlgenVeri` (izin 700): `veri.db`, `memory.json` (şifreli), `
 5. Hassas veriler (sağlık, ilaç, hafıza, kasa) buluta gönderilmez.
 6. Kullanıcı onayı olmadan önemli değişiklik yapılmaz.
 7. **İlaç dozlarını Ülgen değiştirmez.** İlaç/doz kayıtlarını yalnızca kullanıcı (arayüz/CLI, ONAY ile) ekler ve düzenler; model araçlarının ilaç tablosuna yazma yetkisi yoktur. Ülgen yalnızca hatırlatır ve alındı/ertelendi/alınamadı yanıtını kaydeder.
+
+## İlaç onay modeli (kullanıcı kuralı, 2026-11-02)
+
+Üç katman: **ilaç** (ad, doz bilgisi — yalnızca kullanıcı girer) → **plan saati** (08:00, 14:00, 20:00...) → **doz örneği** (o gün, o saat için oluşan kayıt; kendi kimliği ve durumu vardır: bekliyor / alındı / almadı / ertelendi / atlandı / tamamlandı).
+Bir onay **yalnızca bir doz örneğini** değiştirir. Aynı ilacın başka saatini, başka bir ilacı, ertesi günün aynı saatini ve genel hatırlatmaları etkilemez. Birden fazla doz bekliyorsa "tamam" onay vermez; Ülgen hangisini sorar. Kabul testi: A ilacı 08:00 ve 20:00, B ilacı 08:00 → A-08:00 onayı A-20:00, B-08:00 ve yarınki A-08:00'ı değiştirmemeli.
