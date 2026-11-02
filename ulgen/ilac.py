@@ -115,6 +115,7 @@ class Ilac:
                     "SELECT i.id, i.ad, i.doz_notu, i.aktif, "
                     "GROUP_CONCAT(p.saat, ' ') AS saatler FROM ilac i "
                     "LEFT JOIN ilac_plan p ON p.ilac_id=i.id "
+                    "AND (p.aktif=1 OR i.aktif=0) "
                     "GROUP BY i.id ORDER BY i.aktif DESC, i.ad", (), True)]
 
     def sil(self, ilac_id):
@@ -142,6 +143,62 @@ class Ilac:
         veritabani.gunluge_yaz("bilgi", "ilac",
                                "%s silindi (saatler: %s)" % (ad, saatler))
         return "%s ve tüm kayıtları silindi." % ad
+
+    def duzenle(self, ilac_id, ad, doz_notu, saatler):
+        """Yanlış girilen ad, not ve saatleri düzeltir (yazım düzeltmesi).
+
+        Geçmiş dozlar korunur; yalnız adları düzeltilir. Kaldırılan saatin
+        BEKLEYEN dozları silinir, yeni saat bugünden geçerli olur. Dozu
+        Ülgen değiştirmez: yazdığınız not olduğu gibi saklanır."""
+        satir = veritabani.sorgu("SELECT * FROM ilac WHERE id=?",
+                                 (int(ilac_id),), True)
+        if not satir:
+            return "Bu numarada ilaç yok."
+        ad = re.sub(r"\s+", " ", str(ad)).strip()[:60]
+        doz_notu = str(doz_notu or "").strip()[:120]
+        if not ad:
+            return "İlaç adı boş olamaz."
+        yeni = set()
+        for parca in re.split(r"[\s,;]+", str(saatler).strip()):
+            if not parca:
+                continue
+            e = re.fullmatch(r"(\d{1,2})[:.](\d{2})", parca)
+            if not e or int(e.group(1)) > 23 or int(e.group(2)) > 59:
+                return "Saat geçersiz: %s (örnek: 08:00 20:00)." % parca
+            yeni.add("%02d:%s" % (int(e.group(1)), e.group(2)))
+        if not yeni or len(yeni) > 8:
+            return "1 ile 8 arasında saat girin (örnek: 08:00 20:00)."
+        simdi = time.time()
+        with veritabani.islem():
+            veritabani.sorgu("UPDATE ilac SET ad=?, doz_notu=? WHERE id=?",
+                             (ad, doz_notu, int(ilac_id)))
+            veritabani.sorgu("UPDATE doz SET ilac_ad=? WHERE ilac_id=?",
+                             (ad, int(ilac_id)))
+            planlar = veritabani.sorgu(
+                "SELECT * FROM ilac_plan WHERE ilac_id=? AND aktif=1",
+                (int(ilac_id),), True)
+            mevcut = {p["saat"] for p in planlar}
+            gunler = planlar[0]["gunler"] if planlar else "0,1,2,3,4,5,6"
+            for p in planlar:
+                if p["saat"] not in yeni:
+                    veritabani.sorgu(
+                        "UPDATE ilac_plan SET aktif=0 WHERE id=?", (p["id"],))
+                    veritabani.sorgu(
+                        "DELETE FROM doz_gecmis WHERE doz_id IN (SELECT id "
+                        "FROM doz WHERE plan_id=? AND durum IN "
+                        "('bekliyor','ertelendi'))", (p["id"],))
+                    veritabani.sorgu(
+                        "DELETE FROM doz WHERE plan_id=? AND durum IN "
+                        "('bekliyor','ertelendi')", (p["id"],))
+            if satir[0]["aktif"]:
+                for saat in sorted(yeni - mevcut):
+                    veritabani.sorgu(
+                        "INSERT INTO ilac_plan (ilac_id, saat, gunler, "
+                        "olusturma) VALUES (?,?,?,?)",
+                        (int(ilac_id), saat, gunler, simdi))
+        veritabani.gunluge_yaz("bilgi", "ilac", "ilaç düzeltildi: #%d" % int(
+            ilac_id))
+        return "Düzelttim: %s — saatler: %s." % (ad, ", ".join(sorted(yeni)))
 
     def silme_istegi(self, ad, onay=False):
         """Sohbetten: 'ilaç sil: Ad' önce sorar; sonda 'onay' varsa siler."""

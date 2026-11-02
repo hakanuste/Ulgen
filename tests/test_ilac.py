@@ -413,3 +413,40 @@ class IlacSilmeTesti(TemizVeri):
         self.assertEqual(istek(p, "/ilac/sil", "POST",
                                json.dumps({"id": kid, "onay": True}), JSON)[0], 200)
         self.assertEqual(u.zamanlayici.ilac.liste_json(), [])
+
+
+class IlacDuzeltmeTesti(TemizVeri):
+
+    def test_ad_not_saat_duzeltilir_gecmis_kalir(self):
+        u = Ulgen()
+        u.sohbet_isle("ilaç ekle: Metformn 08:00 20:00")
+        i = u.zamanlayici.ilac
+        kid = i.liste_json()[0]["id"]
+        # dünden kalan, yanıtlanmış doz (geçmiş) + bekleyen 20:00 dozu
+        plan20 = veritabani.sorgu(
+            "SELECT id FROM ilac_plan WHERE ilac_id=? AND saat='20:00'", (kid,), True)[0]["id"]
+        for gun, durum in (("2026-01-01", "alindi"), ("2026-01-02", "bekliyor")):
+            veritabani.sorgu(
+                "INSERT INTO doz (ilac_id, plan_id, ilac_ad, planli, durum, sonraki) "
+                "VALUES (?,?,?,?,?,0)", (kid, plan20, "Metformn", gun + " 20:00", durum))
+        self.assertIn("geçersiz", i.duzenle(kid, "X", "", "25:00"))
+        self.assertIn("boş", i.duzenle(kid, "  ", "", "08:00"))
+        self.assertIn("Düzelttim", i.duzenle(kid, "Metformin", "yemekten sonra", "08:00 21.30"))
+        d = i.liste_json()[0]
+        self.assertEqual((d["ad"], d["doz_notu"]), ("Metformin", "yemekten sonra"))
+        self.assertEqual(d["saatler"].split(), ["08:00", "21:30"])
+        planlar = veritabani.sorgu(
+            "SELECT saat FROM ilac_plan WHERE ilac_id=? AND aktif=1 ORDER BY saat", (kid,), True)
+        self.assertEqual([p["saat"] for p in planlar], ["08:00", "21:30"])
+        satirlar = veritabani.sorgu("SELECT ilac_ad, durum FROM doz WHERE ilac_id=?", (kid,), True)
+        self.assertEqual([(s["ilac_ad"], s["durum"]) for s in satirlar], [("Metformin", "alindi")])
+        # HTTP
+        srv = sunucu.yerel_sunucu(u, 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        k, h = istek(srv.server_address[1], "/ilac/duzenle", "POST", json.dumps(
+            {"id": kid, "ad": "Metformin", "saatler": "09:00"}), JSON)
+        self.assertEqual(k, 200)
+        self.assertIn("09:00", json.loads(h)["yanit"])
+        self.assertEqual(istek(srv.server_address[1], "/ilac/duzenle", "POST",
+                               json.dumps({"id": "x"}), JSON)[0], 400)

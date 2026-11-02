@@ -1160,12 +1160,34 @@ async function gorevlerCiz() {
 const durumYazi = { alindi: "alındı", almadi: "almadı", atlandi: "atlandı", tamamlandi: "tamamlandı",
                     bekliyor: "bekliyor", ertelendi: "ertelendi", yanitsiz: "YANITSIZ (bilinmiyor)" };
 
+function ilacDuzeltFormu(kap, i) {
+  if (kap.querySelector(".duzeltForm")) return;
+  const f = document.createElement("div"); f.className = "duzeltForm"; f.style.marginTop = "8px";
+  const alan = (yer, deger) => { const e = document.createElement("input"); e.value = deger; e.placeholder = yer; e.autocomplete = "off";
+    e.style.cssText = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)"; f.appendChild(e); return e; };
+  const ad = alan("İlaç adı", i.ad), not = alan("Not (örn. yemekten sonra)", i.doz_notu || ""), saat = alan("Saatler (örn. 08:00 20:00)", i.saatler || "");
+  const k = document.createElement("button"); k.className = "dugme aktif"; k.textContent = "Kaydet";
+  const v = document.createElement("button"); v.className = "dugme"; v.textContent = "Vazgeç"; v.style.marginLeft = "8px";
+  v.onclick = () => f.remove();
+  k.onclick = async () => {
+    k.disabled = true;
+    const c = await istek("/ilac/duzenle", { id: i.id, ad: ad.value, doz_notu: not.value, saatler: saat.value });
+    balonEkle(c.yanit, "asistan");
+    if (/^Düzelttim/.test(c.yanit)) ilacCiz(); else k.disabled = false;
+  };
+  f.appendChild(k); f.appendChild(v); kap.appendChild(f);
+}
+
 async function kayitliIlaclar(k) {
   const liste = await istek("/ilac/liste");
   baslik(k, "Kayıtlı ilaçlar");
   if (!liste.length) { ekle(k, "Kayıtlı ilaç yok."); return; }
   liste.forEach(i => {
     const d = ekle(k, i.ad + (i.doz_notu ? " (" + i.doz_notu + ")" : "") + (i.aktif ? "" : "  — durduruldu"), i.saatler || "saat yok");
+    const du = document.createElement("button");
+    du.className = "dugme"; du.style.cssText = "margin:6px 6px 0 0"; du.textContent = "Düzelt";
+    du.onclick = () => ilacDuzeltFormu(d, i);
+    d.appendChild(du);
     const b = document.createElement("button");
     b.className = "dugme"; b.style.cssText = "margin-top:6px;border-color:var(--ulgen-danger);color:var(--ulgen-danger)"; b.textContent = "Sil (hatalı girdi)";
     b.onclick = async () => {

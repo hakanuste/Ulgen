@@ -561,6 +561,16 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
                     "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path == "/ilac/duzenle":
+                kimlik = veri.get("id")
+                if (not isinstance(kimlik, int) or isinstance(kimlik, bool)
+                        or not isinstance(veri.get("ad"), str)
+                        or not isinstance(veri.get("saatler"), str)):
+                    return self._cevap(400, {"hata": "id, ad, saatler gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici.ilac
+                                         .duzenle(kimlik, veri["ad"],
+                                                  veri.get("doz_notu", ""),
+                                                  veri["saatler"])})
             if urlparse(self.path).path == "/ilac/sil":
                 kimlik = veri.get("id")
                 if not isinstance(kimlik, int) or isinstance(kimlik, bool) \
