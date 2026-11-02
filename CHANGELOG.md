@@ -119,3 +119,6 @@
 
 ## 2.7.33
 - Ana sayfa panosu yüklenemezse artık sessizce boş kalmaz; hata nedeni kartta görünür.
+
+## 2.7.34
+- Yerel ses denemesi aracı (XTTS-v2): `ulgen/varlik/Yerel Ses Denemesi.command`. Ülgen'e dokunmaz; sesinizi bu Mac'te üretip hızını ölçer. Gerçek cihaz testi bekliyor.
