@@ -22,7 +22,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import ayar, cihazlar, kota, kuyruk, tls, veritabani
+from . import ayar, cihazlar, kodpenceresi, kota, kuyruk, tls, veritabani
 from .arayuz import SAYFA
 
 YEREL_AD = "localhost"
@@ -238,6 +238,15 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, kota.tablo())
             if yol == "/kuyruk":
                 return self._cevap(200, kuyruk.bekleyenler())
+            if yol == "/kod/liste":
+                return self._cevap(200, kodpenceresi.liste())
+            if yol == "/kod/oku":
+                try:
+                    ad = parse_qs(adres.query).get("ad", [""])[0]
+                    return self._cevap(200, {"ad": ad,
+                                             "icerik": kodpenceresi.oku(ad)})
+                except kodpenceresi.KodHatasi as hata:
+                    return self._cevap(400, {"hata": str(hata)})
             if yol == "/ozet":
                 satirlar = veritabani.sorgu(
                     "SELECT zaman, mesaj FROM hatirlaticilar WHERE "
@@ -258,6 +267,25 @@ def istek_sinifi(ulgen, limit):
             if urlparse(self.path).path == "/sohbet":
                 return self._cevap(
                     200, ulgen.sohbet_isle(str(veri.get("metin", ""))))
+            if urlparse(self.path).path.startswith("/kod/"):
+                return self._kod(urlparse(self.path).path, veri)
+            return self._cevap(404, {"hata": "bulunamadı"})
+
+        def _kod(self, yol, veri):
+            try:
+                if yol == "/kod/kaydet":
+                    ad = kodpenceresi.kaydet(str(veri.get("ad", "")),
+                                             str(veri.get("icerik", "")))
+                    return self._cevap(200, {"ad": ad})
+                if yol == "/kod/calistir":
+                    return self._cevap(200, kodpenceresi.calistir(
+                        str(veri.get("icerik", "")),
+                        str(veri.get("dil", "python")),
+                        veri.get("sure", 30) if isinstance(
+                            veri.get("sure", 30), int) else 30,
+                        uzaktan=not self.server.yerel))
+            except kodpenceresi.KodHatasi as hata:
+                return self._cevap(400, {"hata": str(hata)})
             return self._cevap(404, {"hata": "bulunamadı"})
 
         def log_message(self, *args):

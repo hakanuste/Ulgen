@@ -43,3 +43,6 @@ Güncelleme: Aşama 1 sonu · Durum sütunu yalnızca **testle doğrulananı** "
 ## Aşama 3 eki
 - Ücretli geçiş koddan kapalı (test: UcretsizGuvenceTesti). Bulut sağlayıcılarda ücretsiz katman verileri eğitim için kullanabilir; bu yüzden kişisel mesajlar hepsinde engelli ve kuyrukta yalnızca yerel beyne gider.
 - API anahtarları Anahtar Zinciri/şifreli dosyada; `--sir-kaydet groq|mistral|openrouter`.
+
+## Kod penceresi
+Rastgele kod çalıştırma, terminal ile aynı riski taşır. Önlemler: yalnızca düğmeyle, modelden erişilemez, uzaktan varsayılan kapalı, ortamdan sır sızmaz. Kum havuzu yoktur; çalışan kod dosyalarınıza erişebilir.

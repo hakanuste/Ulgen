@@ -52,14 +52,46 @@ header h1 { font-size: 17px; margin: 0; letter-spacing: 2px; }
 #anahtarKutu .kart { background: var(--kart); padding: 18px; border-radius: 14px; width: 100%; max-width: 360px; }
 #anahtarKutu input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #22303d;
                      background: var(--bg); color: var(--yazi); font-size: 16px; margin: 10px 0; }
+#kodPanel { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column;
+            padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px); z-index: 5; }
+#kodPanel.acik { display: flex; }
+#kodPanel .satir { display: flex; gap: 6px; margin: 4px 0; flex-wrap: wrap; align-items: center; }
+#kodPanel select, #kodPanel input { background: var(--kart); color: var(--yazi); border: 1px solid #22303d;
+            border-radius: 8px; padding: 7px; font-size: 14px; }
+#kodYazi { flex: 1; min-height: 160px; resize: none; background: #0d1319; color: #d6e2ee; border: 1px solid #22303d;
+           border-radius: 10px; padding: 10px; font: 14px/1.45 ui-monospace, Menlo, monospace; tab-size: 4; }
+#kodCikti { height: 28%; overflow: auto; margin: 6px 0 0; background: #05080b; border: 1px solid #22303d;
+            border-radius: 10px; padding: 8px; font: 13px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 <header>
   <h1><span id="nokta" class="nokta"></span>ÜLGEN</h1>
+  <button class="dugme" onclick="kodAcPencere()">&lt;/&gt; Kod</button>
   <button id="sesBtn" class="dugme aktif" onclick="sesDegistir()">Ses: açık</button>
   <button id="surekliBtn" class="dugme" onclick="surekliDegistir()">Sürekli dinle: kapalı</button>
 </header>
+<div id="kodPanel">
+  <div class="satir">
+    <b style="flex:1">Kod penceresi</b>
+    <button class="dugme" onclick="kodKapat()">Kapat ✕</button>
+  </div>
+  <div class="satir">
+    <select id="kodDosya" onchange="kodAc()"><option value="">Yeni dosya</option></select>
+    <input id="kodAd" placeholder="ad.py" style="width:120px" autocapitalize="off" autocorrect="off">
+    <select id="kodDil"><option value="python">Python</option><option value="node">Node</option>
+      <option value="bash">Bash</option></select>
+  </div>
+  <textarea id="kodYazi" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off"
+    placeholder="Kodunuzu buraya yazın" onkeydown="kodTus(event)"></textarea>
+  <div class="satir">
+    <button class="dugme aktif" id="kodCalistirBtn" onclick="kodCalistir()">▶ Çalıştır</button>
+    <button class="dugme" onclick="kodKaydet()">Kaydet</button>
+    <button class="dugme" onclick="kodUlgenSor()">Ülgen'e sor</button>
+    <span id="kodDurum" style="font-size:12px;color:var(--soluk)"></span>
+  </div>
+  <pre id="kodCikti">Çıktı burada görünür. Kod sizin yetkinizle çalışır (kum havuzu değildir).</pre>
+</div>
 <div id="yaklasan"></div>
 <div id="beyin" style="font-size:12px;color:var(--soluk);padding:2px 16px"></div>
 <div id="akis"></div>
@@ -254,6 +286,73 @@ async function ozetYukle() {
   } catch (e) {
     document.getElementById("nokta").classList.remove("acik");
   }
+}
+
+const kodDil = { py: "python", js: "node", sh: "bash" };
+
+async function kodListele(sec) {
+  try {
+    const l = await istek("/kod/liste");
+    const k = document.getElementById("kodDosya");
+    k.innerHTML = '<option value="">Yeni dosya</option>';
+    l.forEach(a => { const o = document.createElement("option"); o.value = a; o.textContent = a; k.appendChild(o); });
+    if (sec) k.value = sec;
+  } catch (e) { /* sessizce geç */ }
+}
+
+function kodAcPencere() { document.getElementById("kodPanel").classList.add("acik"); kodListele(); }
+function kodKapat() { document.getElementById("kodPanel").classList.remove("acik"); }
+
+async function kodAc() {
+  const ad = document.getElementById("kodDosya").value;
+  if (!ad) { document.getElementById("kodAd").value = ""; return; }
+  const c = await istek("/kod/oku?ad=" + encodeURIComponent(ad));
+  if (c.hata) { kodDurum(c.hata); return; }
+  document.getElementById("kodYazi").value = c.icerik;
+  document.getElementById("kodAd").value = ad;
+  const dil = kodDil[ad.split(".").pop()];
+  if (dil) document.getElementById("kodDil").value = dil;
+}
+
+function kodDurum(m) { document.getElementById("kodDurum").textContent = m; }
+
+function kodTus(e) {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const t = e.target, b = t.selectionStart;
+    t.value = t.value.slice(0, b) + "    " + t.value.slice(t.selectionEnd);
+    t.selectionStart = t.selectionEnd = b + 4;
+  }
+}
+
+async function kodKaydet() {
+  const ad = document.getElementById("kodAd").value.trim();
+  const c = await istek("/kod/kaydet", { ad: ad, icerik: document.getElementById("kodYazi").value });
+  if (c.hata) { kodDurum(c.hata); return; }
+  kodDurum("Kaydedildi: " + c.ad);
+  kodListele(c.ad);
+}
+
+async function kodCalistir() {
+  const b = document.getElementById("kodCalistirBtn");
+  const cikti = document.getElementById("kodCikti");
+  b.disabled = true;
+  cikti.textContent = "Çalışıyor...";
+  try {
+    const c = await istek("/kod/calistir", { icerik: document.getElementById("kodYazi").value,
+                                              dil: document.getElementById("kodDil").value });
+    cikti.textContent = c.hata ? c.hata : (c.cikti || "(çıktı yok)") +
+      "\n\n[çıkış kodu " + c.cikis + ", " + c.sure_sn + " sn]";
+  } catch (e) { cikti.textContent = e.message; }
+  b.disabled = false;
+}
+
+function kodUlgenSor() {
+  const kod = document.getElementById("kodYazi").value;
+  const cikti = document.getElementById("kodCikti").textContent;
+  document.getElementById("giris").value =
+    "Şu kodu incele ve düzelt:\n" + kod + "\n\nÇıktısı:\n" + cikti;
+  kodKapat();
 }
 
 anahtarIste();

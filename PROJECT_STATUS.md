@@ -25,3 +25,5 @@ Kısmen: iPhone arayüzünde geçmiş/hafıza sayfaları geliştirilmedi (Aşama
 Kodlandı, benzetimde test edildi: sağlayıcı yöneticisi, kota sayacı, kuyruk. Gerçek hesaplarla denenmedi (anahtar gerekir).
 Kısmen: iPhone arayüzünde kota paneli yok (yalnızca `kota` komutu ve `/kota` JSON; panel Aşama 5).
 Not: Groq/Mistral/Gemini'de "ücretsiz" hesap düzeyindedir; anahtarınıza fatura kartı eklemeyin. Ülgen bunu ağdan doğrulayamaz.
+
+Kod penceresi: tamamlandı ve test edildi (benzetim + Chromium ekran denemesi). iPhone'da denenmedi; telefon klavyesinde uzun kod yazımı rahat olmayabilir.

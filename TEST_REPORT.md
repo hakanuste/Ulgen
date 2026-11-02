@@ -44,3 +44,5 @@ Denenmedi: Mac Anahtar Zinciri, uzun süreli (günler) çalışma, çok büyük 
 ## Aşama 3 sonuçları (benzetim: sahte sağlayıcı sunucuları)
 97 test geçti. Kapsanan: gerçek/tahmini token ayrımı, dakikalık/günlük sınır, Pasifik günü, 429 sonrası sıradaki ücretsiz sağlayıcıya geçiş, sunucu hatasında kota harcamadan geçiş, ücretli modelin ağa çıkmadan reddi, kota doluyken kuyruk + hatırlatıcının çalışması, yeniden başlatmada kuyruğun korunması, kişisel mesajın buluta HİÇ gitmemesi, yerel beyin açılınca işlenmesi, süresi dolan istek bildirimi.
 Denenmedi: gerçek Groq/Mistral/OpenRouter/Gemini uç noktaları (anahtarım yok; model adları ve başlık adları belgeden, doğrulanmadı), gerçek 429 davranışı, günler süren kullanım.
+
+Kod penceresi: 14 birim testi (zaman aşımı, ortam, ad doğrulama, uzak kapı, tek çalıştırma) + Chromium uçtan uca deneme geçti.
