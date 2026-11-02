@@ -228,6 +228,28 @@ def engel(saglayici, simdi=None):
     return False, "", 0
 
 
+_ULASIM = {}   # sağlayıcı -> (zaman, bool); panel her açılışta ağa vurmasın
+
+
+def yerel_ulasilir_mi(ad, onbellek_sn=20):
+    """Yerel sunucu (Ollama/llama.cpp) şu an yanıt veriyor mu?"""
+    zaman, deger = _ULASIM.get(ad, (0, False))
+    if time.time() - zaman < onbellek_sn:
+        return deger
+    from .beyin import LlamaCppBeyin, OllamaBeyin
+    a = ayar.yukle()
+    try:
+        if ad == "ollama":
+            nesne = OllamaBeyin(a.get("ollama_adres"), a.get("ollama_model"))
+        else:
+            nesne = LlamaCppBeyin(a.get("llamacpp_adres"))
+        deger = bool(nesne.kullanilabilir_mi())
+    except Exception:
+        deger = False
+    _ULASIM[ad] = (time.time(), deger)
+    return deger
+
+
 def tablo(simdi=None):
     """Panel için sağlayıcı başına durum listesi."""
     simdi = time.time() if simdi is None else simdi
@@ -248,6 +270,7 @@ def tablo(simdi=None):
         sonuc.append({
             "saglayici": ad, "ad": ADLAR[ad], "yerel": ad in YEREL,
             "engelli": engelli, "neden": neden, "bekle_sn": bekle,
+            "ulasilir": yerel_ulasilir_mi(ad) if ad in YEREL else True,
             "sinir": {x: sinir.get(x) for x in
                       ("rpm", "rpd", "tpm", "tpd", "tpay")},
             "sinir_kaynagi": sinir.get("kaynak", ""),

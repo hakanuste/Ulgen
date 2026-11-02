@@ -319,3 +319,18 @@ class KuyrukTesti(SaglayiciTabani):
         for i in range(kuyruk.AZAMI_BEKLEYEN):
             kuyruk.ekle("x%d" % i)
         self.assertIsNone(kuyruk.ekle("fazla"))
+
+
+class YerelUlasimTesti(TemizVeri):
+    def test_kapali_yerel_sunucu_hazir_gorunmez(self):
+        from ulgen import kota
+        kota._ULASIM.clear()
+        from unittest import mock
+        with mock.patch("ulgen.beyin.OllamaBeyin.kullanilabilir_mi",
+                        return_value=False):
+            self.assertFalse(kota.yerel_ulasilir_mi("ollama"))
+        kota._ULASIM.clear()
+        with mock.patch("ulgen.beyin.OllamaBeyin.kullanilabilir_mi",
+                        return_value=True):
+            self.assertTrue(kota.yerel_ulasilir_mi("ollama"))
+        kota._ULASIM.clear()

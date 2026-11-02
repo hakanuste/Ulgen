@@ -298,6 +298,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   .panel { flex: 1; }
   #cipler .genis { display: inline; }
 }
+@media (min-width: 1240px) and (max-width: 1599px) { #baslikOrta small { display: none; } }
 </style>
 </head>
 <body>
@@ -945,7 +946,7 @@ async function panoYenile() {
     const k3 = kartK(p2, "Yapay Zekâ Modelleri", [], "katman");
     const aktif = ((sis.beyin && sis.beyin.beyin) || "").toLowerCase();
     sis.kota.forEach(t => {
-      const durum = t.engelli ? (t.yerel ? "Çevrimdışı" : "Engelli") : (aktif && aktif.indexOf(t.ad.toLowerCase().split(" ")[0]) >= 0 ? "Aktif" : "Hazır");
+      const durum = (t.yerel && t.ulasilir === false) ? "Kapalı" : t.engelli ? (t.yerel ? "Çevrimdışı" : "Engelli") : (aktif && aktif.indexOf(t.ad.toLowerCase().split(" ")[0]) >= 0 ? "Aktif" : "Hazır");
       satirS(k3, t.ad, durum, durum === "Hazır" || durum === "Aktif" ? "ok" : "", rozetBul(t.ad));
     });
     const k4 = kartK(p2, "Sistem Durumu", [], "ayar");
