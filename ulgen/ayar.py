@@ -59,7 +59,11 @@ VARSAYILAN = {
     "uyandirma_sozcukleri": ["ülgen", "ulgen", "ülgün", "ulgun"],
     # Dosya ve veri klasörleri
     "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
-    "elevenlabs_ses_kimligi": "",  # kendi sesinizin kimliği (ElevenLabs > Voices)
+    "elevenlabs_ses_kimligi": "J17lijyP1BHYcM7ld0Rg",  # "dede korkut" (Voices > Copy Voice ID)
+    "elevenlabs_bulut_ses": False,  # True: yanıt metinleri ElevenLabs'e gider (isteğe bağlı)
+    "elevenlabs_model": "eleven_flash_v2_5",
+    "elevenlabs_kararlilik": 0.66,
+    "elevenlabs_hiz": 1.15,
     "elevenlabs_aylik_sinir": 8000,  # ücretsiz katman 10000 karakter
     "izinli_klasorler": [
         "~/Documents/Obsidyen",

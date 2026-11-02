@@ -439,7 +439,12 @@ def istek_sinifi(ulgen, limit):
                 self.wfile.write(ham)
                 return
             if yol == "/ses/durum":
+                kul, _ = ses_klip.kullanilan()
                 return self._cevap(200, {
+                    "bulut": ses_klip.bulut_acik_mi(),
+                    "bulut_kullanilan": kul,
+                    "bulut_sinir": int(ayar.yukle().get(
+                        "elevenlabs_aylik_sinir", 8000)),
                     "cevrimdisi": ses.CevrimdisiTanima.hazir_mi(),
                     "eksik": ses.CevrimdisiTanima.eksikler()})
             if yol == "/hava":
@@ -607,6 +612,36 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
                     "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path == "/ses/oku":
+                try:
+                    ham = ses_klip.metni_oku(str(veri.get("metin", "")))
+                except ses_klip.KlipHatasi as hata:
+                    return self._cevap(409, {"hata": str(hata)})
+                self.send_response(200)
+                self.send_header("Content-Type", "audio/mpeg")
+                self.send_header("Content-Length", str(len(ham)))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.end_headers()
+                self.wfile.write(ham)
+                return
+            if urlparse(self.path).path == "/ses/bulut-ayar":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                acik = veri.get("acik")
+                if not isinstance(acik, bool):
+                    return self._cevap(400, {"hata": "acik(bool) gerekli"})
+                try:
+                    with open(ayar.AYAR_DOSYASI, "r", encoding="utf-8") as f:
+                        mevcut = json.load(f)
+                except (OSError, ValueError):
+                    mevcut = {}
+                mevcut["elevenlabs_bulut_ses"] = acik
+                with open(ayar.AYAR_DOSYASI, "w", encoding="utf-8") as f:
+                    json.dump(mevcut, f, ensure_ascii=False, indent=2)
+                os.chmod(ayar.AYAR_DOSYASI, 0o600)
+                return self._cevap(200, {"acik": acik})
             if urlparse(self.path).path == "/ses/klip-sil":
                 ad = veri.get("ad")
                 if ad not in ses_klip.CUMLELER:

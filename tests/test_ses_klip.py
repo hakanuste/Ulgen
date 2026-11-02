@@ -106,3 +106,63 @@ class KlipYuklemeTesti(TemizVeri):
         self.assertTrue(json.loads(h)["silindi"])
         self.assertEqual(istek(p, "/ses/klip/tamam")[0], 404)
         self.assertEqual(istek(p, "/ses/klip-sil", "POST", json.dumps({"ad": "../x"}), JSON)[0], 400)
+
+
+class BulutSesTesti(TemizVeri):
+
+    def _a(self, **kv):
+        _ayarla(elevenlabs_anahtar="xi-GIZLI-123", elevenlabs_ses_kimligi="J17lijyP1BHYcM7ld0Rg", **kv)
+
+    def test_varsayilan_kapali_ag_istegi_yok(self):
+        self._a()
+        with mock.patch("urllib.request.urlopen") as u:
+            with self.assertRaises(ses_klip.KlipHatasi):
+                ses_klip.metni_oku("Merhaba")
+            u.assert_not_called()
+
+    def test_hassas_ve_uzun_metin_gitmez_normal_gider_ve_onbellek(self):
+        self._a(elevenlabs_bulut_ses=True)
+        with mock.patch("urllib.request.urlopen", return_value=Sahte(b"ID3SES")) as u:
+            for kotu in ("Metformin dozunuzu aldınız mı?", "Nabzınız 78", "Kasa açıldı",
+                         "x" * 701, "   "):
+                with self.assertRaises(ses_klip.KlipHatasi):
+                    ses_klip.metni_oku(kotu)
+            u.assert_not_called()
+            self.assertEqual(ses_klip.metni_oku("Bugün hava güzel."), b"ID3SES")
+            self.assertEqual(ses_klip.metni_oku("Bugün hava güzel."), b"ID3SES")
+            self.assertEqual(u.call_count, 1)                    # ikincisi önbellekten
+            veri = json.loads(u.call_args.args[0].data)
+            self.assertEqual(veri["model_id"], "eleven_flash_v2_5")
+            self.assertEqual(veri["voice_settings"], {"stability": 0.66, "speed": 1.15})
+
+    def test_sinir_ve_http_ucuncu_hata_aciklamasi(self):
+        self._a(elevenlabs_bulut_ses=True, elevenlabs_aylik_sinir=5)
+        with mock.patch("urllib.request.urlopen") as u:
+            with self.assertRaises(ses_klip.KlipHatasi):
+                ses_klip.metni_oku("Bugün hava güzel.")
+            u.assert_not_called()
+        self._a(elevenlabs_bulut_ses=True)
+        import io
+        import urllib.error
+        hata = urllib.error.HTTPError("u", 402, "x", {}, io.BytesIO(b'{"detail":"paid"}'))
+        with mock.patch("urllib.request.urlopen", side_effect=hata):
+            with self.assertRaises(ses_klip.KlipHatasi) as k:
+                ses_klip.metni_oku("Bugün hava güzel.")
+        self.assertIn("ücretli", str(k.exception))
+
+    def test_http_oku_ve_ayar_yalniz_yerel(self):
+        srv = sunucu.yerel_sunucu(Ulgen(), 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        p = srv.server_address[1]
+        self._a()
+        g = json.dumps({"metin": "Merhaba"})
+        self.assertEqual(istek(p, "/ses/oku", "POST", g, JSON)[0], 409)      # kapalı
+        self.assertEqual(istek(p, "/ses/bulut-ayar", "POST", json.dumps({"acik": "evet"}), JSON)[0], 400)
+        self.assertEqual(istek(p, "/ses/bulut-ayar", "POST", json.dumps({"acik": True}), JSON)[0], 200)
+        with mock.patch("urllib.request.urlopen", return_value=Sahte(b"ID3SES")):
+            k, h = istek(p, "/ses/oku", "POST", g, JSON)
+        self.assertEqual((k, h), (200, b"ID3SES"))
+        self.assertEqual(istek(p, "/ses/oku", "POST", g, JSON, yetkisiz=True)[0], 401)
+        srv.yerel = False
+        self.assertEqual(istek(p, "/ses/bulut-ayar", "POST", json.dumps({"acik": False}), JSON)[0], 403)

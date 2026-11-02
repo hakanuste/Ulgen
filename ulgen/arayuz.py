@@ -521,6 +521,7 @@ function konus(metin) {
   if (!sesli) return;
   const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
   if (ad) { klipCal(ad).then(tamam => { if (!tamam) yerelKonus(metin); }); return; }
+  if (bulutSes && metin.length <= 700) { bulutOku(metin).then(tamam => { if (!tamam) yerelKonus(metin); }); return; }
   yerelKonus(metin);
 }
 
@@ -632,6 +633,20 @@ let cevrimdisiSes = false, kayitci = null;
 async function sesDurumuYukle() {
   try { cevrimdisiSes = !!(await istek("/ses/durum")).cevrimdisi; } catch (e) { cevrimdisiSes = false; }
   try { klipler = await istek("/ses/klipler"); } catch (e) { klipler = {}; }
+  try { bulutSes = !!(await istek("/ses/durum")).bulut; } catch (e) { bulutSes = false; }
+}
+let bulutSes = false;
+// Bulut sesi açıksa (ElevenLabs, kendi sesiniz) yanıt metni oraya gider; olmazsa yerel ses okur.
+async function bulutOku(metin) {
+  try {
+    const h = { "Content-Type": "application/json" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+    const c = await fetch("/ses/oku", { method: "POST", headers: h, body: JSON.stringify({ metin: metin }) });
+    if (!c.ok) return false;
+    const url = URL.createObjectURL(await c.blob());
+    if (klipSes) klipSes.pause();
+    klipSes = new Audio(url); klipSes.onended = () => URL.revokeObjectURL(url);
+    await klipSes.play(); return true;
+  } catch (e) { return false; }
 }
 // Kendi sesiniz (ElevenLabs'ten bir kez üretilmiş, yerelde saklı) sabit cümleler için çalınır.
 let klipler = {}, klipSes = null;
@@ -1161,6 +1176,16 @@ async function sesPaneli(k) {
   sec.onchange = kaydetTercih; hiz.onchange = kaydetTercih; perde.onchange = kaydetTercih;
   kap.appendChild(sec); kap.appendChild(document.createTextNode("Hız")); kap.appendChild(hiz);
   kap.appendChild(document.createTextNode("Perde")); kap.appendChild(perde); kap.appendChild(dene);
+  // 1b) Bulut sesi (ElevenLabs): yalnız Mac'in kendi tarayıcısından açılıp kapatılır
+  if (yerel) {
+    const durum = await istek("/ses/durum");
+    const b = ekle(k, "Bulut sesi (ElevenLabs, kendi sesiniz)",
+      "Açıkken okunacak YANIT METNİ ElevenLabs'e gönderilir. İlaç, sağlık, kasa, parola içeren yanıtlar hiç gönderilmez. Bu ay " + durum.bulut_kullanilan + " / " + durum.bulut_sinir + " karakter; sınır dolunca yerel ses okur.");
+    const t = document.createElement("button"); t.className = "dugme" + (durum.bulut ? " aktif" : ""); t.style.marginTop = "6px";
+    t.textContent = "Bulut sesi: " + (durum.bulut ? "açık" : "kapalı");
+    t.onclick = async () => { await istek("/ses/bulut-ayar", { acik: !durum.bulut }); bulutSes = !durum.bulut; ayarCiz(); };
+    b.appendChild(t);
+  }
   // 2) Sabit cümleler için kendi mp3 dosyalarınız
   baslik(k, "Kendi ses dosyalarınız (mp3)");
   const cumleler = await istek("/ses/cumleler");

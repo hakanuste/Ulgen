@@ -72,11 +72,7 @@ def _sayac_yaz(ay, adet):
         json.dump({ay: adet}, f)
 
 
-def uret(ad, zorla=False):
-    """Tek cümleyi üretir (varsa atlar). Dönen: 'uretildi' | 'var'."""
-    hedef = yol(ad)
-    if os.path.isfile(hedef) and not zorla:
-        return "var"
+def _kimlik_ve_ayar():
     a = ayar.yukle()
     anahtar = a.get("elevenlabs_anahtar")
     ses_kimligi = (a.get("elevenlabs_ses_kimligi") or "").strip()
@@ -84,7 +80,13 @@ def uret(ad, zorla=False):
         raise KlipHatasi("ElevenLabs anahtarı ya da ses kimliği yok")
     if not re.fullmatch(r"[A-Za-z0-9]{8,64}", ses_kimligi):
         raise KlipHatasi("ses kimliği geçersiz görünüyor")
-    metin = CUMLELER[ad]
+    return a, anahtar, ses_kimligi
+
+
+def _sentezle(metin):
+    """ElevenLabs'e TEK metin gönderir, mp3 baytlarını döndürür.
+    Aylık karakter sınırı burada denetlenir ve sayılır."""
+    a, anahtar, ses_kimligi = _kimlik_ve_ayar()
     adet, ay = kullanilan()
     sinir = int(a.get("elevenlabs_aylik_sinir", 8000))
     if adet + len(metin) > sinir:
@@ -92,8 +94,11 @@ def uret(ad, zorla=False):
             adet, sinir))
     govde = json.dumps({
         "text": metin,
-        "model_id": a.get("elevenlabs_model", "eleven_multilingual_v2"),
-        "language_code": "tr"}).encode("utf-8")
+        "model_id": a.get("elevenlabs_model", "eleven_flash_v2_5"),
+        "language_code": "tr",
+        "voice_settings": {
+            "stability": float(a.get("elevenlabs_kararlilik", 0.66)),
+            "speed": float(a.get("elevenlabs_hiz", 1.15))}}).encode("utf-8")
     istek = urllib.request.Request(
         ADRES % ses_kimligi + "?output_format=mp3_44100_128", data=govde,
         method="POST")
@@ -105,19 +110,73 @@ def uret(ad, zorla=False):
                                     context=ag.baglam()) as r:
             ses = r.read(AZAMI_BAYT + 1)
     except urllib.error.HTTPError as hata:
-        raise KlipHatasi("HTTP %d: %s" % (
-            hata.code, hata.read().decode("utf-8", "replace")[:160])) from hata
+        ayrinti = hata.read().decode("utf-8", "replace")[:160]
+        if hata.code in (402, 403):
+            ayrinti += (" — bu ses kitaplık sesi olabilir; API için ücretli "
+                        "plan gerekebilir")
+        raise KlipHatasi("HTTP %d: %s" % (hata.code, ayrinti)) from hata
     except (urllib.error.URLError, OSError) as hata:
         raise KlipHatasi(str(hata)) from hata
     if not ses or len(ses) > AZAMI_BAYT:
         raise KlipHatasi("beklenmeyen ses yanıtı")
-    os.makedirs(klasor(), mode=0o700, exist_ok=True)
+    _sayac_yaz(ay, adet + len(metin))
+    return ses
+
+
+def _yaz(hedef, ses):
+    os.makedirs(os.path.dirname(hedef), mode=0o700, exist_ok=True)
     gecici = hedef + ".tmp"
     with open(gecici, "wb") as f:
         f.write(ses)
     os.replace(gecici, hedef)
-    _sayac_yaz(ay, adet + len(metin))
+
+
+def uret(ad, zorla=False):
+    """Sabit cümleyi üretir (varsa atlar). Dönen: 'uretildi' | 'var'."""
+    hedef = yol(ad)
+    if os.path.isfile(hedef) and not zorla:
+        return "var"
+    _yaz(hedef, _sentezle(CUMLELER[ad]))
     return "uretildi"
+
+
+# ---- Bulut sesi: yanıt metinlerini okutma (varsayılan KAPALI, isteğe bağlı)
+HASSAS = re.compile(
+    r"\b(ila[çc]|doz|hap|tablet|sa[ğg]l[ıi]k|nab[ıi]?z|tansiyon|uyku|hasta|"
+    r"te[şs]his|kasa|parola|[şs]ifre|iban|kimlik|belirte[çc]|anahtar)\w*",
+    re.IGNORECASE)
+AZAMI_METIN = 700
+
+
+def bulut_acik_mi():
+    return bool(ayar.yukle().get("elevenlabs_bulut_ses", False))
+
+
+def metni_oku(metin):
+    """Yanıt metnini ElevenLabs ile mp3'e çevirir (aynı metin önbellekten).
+
+    Kapalıysa, hassas içerik varsa (ilaç, sağlık, kasa, parola...) ya da çok
+    uzunsa KlipHatasi fırlatır; çağıran yerel sese döner."""
+    import hashlib
+    if not bulut_acik_mi():
+        raise KlipHatasi("bulut sesi kapalı")
+    metin = re.sub(r"\s+", " ", metin).strip()
+    if not metin or len(metin) > AZAMI_METIN:
+        raise KlipHatasi("metin boş ya da çok uzun")
+    if HASSAS.search(metin):
+        raise KlipHatasi("hassas içerik: yerel sesle okunur")
+    ayarlar = ayar.yukle()
+    imza = "%s|%s|%s|%s" % (ayarlar.get("elevenlabs_ses_kimligi"), metin,
+                            ayarlar.get("elevenlabs_hiz", 1.15),
+                            ayarlar.get("elevenlabs_kararlilik", 0.66))
+    hedef = os.path.join(klasor(), "onbellek", hashlib.sha256(
+        imza.encode("utf-8")).hexdigest()[:32] + ".mp3")
+    if os.path.isfile(hedef):
+        with open(hedef, "rb") as f:
+            return f.read()
+    ses = _sentezle(metin)
+    _yaz(hedef, ses)
+    return ses
 
 
 def hepsini_uret(zorla=False):
@@ -140,11 +199,7 @@ def yukle(ad, ham):
     if not (ham[:3] == b"ID3" or (len(ham) > 2 and ham[0] == 0xFF
                                   and ham[1] & 0xE0 == 0xE0)):
         raise KlipHatasi("yalnız mp3 dosyası kabul edilir")
-    os.makedirs(klasor(), mode=0o700, exist_ok=True)
-    gecici = hedef + ".tmp"
-    with open(gecici, "wb") as f:
-        f.write(ham)
-    os.replace(gecici, hedef)
+    _yaz(hedef, ham)
 
 
 def sil(ad):

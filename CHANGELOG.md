@@ -4,6 +4,7 @@
 - İlaç düzeltme (ad, not, saat) ve silme: arayüzde "Kayıtlı ilaçlar" + Sil (onaylı), sohbette "ilaç sil: Ad" (+ "onay").
 - Hava durumu cihazın konumuna göre (izin verilirse; en yakın il adı çevrimdışı bulunur; son konum raporlarda kullanılır).
 - Ayarlar > "Ses seçimi": okuma sesi (ad, hız, perde) ve sabit cümleler için kendi mp3 dosyalarınızı yükleme.
+- Bulut sesi (ElevenLabs, kendi sesiniz): yanıt metinleri isteğe bağlı okutulur (varsayılan kapalı; hassas içerik gitmez; önbellek; aylık sınır; hata olursa yerel ses).
 - Kendi sesiniz (ElevenLabs): sabit cümleler bir kez üretilip yerelde saklanır (`--ses-uret`); kişisel veri bulutta okutulmaz, aylık karakter sınırı sayılır.
 - Obsidian: kasa otomatik bulunur; erişim/izin hatası açık yazılır. certifi ile TLS (macOS sertifika hatası).
 - Yapay Zekâ sayfasında "Bulut anahtarı ekle" kutusu (yalnız 127.0.0.1; Anahtar Zinciri; "Bağlantıyı dene").
