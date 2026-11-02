@@ -175,7 +175,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
          background: conic-gradient(var(--yesil) var(--p,0%), var(--ulgen-panel) 0); }
 .halka span { width: 74px; height: 74px; border-radius: 50%; background: var(--kart); display: grid; place-items: center;
               color: var(--yazi); font-size: 13px; text-align: center; line-height: 1.2; }
-@media (max-width: 899px) {
+@media (max-width: 1239px) {
   #yan { display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; width: 84%; max-width: 340px; z-index: 30;
          transform: translateX(-105%); transition: transform .25s; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px);
          background: linear-gradient(180deg,var(--ulgen-navy),var(--ulgen-bg)); border-right: 1px solid var(--altin2); overflow-y: auto; }
@@ -246,7 +246,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   #yazSatir #giris { flex: 1; border-radius: 22px; border: 1px solid var(--altin2); }
   #dalgaS { transform: scaleX(-1); }
 }
-@media (min-width: 900px) {
+@media (min-width: 1240px) {
   #kok { flex-direction: row; }
   #yan { display: flex; flex-direction: column; width: 236px; flex-shrink: 0; padding: 14px 14px 16px;
          border-right: 1px solid var(--altin2); background: linear-gradient(180deg,var(--ulgen-navy),var(--ulgen-bg));

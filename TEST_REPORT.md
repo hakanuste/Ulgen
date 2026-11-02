@@ -59,3 +59,12 @@ Denenmedi: gerçek iPhone/Safari, ana ekran uygulaması, uzun süreli bağlantı
 ## Takvim aktarımı (benzetim)
 .ics, `icalendar` kütüphanesiyle ayrıştırıldı: olay sayısı, RRULE (günlük/hafta içi), alarmlar, 75 sekizli satır katlama, genel başlıklar, tek kullanımlık bağlantı, uzak sunucuda belirteç zorunluluğu. 150 test geçti.
 DENENMEDİ (iPhone gerekir): Apple Takvim'in dosyayı içe aktarması, "Tüm Olayları Ekle", alarmın kilit ekranında çalması, Rahatsız Etme/Odak kipinde davranış, yinelenen olayların UID ile güncellenmesi.
+
+
+## Ağır son sınav (2.7, Linux benzetimi, 2026-11-02)
+- 199 birim sınavı 3 ardışık turda geçti; derleme ve stil temiz.
+- `tests/agir/yuk_ve_saldiri.py`: 400 bulanık sohbet girdisi, bozuk/dev gövde, yol gezinme, kötü Host, 16 iş parçacığı × 50 istek: 5xx yok, 400/400 kayıt, bütünlük "ok". Yetkisiz yoğun deneme 429 (hız sınırı) ile kesildi (beklenen).
+- `tests/agir/otuz_gun.py`: 43 200 dakikalık zaman benzetimi: 87 doz, her doza ayrı yanıt, sabah 30/akşam 30/haftalık 4 rapor, kopya yok.
+- `tests/agir/yedek_donus.py`: silme→geri yükleme, yanlış parola ve bozuk yedek reddedildi, veritabanı düz sqlite ile okunamıyor.
+- `tests/agir/ekran_tarama.py`: 12 sekme × 7 ekran boyutu: JS hatası yok. BULGU: iPhone yatay ve iPad yatayda yatay taşma → masaüstü düzeni 1240 px altında kapatıldı, düzeltildi.
+- Gerçek cihazda yapılmayanlar: PROJECT_STATUS ve TEST_DEVICE'a bakın.
