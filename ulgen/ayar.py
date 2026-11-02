@@ -59,6 +59,8 @@ VARSAYILAN = {
     "uyandirma_sozcukleri": ["ülgen", "ulgen", "ülgün", "ulgun"],
     # Dosya ve veri klasörleri
     "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
+    "elevenlabs_ses_kimligi": "",  # kendi sesinizin kimliği (ElevenLabs > Voices)
+    "elevenlabs_aylik_sinir": 8000,  # ücretsiz katman 10000 karakter
     "izinli_klasorler": [
         "~/Documents/Obsidyen",
         "~/Documents/Ülgen Genel Asistan",
@@ -102,7 +104,8 @@ SABLON = {
 # Sır adı -> ayar alanı (Anahtar Zinciri'nden okunur)
 SIRLAR = {"gemini": "gemini_anahtar", "groq": "groq_anahtar",
           "nvidia": "nvidia_anahtar",
-          "mistral": "mistral_anahtar", "openrouter": "openrouter_anahtar"}
+          "mistral": "mistral_anahtar", "openrouter": "openrouter_anahtar",
+          "elevenlabs": "elevenlabs_anahtar"}
 
 
 def yol_ac(yol):

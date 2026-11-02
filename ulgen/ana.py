@@ -6,6 +6,7 @@ Kullanım:
   python -m ulgen --ses           mikrofonla 'Ülgen' diyerek konuşma
   python -m ulgen --sabah         sabah raporunu yazdırır
   python -m ulgen --ac             tarayıcıda yerel giriş (tek kullanımlık bağlantı)
+  python -m ulgen --ses-uret      sabit cümleleri kendi sesinizle üretir (ElevenLabs, bir kez)
   python -m ulgen --ses-modeli-indir  çevrimdışı Türkçe ses modelini indirir
   python -m ulgen --dene [nvidia] gerçek bulut isteği dener (süre, kota)
   python -m ulgen --tani           Mac/iPhone cihaz denetimi raporu
@@ -162,6 +163,11 @@ def yonetim(argv):
     if "--takvim-deneme" in argv:
         from . import tani
         return tani.takvim_deneme()
+    if "--ses-uret" in argv:
+        from . import ses_klip
+        for ad, durum in ses_klip.hepsini_uret("--zorla" in argv).items():
+            print("%-12s %s" % (ad, durum))
+        return 0
     if "--ses-modeli-indir" in argv:
         from .ses import CevrimdisiTanima
         eksik = CevrimdisiTanima.eksikler()

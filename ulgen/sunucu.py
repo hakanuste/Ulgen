@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import gizli, hava, obsidyen, saglik_veri, ses
+from . import gizli, hava, obsidyen, saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -40,7 +40,7 @@ GUVENLIK_BASLIKLARI = {
     "Referrer-Policy": "no-referrer",
     "Cache-Control": "no-store",
     "Content-Security-Policy": (
-        "default-src 'self'; script-src 'self'; "
+        "default-src 'self'; script-src 'self'; media-src 'self' blob:; "
         "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
         "connect-src 'self'; object-src 'none'; frame-ancestors 'none'; "
         "base-uri 'none'; form-action 'none'"),
@@ -416,6 +416,23 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/ses/klipler":
+                return self._cevap(200, ses_klip.hazir_klipler())
+            if yol.startswith("/ses/klip/"):
+                ad = yol[len("/ses/klip/"):]
+                try:
+                    with open(ses_klip.yol(ad), "rb") as f:
+                        ham = f.read()
+                except (ses_klip.KlipHatasi, OSError):
+                    return self._cevap(404, {"hata": "klip yok"})
+                self.send_response(200)
+                self.send_header("Content-Type", "audio/mpeg")
+                self.send_header("Content-Length", str(len(ham)))
+                self.send_header("Cache-Control", "private, max-age=3600")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.end_headers()
+                self.wfile.write(ham)
+                return
             if yol == "/ses/durum":
                 return self._cevap(200, {
                     "cevrimdisi": ses.CevrimdisiTanima.hazir_mi(),
@@ -457,6 +474,23 @@ def istek_sinifi(ulgen, limit):
             ad = veri.get("saglayici")
             if ad not in ayar.SIRLAR:
                 return self._cevap(400, {"hata": "bilinmeyen sağlayıcı"})
+            if yol == "/yz/anahtar" and ad == "elevenlabs" \
+                    and veri.get("ses_kimligi"):
+                kim = str(veri["ses_kimligi"]).strip()
+                if not re.fullmatch(r"[A-Za-z0-9]{8,64}", kim):
+                    return self._cevap(400, {"hata": "ses kimliği geçersiz"})
+                try:
+                    with open(ayar.AYAR_DOSYASI, "r", encoding="utf-8") as f:
+                        mevcut = json.load(f)
+                except (OSError, ValueError):
+                    mevcut = {}
+                mevcut["elevenlabs_ses_kimligi"] = kim
+                with open(ayar.AYAR_DOSYASI, "w", encoding="utf-8") as f:
+                    json.dump(mevcut, f, ensure_ascii=False, indent=2)
+                os.chmod(ayar.AYAR_DOSYASI, 0o600)
+                if not veri.get("anahtar"):
+                    return self._cevap(200, {"tamam": True,
+                                             "yer": "ayar.json (ses kimliği)"})
             if yol == "/yz/anahtar":
                 anahtar = veri.get("anahtar")
                 if (not isinstance(anahtar, str) or not 8 <= len(anahtar) <= 400
@@ -466,6 +500,15 @@ def istek_sinifi(ulgen, limit):
                 yer = gizli.sir_yaz(ad, anahtar)
                 veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı yazıldı" % ad)
                 return self._cevap(200, {"tamam": True, "yer": yer})
+            if ad == "elevenlabs":
+                try:
+                    return self._cevap(200, {
+                        "calisti": True, "cikti": "ElevenLabs: " + ", ".join(
+                            "%s %s" % (k, v) for k, v in
+                            ses_klip.hepsini_uret().items())})
+                except Exception as hata:      # ağ/anahtar: açık ileti
+                    return self._cevap(200, {"calisti": False,
+                                             "cikti": str(hata)[:200]})
             import io
             from contextlib import redirect_stdout
             from . import tani

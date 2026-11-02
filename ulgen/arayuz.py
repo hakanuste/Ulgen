@@ -518,7 +518,14 @@ function cipSec(onek) {
 }
 
 function konus(metin) {
-  if (!sesli || !("speechSynthesis" in window)) return;
+  if (!sesli) return;
+  const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
+  if (ad) { klipCal(ad).then(tamam => { if (!tamam) yerelKonus(metin); }); return; }
+  yerelKonus(metin);
+}
+
+function yerelKonus(metin) {
+  if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   // Uzun metinler (sabah raporu) tek parça okununca tarayıcıda kesilir;
   // bu yüzden cümle cümle okunur.
@@ -617,6 +624,22 @@ function dinleyiciBaslat() {
 let cevrimdisiSes = false, kayitci = null;
 async function sesDurumuYukle() {
   try { cevrimdisiSes = !!(await istek("/ses/durum")).cevrimdisi; } catch (e) { cevrimdisiSes = false; }
+  try { klipler = await istek("/ses/klipler"); } catch (e) { klipler = {}; }
+}
+// Kendi sesiniz (ElevenLabs'ten bir kez üretilmiş, yerelde saklı) sabit cümleler için çalınır.
+let klipler = {}, klipSes = null;
+async function klipCal(ad) {
+  try {
+    const h = anahtar ? { "Authorization": "Bearer " + anahtar } : {};
+    const c = await fetch("/ses/klip/" + ad, { headers: h });
+    if (!c.ok) return false;
+    const url = URL.createObjectURL(await c.blob());
+    if (klipSes) klipSes.pause();
+    klipSes = new Audio(url);
+    klipSes.onended = () => URL.revokeObjectURL(url);
+    await klipSes.play();
+    return true;
+  } catch (e) { return false; }
 }
 async function cevrimdisiKayit() {
   if (kayitci) { kayitci.stop(); return; }
@@ -1081,14 +1104,16 @@ function anahtarKutusu(k) {
   baslik(k, "Bulut anahtarı ekle (Mac'in Anahtar Zinciri'ne yazılır)");
   const kap = document.createElement("div"); kap.className = "satir2";
   const sec = document.createElement("select"); sec.className = "dugme";
-  ["gemini", "nvidia", "groq", "mistral", "openrouter"].forEach(a => { const o = document.createElement("option"); o.value = a; o.textContent = a; sec.appendChild(o); });
+  ["gemini", "nvidia", "groq", "mistral", "openrouter", "elevenlabs"].forEach(a => { const o = document.createElement("option"); o.value = a; o.textContent = a; sec.appendChild(o); });
   const gir = document.createElement("input"); gir.type = "password"; gir.autocomplete = "off"; gir.placeholder = "API anahtarı";
   gir.style.cssText = "width:100%;margin:8px 0;padding:10px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+  const kim = document.createElement("input"); kim.type = "text"; kim.autocomplete = "off"; kim.placeholder = "ElevenLabs ses kimliği (yalnız elevenlabs için)";
+  kim.style.cssText = gir.style.cssText;
   const sonuc = document.createElement("pre"); sonuc.style.cssText = "white-space:pre-wrap;font-size:12px;color:var(--soluk)";
   const kaydet = document.createElement("button"); kaydet.className = "dugme aktif"; kaydet.textContent = "Kaydet";
   const dene = document.createElement("button"); dene.className = "dugme"; dene.textContent = "Bağlantıyı dene"; dene.style.marginLeft = "8px";
   kaydet.onclick = async () => {
-    const c = await istek("/yz/anahtar", { saglayici: sec.value, anahtar: gir.value });
+    const c = await istek("/yz/anahtar", { saglayici: sec.value, anahtar: gir.value, ses_kimligi: kim.value });
     gir.value = ""; sonuc.textContent = c.tamam ? "Kaydedildi (" + c.yer + "). Şimdi 'Bağlantıyı dene'yi kullanın." : (c.hata || "Kaydedilemedi.");
   };
   dene.onclick = async () => {
@@ -1096,7 +1121,7 @@ function anahtarKutusu(k) {
     try { const c = await istek("/yz/dene", { saglayici: sec.value }); sonuc.textContent = c.cikti || c.hata || "Yanıt yok."; }
     finally { dene.disabled = false; }
   };
-  kap.appendChild(sec); kap.appendChild(gir); kap.appendChild(kaydet); kap.appendChild(dene); kap.appendChild(sonuc);
+  kap.appendChild(sec); kap.appendChild(gir); kap.appendChild(kim); kap.appendChild(kaydet); kap.appendChild(dene); kap.appendChild(sonuc);
   k.appendChild(kap);
 }
 

@@ -1,6 +1,8 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Kendi sesiniz (ElevenLabs): sabit cümleler bir kez üretilip yerelde saklanır (`--ses-uret`); kişisel veri bulutta okutulmaz, aylık karakter sınırı sayılır.
+- Obsidian: kasa otomatik bulunur; erişim/izin hatası açık yazılır. certifi ile TLS (macOS sertifika hatası).
 - Yapay Zekâ sayfasında "Bulut anahtarı ekle" kutusu (yalnız 127.0.0.1; Anahtar Zinciri; "Bağlantıyı dene").
 - Raporlar: sabah/akşam/haftalık (`ulgen/rapor.py`, göç 9, `rapor_acik`, `rapor_saatleri`).
 - `--dene [sağlayıcı]`: gerçek bulut isteği, süre/token/hata ipucu.
