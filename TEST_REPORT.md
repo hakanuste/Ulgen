@@ -51,3 +51,7 @@ Kod penceresi: 14 birim testi (zaman aşımı, ortam, ad doğrulama, uzak kapı,
 138 test geçti. Kabul senaryosu: A ilacı 08:00 ve 20:00, B ilacı 08:00; A-08 onayı A-20'yi, B-08'i ve ertesi günkü A-08'i değiştirmedi. Ayrıca: çıplak tamam, belirsiz "aldım", ilgisiz cümle ("marketten ekmek aldım"), çifte dokunuş, ertele, azami hatırlatma sonrası yanıtsız, yeniden başlatma (sayaç korunur), kapalıyken kaçan doz, yapay zekâ kapalıyken çalışma, model araçlarında ilaç yazma yokluğu, gerçek HTTP uç noktasında tek doz, geçersiz gövdeler, görev/randevu/rutin zamanlaması, genel hatırlatıcı toplu onay kusurunun giderildiği.
 Chromium denemesi: iki doz bildirimi, "Aldım" yalnızca ilk dozu kapattı.
 Denenmedi: gerçek iPhone'da bildirim (Safari/PWA kapalıyken yerel bildirim planlayamaz; Mac uykudayken/kapalıyken hiçbir hatırlatma çalışmaz — bkz. ROADMAP, bekleyen karar A/B/C), saat dilimi/yaz saati geçişi, günlerce süren çalışma.
+
+## Aşama 5 (benzetim, Chromium 390 px)
+Her sekme verilerle çizildi; ilaç ve görev düğmeleri gerçek arka uçta yalnızca ilgili kaydı değiştirdi; bağlantı koparılıp (istek engellenerek) geri verildi: uyarı çıktı ve kendiliğinden kapandı; sayfa hatası yok.
+Denenmedi: gerçek iPhone/Safari, ana ekran uygulaması, uzun süreli bağlantı, ZeroTier ağı üzerinden.

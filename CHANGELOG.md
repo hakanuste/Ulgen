@@ -50,3 +50,10 @@
 - Bildirimlere `eylem` eklendi; arayüzde her doz için Aldım/Ertele/Almadım/Atla düğmeleri (yalnızca kendi dozunu gönderir). Uç noktalar: `/ilac/bugun`, `/ilac/yanit`.
 - Komutlar: `ilaç ekle: Ad 08:00 20:00 [not] [hafta içi|hafta sonu]`, `ilaçlarım`, `ilaçlar`, `ilaç geçmişi`, `ilaç durdur: Ad`, `aldım D3`, `ertele 30 D3`, `görev/randevu/rutin ekle: ...`, `görevlerim`, `randevularım`, `rutinlerim`, `görev tamam N`.
 - Testler 111 → 138.
+
+## Aşama 5 — iPhone arayüzü (sürüm 2.5)
+- Sekmeler: Sohbet, Görevler (görev/randevu/rutin/hatırlatıcı, "Tamamlandı" düğmesi), İlaç (bugünkü dozlar, her doz için kendi düğmeleri), Bildirim (oturum geçmişi), Sistem (yönetim paneli: sürüm, veritabanı bütünlüğü, son yedek, beyin, kuyruk, kota gerçek/tahmini ayrı, cihazlar, son günlük).
+- Bağlantı izleme: kopunca kırmızı uyarı, artan bekleme (5→60 sn) ile yeniden deneme, dönünce otomatik yenileme; sayfa öne gelince bildirim ve sekme yenilenir.
+- Uç noktalar: `/gorevler`, `/gorev/bitir`, `/sistem` (salt okunur; belirteç/özet sızdırmaz).
+- Cihaz iptali arayüzden DEĞİL, Mac'te `--cihaz-iptal` ile (uzaktaki cihaz kendi yetkisini kaldırmasın diye).
+- Testler 138 → 139.

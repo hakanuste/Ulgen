@@ -346,3 +346,35 @@ class SunucuDozTesti(Taban):
         finally:
             srv.shutdown()
             srv.server_close()
+
+
+class PanelUcNoktalariTesti(Taban):
+
+    def test_gorevler_ve_sistem_json_sir_icermez(self):
+        from ulgen import cihazlar
+        u = Ulgen()
+        u.sohbet_isle("görev ekle: rapor yaz yarın 11:00")
+        u.sohbet_isle("rutin ekle: her gün 07:00 yürüyüş")
+        belirtec = cihazlar.olustur("iPhone")[1]
+        srv = sunucu.yerel_sunucu(u, 0)
+        sunucu.arka_planda_calistir(srv)
+        try:
+            port = srv.server_address[1]
+            g = json.loads(istek(port, "/gorevler")[1])
+            self.assertEqual(len(g["gorev"]), 1)
+            self.assertEqual(len(g["rutin"]), 1)
+            kod, ham = istek(port, "/sistem")
+            self.assertEqual(kod, 200)
+            sistem = json.loads(ham)
+            self.assertTrue(sistem["butunluk"]["saglam"])
+            self.assertEqual(sistem["cihazlar"][0]["ad"], "iPhone")
+            self.assertNotIn(belirtec, ham.decode())      # belirteç sızmaz
+            self.assertNotIn("ozet", sistem["cihazlar"][0])   # özet (hash) de yok
+            kod, ham = istek(port, "/gorev/bitir", "POST",
+                             json.dumps({"id": 1}), JSON)
+            self.assertIn("tamamlandı", json.loads(ham)["yanit"])
+            self.assertEqual(istek(port, "/gorev/bitir", "POST",
+                                   json.dumps({"id": "1"}), JSON)[0], 400)
+        finally:
+            srv.shutdown()
+            srv.server_close()

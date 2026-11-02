@@ -33,3 +33,8 @@ Tamamlandı ve test edildi (benzetim): doz başına onay, hatırlatma döngüsü
 Kodlandı, gerçek cihaz testi bekliyor: arayüz düğmeleri iPhone'da.
 Geliştirilmedi / teknik engel: Mac uykudayken ya da kapalıyken hatırlatma (Mac kapalıyken hiçbir kod çalışmaz). Çözüm seçenekleri A/B/C kararınızı bekliyor.
 Not: ilaç dozunu Ülgen değiştirmez; ilaç eklemek/durdurmak yalnızca sizin yazdığınız komutla olur. Tıbbi öneri vermez.
+
+## Aşama 5 durumu
+Tamamlandı ve test edildi (benzetim + Chromium): sekmeler, paneller, yeniden bağlanma.
+Kodlandı, gerçek cihaz testi bekliyor: iPhone Safari/ana ekran görünümü.
+Geliştirilmedi: arayüzden ayar değiştirme, belirteç üretme/iptal, geçmiş sohbet ve hafıza sayfaları, anlık bildirim (push; Safari için yerel uygulama gerekir).

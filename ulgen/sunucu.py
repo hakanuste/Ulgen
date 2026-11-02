@@ -22,7 +22,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import ayar, cihazlar, kodpenceresi, kota, kuyruk, tls, veritabani
+from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, tls,
+               veritabani, yedek)
 from .arayuz import SAYFA
 
 YEREL_AD = "localhost"
@@ -149,6 +150,34 @@ def origin_gecerli_mi(origin, host, fetch_site):
     return urlparse(origin).netloc.lower() == (host or "").lower()
 
 
+def _gorevler_json():
+    satirlar = veritabani.sorgu(
+        "SELECT id, tur, baslik, zaman, tekrar FROM gorev WHERE "
+        "durum='acik' ORDER BY COALESCE(zaman,'9999'), id", (), True)
+    return {"gorev": [x for x in satirlar if x["tur"] == "gorev"],
+            "randevu": [x for x in satirlar if x["tur"] == "randevu"],
+            "rutin": [x for x in satirlar if x["tur"] == "rutin"]}
+
+
+def _sistem_json(ulgen):
+    """Yönetim paneli: salt okunur durum özeti (sır içermez)."""
+    saglam, ayrinti = veritabani.butunluk_denetimi()
+    son_yedek = yedek.otomatik_son_zaman()
+    return {
+        "surum": __surum__, "veritabani_surumu": veritabani.surum(),
+        "butunluk": {"saglam": saglam, "ayrinti": ayrinti},
+        "son_yedek": son_yedek or None,
+        "cihazlar": [{"id": c["id"], "ad": c["ad"],
+                      "son_kullanim": c["son_kullanim"],
+                      "iptal": bool(c["iptal"])} for c in cihazlar.listele()],
+        "beyin": ulgen.yonlendirici.durum(),
+        "kuyruk": len(kuyruk.bekleyenler()),
+        "kota": kota.tablo(),
+        "gunluk": veritabani.sorgu(
+            "SELECT zaman, seviye, kaynak, metin FROM gunluk "
+            "ORDER BY id DESC LIMIT 15", (), True)}
+
+
 def istek_sinifi(ulgen, limit):
     """Ulgen nesnesine bağlı ana istek işleyici sınıfı."""
 
@@ -247,6 +276,10 @@ def istek_sinifi(ulgen, limit):
                                              "icerik": kodpenceresi.oku(ad)})
                 except kodpenceresi.KodHatasi as hata:
                     return self._cevap(400, {"hata": str(hata)})
+            if yol == "/gorevler":
+                return self._cevap(200, _gorevler_json())
+            if yol == "/sistem":
+                return self._cevap(200, _sistem_json(ulgen))
             if yol == "/ilac/bugun":
                 return self._cevap(
                     200, ulgen.zamanlayici.ilac.bugun_json())
@@ -270,6 +303,12 @@ def istek_sinifi(ulgen, limit):
             if urlparse(self.path).path == "/sohbet":
                 return self._cevap(
                     200, ulgen.sohbet_isle(str(veri.get("metin", ""))))
+            if urlparse(self.path).path == "/gorev/bitir":
+                kimlik = veri.get("id")
+                if not isinstance(kimlik, int) or isinstance(kimlik, bool):
+                    return self._cevap(400, {"hata": "id(int) gerekli"})
+                return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
+                                         .bitir(kimlik)})
             if urlparse(self.path).path == "/ilac/yanit":
                 return self._doz_yanit(veri)
             if urlparse(self.path).path.startswith("/kod/"):
