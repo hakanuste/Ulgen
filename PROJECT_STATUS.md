@@ -16,3 +16,7 @@ Durum sözlüğü ve tüm özellik matrisi: **ROADMAP.md** (tek ana plan).
 | 8 Raporlar + bütünleşik test | kısmen (yalnızca sabah haber+sağlık özeti) |
 
 Bekleyen kararlar: ROADMAP.md sonu.
+
+## Aşama 2 durumu
+Tamamlandı ve test edildi (benzetim): veritabanı göç/işlem/bütünlük/yedek-kurtarma, hafıza modeli, duyarlı depo ayrımı.
+Kısmen: iPhone arayüzünde geçmiş/hafıza sayfaları geliştirilmedi (Aşama 5); `veri.db` diskte şifresiz (yedekleri şifreli).

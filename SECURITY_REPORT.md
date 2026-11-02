@@ -34,3 +34,8 @@ Güncelleme: Aşama 1 sonu · Durum sütunu yalnızca **testle doğrulananı** "
 
 - ZeroTier adresinden eski `http://<ip>:8765` artık **çalışmaz**. Yeni: `https://<ip>:8443` (önce `http://<ip>:8766` ile sertifikayı yükleyin).
 - Eski `anahtar.txt` açılışta cihaz belirtecine çevrilir ve dosya silinir; iPhone'daki kayıtlı anahtar çalışmaya devam eder (ancak HTTPS'e geçmeniz gerekir).
+
+## Aşama 2 eki
+- Duyarlı sohbet/hafıza buluta gönderilmez; bulut beynin kişisel araç çağırması kod düzeyinde engellenir (test: AracKapisiTesti).
+- Bozuk veritabanı silinmez, `yedekler/bozuk-*` içine taşınır.
+- Açık: `veri.db` diskte şifresiz.

@@ -16,6 +16,7 @@ AYAR_DOSYASI = os.path.join(KLASOR, "ayar.json")
 ANAHTAR_DOSYASI = os.path.join(KLASOR, "anahtar.txt")
 VERI_TABANI = os.path.join(KLASOR, "veri.db")
 HAFIZA_DOSYASI = os.path.join(KLASOR, "memory.json")
+HASSAS_DOSYASI = os.path.join(KLASOR, "memory_hassas.json")
 PORT = 8765
 
 # Varsayılan ayarlar. ayar.json içindeki değerler bunların üzerine yazılır.

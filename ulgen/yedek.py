@@ -16,13 +16,14 @@ import tarfile
 import tempfile
 from datetime import datetime
 
-from . import ayar, gizli
+from . import ayar, gizli, veritabani
 
 BASLIK = b"ULGENYEDEK1"
 ISIM_VERI = "veri.db"
 ISIM_HAFIZA = "memory.json"
+ISIM_HASSAS = "memory_hassas.json"
 ISIM_AYAR = "ayar.json"
-IZINLI = (ISIM_VERI, ISIM_HAFIZA, ISIM_AYAR)
+IZINLI = (ISIM_VERI, ISIM_HAFIZA, ISIM_HASSAS, ISIM_AYAR)
 AZAMI_BOYUT = 2_000_000_000
 
 
@@ -56,11 +57,13 @@ def al(hedef, parola):
     try:
         if os.path.exists(ayar.VERI_TABANI):
             _tutarli_veritabani(os.path.join(gecici, ISIM_VERI))
-        if os.path.exists(ayar.HAFIZA_DOSYASI):
-            with open(ayar.HAFIZA_DOSYASI, "rb") as f:
-                ham = gizli.coz(f.read())
-            with open(os.path.join(gecici, ISIM_HAFIZA), "wb") as f:
-                f.write(ham)
+        for ad, kaynak in ((ISIM_HAFIZA, ayar.HAFIZA_DOSYASI),
+                           (ISIM_HASSAS, ayar.HASSAS_DOSYASI)):
+            if os.path.exists(kaynak):
+                with open(kaynak, "rb") as f:
+                    ham = gizli.coz(f.read())
+                with open(os.path.join(gecici, ad), "wb") as f:
+                    f.write(ham)
         a = ayar.yukle()
         for alan in ayar.SIRLAR.values():
             a.pop(alan, None)
@@ -137,8 +140,10 @@ def geri_yukle(dosya, parola):
         onceki = os.path.join(ayar.KLASOR, "yedekler", "onceki-%s"
                               % datetime.now().strftime("%Y%m%d_%H%M%S"))
         os.makedirs(onceki, mode=0o700)
+        veritabani.kapat()
         hedefler = {ISIM_VERI: ayar.VERI_TABANI,
                     ISIM_HAFIZA: ayar.HAFIZA_DOSYASI,
+                    ISIM_HASSAS: ayar.HASSAS_DOSYASI,
                     ISIM_AYAR: ayar.AYAR_DOSYASI}
         for ad in uyeler:
             hedef = hedefler[ad]
@@ -152,3 +157,143 @@ def geri_yukle(dosya, parola):
         return onceki
     finally:
         shutil.rmtree(gecici, ignore_errors=True)
+
+
+# ------------------------------------------------- otomatik yerel yedek
+
+OTOMATIK_SAKLA = 7
+OTOMATIK_ARALIK = 24 * 3600
+
+
+def otomatik_dizin():
+    yol = os.path.join(ayar.KLASOR, "yedekler", "otomatik")
+    os.makedirs(yol, mode=0o700, exist_ok=True)
+    return yol
+
+
+def otomatik_listele():
+    """Otomatik yedekleri yeniden eskiye doğru listeler."""
+    return sorted((f for f in os.listdir(otomatik_dizin())
+                   if f.endswith(".db.enc")), reverse=True)
+
+
+def otomatik_al():
+    """Veritabanının tutarlı, ana anahtarla şifreli bir kopyasını alır.
+
+    Bu yedek BU Mac'e bağlıdır (ana anahtar gerekir). Mac kaybı için
+    parolalı yedeği (``al``) kullanın. Son 7 otomatik yedek saklanır.
+    """
+    gecici = tempfile.mkdtemp()
+    try:
+        kopya = os.path.join(gecici, "kopya.db")
+        veritabani.kapat()          # WAL'i dosyaya işleyip kopyala
+        _tutarli_veritabani(kopya)
+        with open(kopya, "rb") as f:
+            sifreli = gizli.sifrele(f.read())
+        ad = "veri-%s.db.enc" % datetime.now().strftime("%Y%m%d-%H%M%S")
+        hedef = os.path.join(otomatik_dizin(), ad)
+        with open(hedef + ".tmp", "wb") as f:
+            f.write(sifreli)
+        os.chmod(hedef + ".tmp", 0o600)
+        os.replace(hedef + ".tmp", hedef)
+    finally:
+        shutil.rmtree(gecici, ignore_errors=True)
+    for eski in otomatik_listele()[OTOMATIK_SAKLA:]:
+        os.remove(os.path.join(otomatik_dizin(), eski))
+    return hedef
+
+
+def otomatik_son_zaman():
+    """En yeni otomatik yedeğin Unix zamanı (yoksa 0)."""
+    liste = otomatik_listele()
+    if not liste:
+        return 0
+    return os.path.getmtime(os.path.join(otomatik_dizin(), liste[0]))
+
+
+def _otomatik_cozup_dogrula(ad, hedef):
+    with open(os.path.join(otomatik_dizin(), ad), "rb") as f:
+        ham = gizli.coz(f.read())
+    with open(hedef, "wb") as f:
+        f.write(ham)
+    tamam, ayrinti = veritabani.butunluk_denetimi(hedef)
+    if not tamam:
+        raise YedekHatasi("Yedek bozuk: %s" % ayrinti)
+
+
+def otomatik_geri_yukle(ad=None):
+    """Seçilen (yoksa en yeni sağlam) otomatik yedeği geri yükler.
+
+    Mevcut veritabanı silinmez; ``yedekler/onceki-...`` içine taşınır.
+    """
+    adaylar = [ad] if ad else otomatik_listele()
+    gecici = tempfile.mkdtemp()
+    try:
+        secilen = None
+        for aday in adaylar:
+            yol = os.path.join(gecici, "aday.db")
+            try:
+                _otomatik_cozup_dogrula(aday, yol)
+            except (YedekHatasi, gizli.AnahtarYok, OSError):
+                continue
+            secilen = aday
+            break
+        if secilen is None:
+            raise YedekHatasi("Sağlam otomatik yedek bulunamadı.")
+        veritabani.kapat()
+        onceki = os.path.join(ayar.KLASOR, "yedekler", "onceki-%s"
+                              % datetime.now().strftime("%Y%m%d_%H%M%S"))
+        os.makedirs(onceki, mode=0o700, exist_ok=True)
+        for ek in ("", "-wal", "-shm"):
+            if os.path.exists(ayar.VERI_TABANI + ek):
+                shutil.move(ayar.VERI_TABANI + ek,
+                            os.path.join(onceki, "veri.db" + ek))
+        shutil.copy2(os.path.join(gecici, "aday.db"), ayar.VERI_TABANI)
+        os.chmod(ayar.VERI_TABANI, 0o600)
+        return secilen, onceki
+    finally:
+        shutil.rmtree(gecici, ignore_errors=True)
+
+
+def veritabani_kurtar():
+    """Açılışta çalışır: veritabanı bozuksa yedekten kurtarır.
+
+    Bozuk dosya silinmez, ``yedekler/bozuk-...`` içine taşınır. Kullanıcıya
+    gösterilecek bir mesaj döndürür (sorun yoksa None).
+    """
+    if not os.path.exists(ayar.VERI_TABANI):
+        return None
+    tamam, ayrinti = veritabani.butunluk_denetimi(ayar.VERI_TABANI)
+    if tamam:
+        return None
+    veritabani.kapat()
+    hedef = os.path.join(ayar.KLASOR, "yedekler", "bozuk-%s"
+                         % datetime.now().strftime("%Y%m%d_%H%M%S"))
+    os.makedirs(hedef, mode=0o700, exist_ok=True)
+    for ek in ("", "-wal", "-shm"):
+        if os.path.exists(ayar.VERI_TABANI + ek):
+            shutil.move(ayar.VERI_TABANI + ek,
+                        os.path.join(hedef, "veri.db" + ek))
+    try:
+        secilen, _ = otomatik_geri_yukle()
+    except YedekHatasi:
+        return ("Veritabanı bozuktu (%s) ve sağlam yedek bulunamadı. Bozuk "
+                "dosya şuraya taşındı: %s. Boş veritabanı oluşturuldu."
+                % (ayrinti[:80], hedef))
+    return ("Veritabanı bozuktu; %s yedeğinden kurtarıldı. Bozuk dosya: %s"
+            % (secilen, hedef))
+
+
+def otomatik_dongu(durdur):
+    """Günde bir otomatik yedek alan arka plan döngüsü (durdur: Event)."""
+    import time
+    while not durdur.is_set():
+        try:
+            if time.time() - otomatik_son_zaman() > OTOMATIK_ARALIK:
+                otomatik_al()
+        except Exception as hata:  # yedek hatası uygulamayı durdurmasın
+            try:
+                veritabani.gunluge_yaz("hata", "yedek", hata)
+            except Exception:
+                pass
+        durdur.wait(3600)

@@ -13,12 +13,12 @@ import re
 import threading
 from datetime import datetime
 
-from . import ayar, cihazlar, kisilik, veritabani
+from . import ayar, cihazlar, kisilik, veritabani, yedek
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
 from .beyin import BeyinHatasi, BeyinYonlendirici
-from .guvenlik import OnayIstegi, OnayYoneticisi, kod_ayikla
+from .guvenlik import OnayIstegi, OnayYoneticisi, duyarli_mi, kod_ayikla
 from .hafiza import HafizaYoneticisi
 from .zamanlayici import Zamanlayici
 
@@ -53,6 +53,7 @@ class Ulgen:
 
     def __init__(self):
         ayar.sablon_olustur()
+        self._kurtarma_mesaji = yedek.veritabani_kurtar()
         veritabani.kur()
         cihazlar.eski_anahtari_tasi()
         self.yonlendirici = BeyinYonlendirici(ayar.yukle)
@@ -71,6 +72,12 @@ class Ulgen:
         self._bildirim_kilit = threading.Lock()
         self._sayac = 0
         self._sohbet_kilit = threading.Lock()
+        self._duyarli_tur = False
+        self._durdur = threading.Event()
+        if self._kurtarma_mesaji:
+            veritabani.gunluge_yaz("uyari", "veritabani",
+                                   self._kurtarma_mesaji)
+            self.bildir(self._kurtarma_mesaji)
 
     # --------------------------------------------------------- bildirimler
     def bildir(self, metin):
@@ -87,10 +94,12 @@ class Ulgen:
 
     # ---------------------------------------------------------- yardımcı
     @staticmethod
-    def _kaydet(rol, metin):
+    def _kaydet(rol, metin, duyarli=False):
         veritabani.sorgu(
-            "INSERT INTO sohbet (rol, metin, zaman) VALUES (?, ?, ?)",
-            (rol, metin, datetime.now().isoformat(timespec="seconds")))
+            "INSERT INTO sohbet (rol, metin, zaman, duyarli) "
+            "VALUES (?, ?, ?, ?)",
+            (rol, metin, datetime.now().isoformat(timespec="seconds"),
+             int(duyarli)))
 
     def sistem_istemi(self, beyin, kullanici_metni):
         """Öncelik sırasıyla sistem istemini kurar."""
@@ -102,11 +111,16 @@ class Ulgen:
             (0, "Şu an: " + self.araclar.saat_tarih()),
         ]
         if kisisel:
-            hafiza = self.hafiza.metne_cevir()
+            # Duyarlı depo (sağlık, kimlik, finans...) YALNIZCA yerel beyne
+            hafiza = self.hafiza.metne_cevir(
+                metin_ipucu=kullanici_metni, duyarli_dahil=beyin.yerel,
+                saglik_dahil=beyin.yerel)
             if hafiza:
-                parcalar.append((1, "# LONG-TERM MEMORY (about the user)\n"
+                parcalar.append((1, "# LONG-TERM MEMORY (about the user; "
+                                 "lines marked ÇIKARIM are unverified "
+                                 "guesses, not facts the user stated)\n"
                                  + hafiza))
-            ozet = self.baglam.ozet_metni()
+            ozet = self.baglam.ozet_metni() if beyin.yerel else ""
             if ozet:
                 parcalar.append((2, "# EARLIER CONVERSATION SUMMARY\n"
                                  + ozet))
@@ -123,9 +137,11 @@ class Ulgen:
         if not metin:
             return {"yanit": "Sizi dinliyorum.", "beyin": None}
         with self._sohbet_kilit:
+            self._duyarli_tur = duyarli_mi(metin)
             yanit, beyin_adi = self._isle(metin)
-        self._kaydet("kullanici", metin)
-        self._kaydet("asistan", yanit)
+            duyarli = self._duyarli_tur
+        self._kaydet("kullanici", metin, duyarli)
+        self._kaydet("asistan", yanit, duyarli)
         return {"yanit": yanit, "beyin": beyin_adi}
 
     def _isle(self, metin):
@@ -139,6 +155,7 @@ class Ulgen:
         except OnayIstegi as istek:
             return istek.mesaj, None
         if hizli is not None:
+            self._duyarli_tur = True    # yerel komut sonuçları buluta gitmez
             return hizli, "hızlı komut"
         beyin = self.yonlendirici.sec()
         if beyin is None:
@@ -146,6 +163,15 @@ class Ulgen:
                     "sunucusunu başlatın, ya da ayar.json içine ücretsiz "
                     "Gemini anahtarınızı yazın. Saat, ses, hatırlatıcı gibi "
                     "hızlı komutlar yine de çalışır."), None
+        bulut = not beyin.yerel
+        if bulut and self._duyarli_tur and \
+                not ayar.yukle().get("bulut_kisisel_veri", False):
+            return ("Bu mesaj kişisel ya da duyarlı görünüyor (sağlık, "
+                    "kimlik, finans, parola gibi); buluta GÖNDERMEDİM. "
+                    "Yerel beyin (Ollama/llama.cpp) açık değil. Saat, "
+                    "hatırlatıcı gibi yerel komutlar çalışır."), None
+        self.araclar.bulut_modu = bulut
+        self.araclar.kisisel_kullanildi = False
         try:
             yanit = self._beyinle_yanitla(beyin, metin)
         except BeyinHatasi as hata:
@@ -153,6 +179,8 @@ class Ulgen:
             return "Beyin yanıt veremedi: %s" % hata, beyin.ad
         except OnayIstegi as istek:
             return istek.mesaj, beyin.ad
+        if self.araclar.kisisel_kullanildi:
+            self._duyarli_tur = True
         try:
             self.hafiza.gozlemle(metin, yanit)
         except Exception:  # hafıza hatası sohbeti bozmasın
@@ -162,7 +190,8 @@ class Ulgen:
     def _beyinle_yanitla(self, beyin, metin):
         """Model + araç döngüsü."""
         sistem = self.sistem_istemi(beyin, metin)
-        mesajlar = self.baglam.gecmis(beyin.gecmis_butce)
+        mesajlar = self.baglam.gecmis(beyin.gecmis_butce,
+                                      bulut=not beyin.yerel)
         mesajlar.append({"role": "user", "content": metin})
         yanit = ""
         for tur in range(AZAMI_ARAC_TURU + 1):
@@ -184,3 +213,5 @@ class Ulgen:
     # --------------------------------------------------------- arka plan
     def arka_plani_baslat(self):
         threading.Thread(target=self.zamanlayici.dongu, daemon=True).start()
+        threading.Thread(target=yedek.otomatik_dongu, args=(self._durdur,),
+                         daemon=True).start()

@@ -11,6 +11,7 @@ from ulgen import ayar, gizli, veritabani  # noqa: E402
 class TemizVeri(unittest.TestCase):
 
     def setUp(self):
+        veritabani.kapat()
         shutil.rmtree(ayar.KLASOR, ignore_errors=True)
         os.makedirs(ayar.KLASOR, mode=0o700)
         gizli._SIR_ONBELLEK.clear()

@@ -76,3 +76,5 @@ Kural: önce güvenlik ve veri bütünlüğü; her aşama testi geçmeden sonrak
 ## Bekleyen kararlar
 1. Mac kapalıyken kritik hatırlatma için ara çözüm: **A** (genel başlıkla Apple Hatırlatıcılar), **B**, ya da yalnızca **C**'yi bekle?
 2. Native iOS uygulaması (C) kaynak kodunu yazayım mı? (Xcode'da sizin derlemeniz gerekir; test edilmemiş kod olarak etiketlenir.)
+
+## Güncelleme: Aşama 2 bitti (T = tamamlandı ve test edildi, benzetim). Sıradaki: Aşama 3 (sağlayıcı yöneticisi, kota, kalıcı kuyruk).

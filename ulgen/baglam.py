@@ -102,18 +102,22 @@ class BaglamYoneticisi:
             "SELECT metin FROM ozet ORDER BY id DESC LIMIT 1", (), True)
         return satirlar[0]["metin"] if satirlar else ""
 
-    def _satirlar(self):
+    def _satirlar(self, bulut=False):
+        """Özetlenmemiş konuşma satırları. Bulut beyin için duyarlı satırlar
+        (sağlık, kimlik, yerel komut çıktıları...) hiç döndürülmez."""
         return veritabani.sorgu(
             "SELECT id, rol, metin FROM sohbet WHERE ozetlendi = 0 "
-            "ORDER BY id", (), True)
+            + ("AND duyarli = 0 " if bulut else "") + "ORDER BY id",
+            (), True)
 
-    def gecmis(self, butce_token):
+    def gecmis(self, butce_token, bulut=False):
         """Bütçeye sığan sohbet geçmişini model mesaj listesi olarak verir."""
-        satirlar = self._satirlar()
+        satirlar = self._satirlar(bulut)
         toplam = sum(token_say(s["metin"]) for s in satirlar)
-        if toplam > butce_token and len(satirlar) > self.KORUNAN_SON_MESAJ:
+        if toplam > butce_token and not bulut \
+                and len(satirlar) > self.KORUNAN_SON_MESAJ:
             self._sikistir(satirlar[:-self.KORUNAN_SON_MESAJ])
-            satirlar = self._satirlar()
+            satirlar = self._satirlar(bulut)
         secilen = []
         kalan = butce_token
         for satir in reversed(satirlar):

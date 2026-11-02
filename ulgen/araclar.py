@@ -234,6 +234,15 @@ class SistemKontrol:
 
 # ------------------------------------------------------------------- kayıt
 
+# Kişisel veri döndüren araçlar: sonuçları bulut beyne GİTMEZ
+KISISEL_ARACLAR = frozenset({
+    "hafiza_ara", "hafiza_goster", "karar_listele", "saglik_raporu",
+    "sabah_ozeti", "kasa_ara", "dosya_listele", "dosya_oku", "dosya_yaz",
+    "dosya_ozetle", "dosya_ara", "en_yeni_dosya", "hatirlaticilari_listele",
+    "ekrani_incele", "terminal",
+})
+
+
 class Araclar:
     """Tüm araçları toplar; model ve hızlı komut yolları buradan geçer."""
 
@@ -249,6 +258,8 @@ class Araclar:
         self.dosya = DosyaYoneticisi(onay)
         self.dosya_ajani = DosyaAjani(baglam, self.dosya._izinli_kokler)
         self.dosya.ajan = self.dosya_ajani
+        self.bulut_modu = False
+        self.kisisel_kullanildi = False
         self._kayit = self._kayit_olustur()
 
     def _kayit_olustur(self):
@@ -270,6 +281,18 @@ class Araclar:
             "hafiza_unut": (
                 "Anahtar sözcüğü içeren hafıza kayıtlarını siler "
                 "(kullanıcı ONAY'ı ister)", self.unut_onayli, ("anahtar",)),
+            "hafiza_ara": (
+                "Hafızada ve geçmiş konuşmalarda arar (kaynak/güven gösterir)",
+                self.hafiza_ara, ("sorgu",)),
+            "hafiza_goster": (
+                "Bir hafıza öğesinin kaynağını, tarihini, güvenini ve geçmişini "
+                "gösterir", self.hafiza_goster, ("kimlik",)),
+            "karar_listele": (
+                "Bir projenin kayıtlı kararlarını listeler (proje adı)",
+                self.karar_listele, ("proje",)),
+            "hafiza_duzelt": (
+                "Yanlış hafıza öğesini düzeltir (kullanıcı ONAY'ı ister)",
+                self.duzelt_onayli, ("kimlik", "yeni_metin")),
             "internette_ara": (
                 "İnternette arar, sayfaları okur ve kaynaklı özet verir",
                 self.arastirma.arastir, ("sorgu",)),
@@ -371,6 +394,105 @@ class Araclar:
         except BeyinHatasi as hata:
             return "Ekran çözümlenemedi: %s" % hata
 
+    # ------------------------------------------------------ hafıza araçları
+    def _oge_satiri(self, o):
+        return "#%s [%s%s] %s  (%s)" % (
+            o["id"], o["kategori"], "/" + o["proje"] if o.get("proje") else "",
+            o["metin"], self.hafiza.etiket(o))
+
+    def hafiza_ara(self, sorgu):
+        sonuc = self.hafiza.ara(sorgu, duyarli_dahil=not self.bulut_modu)
+        if not sonuc:
+            return "Hafızada ve geçmiş konuşmalarda eşleşme bulunamadı."
+        return "\n".join("- %s %s: %s  [%s]" % (
+            s["tur"], s["id"], s["metin"], s["ayrinti"]) for s in sonuc)
+
+    def hafiza_goster(self, kimlik):
+        oge = self.hafiza.goster(str(kimlik).lstrip("#"))
+        if oge is None:
+            return "Bu kimlikte bir hafıza öğesi yok."
+        satirlar = [self._oge_satiri(oge),
+                    "Durum: %s; kanıt: %s" % (oge["durum"],
+                                              oge.get("kanit") or "-")]
+        if oge.get("oncekiler"):
+            satirlar.append("Önceki sürümler: " + ", ".join(oge["oncekiler"]))
+        if oge.get("yerine"):
+            satirlar.append("Yerine geçen: " + oge["yerine"])
+        return "\n".join(satirlar)
+
+    def karar_listele(self, proje):
+        adlar = self.hafiza.projeleri_bul(proje) or [proje]
+        satirlar = [self._oge_satiri(o)
+                    for ad in adlar
+                    for o in self.hafiza.liste(proje=ad, kategori="karar")]
+        return "\n".join(satirlar) or "Bu proje için kayıtlı karar yok."
+
+    def duzelt_onayli(self, kimlik, yeni_metin):
+        """Yapay zekânın hafıza düzeltmesi kullanıcı ONAY'ına bağlıdır."""
+        kimlik = str(kimlik).lstrip("#")
+        eski = self.hafiza.goster(kimlik)
+        if eski is None:
+            return "Bu kimlikte bir hafıza öğesi yok."
+        return self.onay.iste(
+            "#%s düzeltilecek: '%s' -> '%s' (eskisi geçmişte kalır)" % (
+                kimlik, eski["metin"], yeni_metin),
+            lambda: "Düzeltildi (yeni kimlik #%s)." % self.hafiza.duzelt(
+                kimlik, yeni_metin))
+
+    def _hafiza_komutu(self, m):
+        """Kullanıcının hafıza komutları (kaynak = kullanıcı, güven 1.0)."""
+        e = re.match(r"^(hat[ıi]rla|karar|teknik|rutin)"
+                     r"(?:\s*\(([^)]{2,60})\))?\s*[:,]\s*(.{3,300})$", m,
+                     re.IGNORECASE)
+        if e and not re.search(r"\d{1,2}[:.]\d{2}", e.group(3)):
+            ad = e.group(1).lower()
+            kategori = {"karar": "karar", "teknik": "teknik",
+                        "rutin": "rutin"}.get(ad, "bilgi")
+            proje = None
+            if e.group(2):
+                bulunan = self.hafiza.projeleri_bul(e.group(2))
+                proje = bulunan[0] if bulunan else e.group(2).strip()
+                self.hafiza.proje_ekle(proje)
+            kimlik = self.hafiza.ekle(kategori, e.group(3), "kullanici",
+                                      proje, 1.0, "kullanıcı komutu")
+            return ("Kaydettim (#%s)." % kimlik) if kimlik else \
+                "Bu bilgi zaten kayıtlı."
+        e = re.match(r"^d[üu]zelt\s+#?(h?\d+)\s*[:,]\s*(.{3,300})$", m,
+                     re.IGNORECASE)
+        if e:
+            yeni = self.hafiza.duzelt(e.group(1), e.group(2), "kullanıcı")
+            return ("Düzelttim; eskisi geçmişte kaldı (yeni #%s)." % yeni) \
+                if yeni else "Bu kimlikte bir hafıza öğesi yok."
+        e = re.match(r"^(?:teyit|do[ğg]rula)\s+#?(h?\d+)$", m, re.IGNORECASE)
+        if e:
+            return "Teyit edildi." if self.hafiza.teyit(e.group(1)) else \
+                "Bu kimlikte uygun bir öğe yok."
+        e = re.match(r"^(?:bilgi|kaynak)\s+#?(h?\d+)$", m, re.IGNORECASE)
+        if e:
+            return self.hafiza_goster(e.group(1))
+        e = re.match(r"^proje ekle[:,]?\s+(.{2,60})$", m, re.IGNORECASE)
+        if e:
+            return "Proje eklendi." if self.hafiza.proje_ekle(e.group(1)) \
+                else "Bu proje zaten var."
+        e = re.match(r"^(?:haf[ıi]zada ara|ge[çc]mi[şs]te ara)[:,]?\s+(.+)$",
+                     m, re.IGNORECASE)
+        if e:
+            return self.hafiza_ara(e.group(1))
+        e = re.match(r"^(.{2,60}?)\s+kararlar[ıi]$", m, re.IGNORECASE)
+        if e and self.hafiza.projeleri_bul(e.group(1)):
+            return self.karar_listele(e.group(1))
+        if re.match(r"^[çc]eli[şs]kiler$", m, re.IGNORECASE):
+            liste = self.hafiza.celiskiler()
+            return "\n".join(
+                "%s  <- çelişiyor: #%s (teyit için: teyit %s)" % (
+                    self._oge_satiri(o), o.get("celiski"), o["id"])
+                for o in liste) or "Çelişen çıkarım yok."
+        if re.match(r"^eskiyen bilgiler$", m, re.IGNORECASE):
+            liste = self.hafiza.eskimis_adaylar()
+            return "\n".join(self._oge_satiri(o) + " | %d günlük" % o["yas_gun"]
+                             for o in liste) or "Eskimiş görünen çıkarım yok."
+        return None
+
     def katalog(self):
         """Modele verilecek araç listesi metni."""
         satirlar = []
@@ -384,6 +506,12 @@ class Araclar:
         kayit = self._kayit.get(ad)
         if kayit is None:
             return "Bilinmeyen araç: %s" % ad
+        if ad in KISISEL_ARACLAR:
+            self.kisisel_kullanildi = True
+            if self.bulut_modu:
+                return ("Bu araç kişisel veri döndürür; bulut beyin "
+                        "kullanılırken çalıştırılmaz (veri buluta "
+                        "gitmesin diye). Yerel beyin gerekir.")
         _, islev, adlar = kayit
         parametreler = parametreler if isinstance(parametreler, dict) else {}
         eksik = [a for a in adlar if a not in parametreler]
@@ -417,6 +545,9 @@ class Araclar:
         eslesme = re.match(r"^not al[:,]?\s+(.+)$", m, re.IGNORECASE)
         if eslesme:
             return self.not_ekle(eslesme.group(1))
+        hizli = self._hafiza_komutu(m)
+        if hizli is not None:
+            return hizli
         eslesme = re.match(r"^(?:unut|sil)[:,]\s*(.+)$", m, re.IGNORECASE)
         if eslesme:
             return self.unut_onayli(eslesme.group(1))

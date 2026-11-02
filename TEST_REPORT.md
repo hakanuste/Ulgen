@@ -36,3 +36,7 @@ Ek elle yapılan: gerçek süreçte (`python -m ulgen`) 127.0.0.1'de HTTP, HTTPS
 | 14 | Face ID geçersiz/süresi dolmuş | sunucu tarafı (sahte doğrulayıcı) | gerçek Face ID | Aşama 6 |
 | 15 | Kasa yetkisi iptali | evet | – | Aşama 6 |
 | 16 | Rapor doğruluğu | evet (bilinen veriyle) | – | Aşama 8 |
+
+## Aşama 2 sonuçları (Linux benzetimi, gerçek Mac/iPhone değil)
+76 test, tümü geçti: göç (eski v1 veritabanı dahil), işlem geri alma, bütünlük denetimi, bozuk veritabanından yedekle kurtarma, hafıza kaynak/güven/eskime/çelişki/düzeltme, duyarlı deponun buluta kapalılığı, disk şifrelemesi, bulutta kişisel araç engeli, hızlı hafıza komutları.
+Denenmedi: Mac Anahtar Zinciri, uzun süreli (günler) çalışma, çok büyük veritabanında FTS başarımı.
