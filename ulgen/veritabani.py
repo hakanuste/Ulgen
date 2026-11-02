@@ -200,6 +200,16 @@ def _baglan():
             raise VeriTabaniHatasi(
                 "Veritabanı şifreli ama SQLCipher kurulu değil: "
                 "pip install sqlcipher3-wheels")
+        # GÜVENLİ VARSAYILAN: SQLCipher yoksa ÇALIŞMAYI REDDET. Şifresiz
+        # çalışma yalnızca kullanıcı bilerek ayar.json'a
+        # "sifresiz_veritabani_izni": true yazarsa olur.
+        if ayar.yukle().get("sifresiz_veritabani_izni") is not True:
+            raise VeriTabaniHatasi(
+                "SQLCipher kurulu değil; veritabanı şifrelenemiyor. Ülgen "
+                "güvenlik gereği başlamadı. Çözüm: pip install "
+                "sqlcipher3-wheels (Kur.command bunu yapar). Bilerek şifresiz "
+                "çalışmak için ayar.json'a \"sifresiz_veritabani_izni\": true "
+                "yazın (önerilmez).")
         baglanti = sqlite3.connect(yol, check_same_thread=False,
                                    isolation_level=None)
         baglanti.row_factory = sqlite3.Row

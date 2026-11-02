@@ -289,3 +289,72 @@ def otomatik_dongu(durdur):
             except Exception:
                 pass
         durdur.wait(3600)
+
+
+# ------------------------------------------------- kurulum öncesi yedek
+def _ozet(yol):
+    import hashlib
+    h = hashlib.sha256()
+    with open(yol, "rb") as f:
+        for parca in iter(lambda: f.read(1 << 20), b""):
+            h.update(parca)
+    return h.hexdigest()
+
+
+def kurulum_yedegi(dizin):
+    """Kurulumdan önce TUTARLI yedek: WAL işlenir (checkpoint), veritabanı
+    kopyalanır, kopya bit bit doğrulanır ve bütünlük denetimi yapılır.
+    Dosya adları ``MANIFEST.json`` içindeki SHA-256 ile kaydedilir.
+
+    Şifreli veritabanının yedeği ana anahtar OLMADAN açılamaz: anahtar
+    Anahtar Zinciri'ndeyse ayrıca saklanmaz (parolalı yedek için --yedek-al).
+    Hata olursa YedekHatasi; kurulum çağıranca DURDURULUR."""
+    os.makedirs(dizin, mode=0o700, exist_ok=True)
+    manifest = {}
+    yol = ayar.VERI_TABANI
+    tur = veritabani.dosya_turu(yol)
+    if tur != "yok":
+        hedef = os.path.join(dizin, ISIM_VERI)
+        try:
+            if tur == "sifreli":
+                if veritabani._sc is None:
+                    raise YedekHatasi("şifreli veritabanı için SQLCipher yok")
+                baglanti = veritabani._sifreli_ac(yol)
+                try:
+                    baglanti.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                finally:
+                    baglanti.close()
+                shutil.copy2(yol, hedef)
+                if _ozet(yol) != _ozet(hedef):
+                    raise YedekHatasi("kopya özeti kaynakla uyuşmuyor "
+                                      "(yazan başka süreç olabilir)")
+            else:
+                kaynak = sqlite3.connect(yol)
+                hedefb = sqlite3.connect(hedef)
+                try:
+                    kaynak.backup(hedefb)
+                finally:
+                    hedefb.close()
+                    kaynak.close()
+        except veritabani.VeriTabaniHatasi as hata:
+            raise YedekHatasi(str(hata))
+        except (OSError, sqlite3.Error) as hata:
+            raise YedekHatasi("veritabanı yedeklenemedi: %s" % hata)
+        saglam, ayr = veritabani.butunluk_denetimi(hedef)
+        if not saglam:
+            raise YedekHatasi("yedek bütünlük denetiminden geçmedi: %s" % ayr)
+        manifest[ISIM_VERI] = _ozet(hedef)
+    for ad in os.listdir(ayar.KLASOR):
+        yolu = os.path.join(ayar.KLASOR, ad)
+        if os.path.isfile(yolu) and (ad.endswith((".json", ".anahtar", ".key",
+                                                  ".sifreli", ".paket"))):
+            shutil.copy2(yolu, os.path.join(dizin, ad))
+            manifest[ad] = _ozet(os.path.join(dizin, ad))
+    kod = os.path.join(ayar.KLASOR, "kod")
+    if os.path.isdir(kod):
+        shutil.copytree(kod, os.path.join(dizin, "kod"), dirs_exist_ok=True)
+    with open(os.path.join(dizin, "MANIFEST.json"), "w",
+              encoding="utf-8") as f:
+        json.dump({"zaman": datetime.now().isoformat(timespec="seconds"),
+                   "dosyalar": manifest}, f, indent=1)
+    return manifest

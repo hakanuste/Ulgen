@@ -15,6 +15,7 @@ Kullanım:
                                    (gemini, groq, mistral, openrouter)
   python -m ulgen --yedek-al DOSYA        şifreli yedek alır
   python -m ulgen --yedek-yukle DOSYA     yedekten geri yükler
+  python -m ulgen --kurulum-yedegi KLASOR kurulum öncesi tutarlı yedek
   python -m ulgen --ana-anahtar-kurtar kurtarma.paket   yeni Mac'te anahtarı geri getirir
 """
 
@@ -177,6 +178,14 @@ def yonetim(argv):
             return 1
         print("Kaydedildi (%s)." % gizli.sir_yaz(ad, deger.strip()))
         return 0
+    if "--kurulum-yedegi" in argv:
+        try:
+            m = yedek.kurulum_yedegi(_deger(argv, "--kurulum-yedegi"))
+        except yedek.YedekHatasi as hata:
+            print("YEDEK ALINAMADI:", hata)
+            return 1
+        print("Kurulum yedeği tamam (%d dosya)." % len(m))
+        return 0
     try:
         if "--yedek-al" in argv:
             veritabani.kur()
@@ -195,6 +204,14 @@ def yonetim(argv):
 
 
 def main(argv=None):
+    try:
+        return _ana(argv)
+    except veritabani.VeriTabaniHatasi as hata:
+        print("\nÜLGEN BAŞLAMADI (güvenlik): %s\n" % hata)
+        return 0     # launchd (SuccessfulExit=false) döngüye girmesin
+
+
+def _ana(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     sonuc = yonetim(argv)
     if sonuc is not None:

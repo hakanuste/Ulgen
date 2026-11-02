@@ -30,17 +30,26 @@ ESKI="$HEDEF/eski"                      # eski sürümler SİLİNMEZ, buraya ta�
 mkdir -p "$HEDEF" "$VERI" "$ESKI" || dur "Klasörler oluşturulamadı."
 chmod 700 "$VERI"
 
-# 2a) Kurulumdan ÖNCE verinin yedeği (hiçbir şey silinmez, yalnız kopyalanır)
+# 2a) Yazan süreç kalmasın diye servis durdurulur; sonra TUTARLI yedek alınır
+#     (WAL işlenir, kopya bit bit ve bütünlük açısından doğrulanır).
+servis_ac() { [ "$MAC" = "1" ] && [ -f "$AJAN" ] && launchctl load "$AJAN" 2>/dev/null; }
+[ "$MAC" = "1" ] && [ -f "$AJAN" ] && launchctl unload "$AJAN" 2>/dev/null
+sleep 1
 YEDEK="$VERI/yedekler/kurulum-$ZAMAN"
 mkdir -p "$YEDEK" && chmod 700 "$VERI/yedekler" "$YEDEK" 2>/dev/null
-for f in "$VERI"/veri.db* "$VERI"/*.json "$VERI"/*.anahtar "$VERI"/*.key "$VERI"/*.sifreli; do
-  [ -f "$f" ] && cp -p "$f" "$YEDEK/" 2>/dev/null
-done
-[ -d "$VERI/kod" ] && cp -Rp "$VERI/kod" "$YEDEK/kod" 2>/dev/null
-echo "Veri yedeği: $YEDEK"
-if [ -f "$VERI/veri.db" ] && [ ! -f "$YEDEK/veri.db" ]; then
-  dur "Veritabanı yedeklenemedi; kurulum DURDURULDU, hiçbir şey değişmedi."
+if [ -x "$HEDEF/ortam/bin/python" ] && [ -d "$HEDEF/ulgen" ]; then
+  PYTHONPATH="$HEDEF" "$HEDEF/ortam/bin/python" -m ulgen --kurulum-yedegi "$YEDEK" \
+    || { servis_ac; dur "Tutarlı veri yedeği alınamadı; kurulum DURDURULDU, hiçbir şey değişmedi."; }
+elif [ -f "$VERI/veri.db" ]; then
+  # Eski ortam yok: servis durduğu için dosyalar tutarlıdır; WAL dosyalarıyla birlikte kopyalanır.
+  for f in "$VERI"/veri.db "$VERI"/veri.db-wal "$VERI"/veri.db-shm "$VERI"/*.json "$VERI"/*.anahtar "$VERI"/*.key "$VERI"/*.sifreli "$VERI"/*.paket; do
+    [ -f "$f" ] && cp -p "$f" "$YEDEK/"
+  done
+  [ -d "$VERI/kod" ] && cp -Rp "$VERI/kod" "$YEDEK/kod"
+  [ -f "$YEDEK/veri.db" ] || { servis_ac; dur "Veritabanı yedeklenemedi; kurulum DURDURULDU."; }
+  echo "Uyarı: eski ortam olmadığından yedeğin bütünlüğü kurulumdan sonra denetlenecek."
 fi
+echo "Veri yedeği: $YEDEK"
 
 # 2b) Yeni sürüm önce GEÇİCİ klasöre hazırlanır
 YENI="$HEDEF/.yeni-$ZAMAN"
@@ -88,10 +97,21 @@ fi
   || { geri_al; dur "Ülgen yüklenemedi."; }
 # Veritabanı şifrelemesi (SQLCipher). Yüklenemezse kurulum sürer ama veritabanı
 # diskte ŞİFRESİZ kalır; bu açıkça söylenir ve tanı raporunda HATA görünür.
-if ! "$HEDEF/ortam/bin/python" -m pip install --quiet sqlcipher3-wheels; then
-  printf '\n!!! UYARI: sqlcipher3-wheels yüklenemedi. Veritabanınız diskte ŞİFRESİZ kalacak.\n'
-  echo "    Sonra deneyin: $HEDEF/ortam/bin/python -m pip install sqlcipher3-wheels"
-  echo "    ve '$HEDEF/ortam/bin/python -m ulgen --tani' ile denetleyin."
+if ! "$HEDEF/ortam/bin/python" -m pip install --quiet sqlcipher3-wheels \
+   || ! "$HEDEF/ortam/bin/python" -c 'import sqlcipher3.dbapi2'; then
+  printf '\n!!! sqlcipher3-wheels yüklenemedi. Ülgen veritabanını ŞİFRESİZ tutmayı reddeder.\n'
+  geri_al
+  dur "Veritabanı şifrelemesi kurulamadı; kurulum geri alındı. İnterneti denetleyip yeniden deneyin (bilerek şifresiz çalışmak için KURULUM.txt'ye bakın)."
+fi
+# Yedeğin bütünlüğü yeni ortamla bir daha doğrulanır
+if [ -f "$YEDEK/veri.db" ]; then
+  PYTHONPATH="$HEDEF" "$HEDEF/ortam/bin/python" - "$YEDEK/veri.db" <<'PYDOG' || { geri_al; dur "Yedek bütünlük denetiminden geçmedi; kurulum geri alındı."; }
+import sys
+from ulgen import veritabani
+ok, ayr = veritabani.butunluk_denetimi(sys.argv[1])
+print("Yedek bütünlüğü:", "sağlam" if ok else "SORUNLU " + ayr)
+sys.exit(0 if ok else 1)
+PYDOG
 fi
 "$HEDEF/ortam/bin/python" -m ulgen --anahtar >/dev/null
 
@@ -126,7 +146,7 @@ if [ "$MAC" = "1" ]; then
   </array>
   <key>WorkingDirectory</key><string>$HEDEF</string>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>StandardOutPath</key><string>$VERI/ulgen.log</string>
   <key>StandardErrorPath</key><string>$VERI/ulgen.log</string>
 </dict></plist>

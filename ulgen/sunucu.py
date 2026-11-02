@@ -12,6 +12,7 @@ doğrulanır; art arda yanlış denemede IP geçici engellenir.
 
 import ipaddress
 import json
+import os
 import re
 import socket
 import ssl
@@ -25,7 +26,7 @@ from urllib.parse import parse_qs, urlparse
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
-from .arayuz import SAYFA
+from .arayuz import BETIK, SAYFA
 
 YEREL_AD = "localhost"
 AZAMI_ESZAMANLI = 32
@@ -38,9 +39,15 @@ GUVENLIK_BASLIKLARI = {
     "Referrer-Policy": "no-referrer",
     "Cache-Control": "no-store",
     "Content-Security-Policy": (
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; connect-src 'self'; "
-        "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
+        "default-src 'self'; script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "connect-src 'self'; object-src 'none'; frame-ancestors 'none'; "
+        "base-uri 'none'; form-action 'none'"),
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "Permissions-Policy": (
+        "microphone=(self), publickey-credentials-get=(self), "
+        "publickey-credentials-create=(self), camera=(), geolocation=()"),
 }
 
 
@@ -161,6 +168,10 @@ def origin_gecerli_mi(origin, host, fetch_site):
     return urlparse(origin).netloc.lower() == (host or "").lower()
 
 
+VARLIKLAR = {"/varlik/logo.webp": ("logo.webp", "image/webp"),
+             "/varlik/simge.png": ("simge.png", "image/png")}
+
+
 def _gorevler_json():
     satirlar = veritabani.sorgu(
         "SELECT id, tur, baslik, zaman, tekrar FROM gorev WHERE "
@@ -254,6 +265,19 @@ def istek_sinifi(ulgen, limit):
             self.end_headers()
             self.wfile.write(govde)
 
+        def _varlik(self, yol):
+            ad, tur = VARLIKLAR[yol]
+            with open(os.path.join(os.path.dirname(__file__), "varlik", ad),
+                      "rb") as f:
+                govde = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", tur)
+            self.send_header("Content-Length", str(len(govde)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            self.wfile.write(govde)
+
         def _on_denetim(self):
             """Host/Origin denetimi; geçmezse yanıtlar ve False döndürür."""
             if not host_gecerli_mi(self.headers.get("Host")):
@@ -312,6 +336,11 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, SAYFA, "text/html; charset=utf-8")
             if yol == "/saglik":
                 return self._cevap(200, {"durum": "tamam"})
+            if yol == "/varlik/uygulama.js":
+                return self._cevap(200, BETIK,
+                                   "text/javascript; charset=utf-8")
+            if yol in VARLIKLAR:
+                return self._varlik(yol)
             if yol == "/giris" and self.server.yerel:
                 return self._giris(parse_qs(adres.query).get("t", [""])[0])
             if yol == "/takvim.ics":
