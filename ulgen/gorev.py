@@ -206,6 +206,40 @@ class Gorevler:
             "SELECT id, tur, baslik, zaman, tekrar, onceden_dk FROM gorev "
             "WHERE durum='acik' ORDER BY COALESCE(zaman,'9999'), id", (), True)
 
+    def ekle(self, tur, baslik, zaman="", tekrar="", su_an=None):
+        """Arayüz formundan yapılandırılmış ekleme (görev|randevu|rutin)."""
+        su_an = su_an or datetime.now()
+        if tur not in ("gorev", "randevu", "rutin"):
+            return "Tür görev, randevu ya da rutin olmalı."
+        baslik = " ".join(str(baslik or "").split())
+        if not baslik or len(baslik) > 200:
+            return "Ad boş olamaz (en çok 200 karakter)."
+        zaman = str(zaman or "").strip().replace("T", " ")
+        gunler = ""
+        if tur == "rutin":
+            if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", zaman):
+                return "Rutin saati SS:DD biçiminde olmalı (örn. 07:30)."
+            gunler = ",".join(sorted({x for x in str(tekrar).split(",")
+                                      if x in list("0123456")}))
+            if not gunler:
+                return "En az bir gün seçin."
+        elif zaman:
+            try:
+                z = datetime.strptime(zaman, BICIM)
+            except ValueError:
+                return "Zaman YYYY-AA-GG SS:DD biçiminde olmalı."
+            if tur == "randevu" and z <= su_an:
+                return "Bu zaman geçmişte görünüyor."
+        elif tur == "randevu":
+            return "Randevu için tarih ve saat gerekli."
+        veritabani.sorgu(
+            "INSERT INTO gorev (tur, baslik, zaman, tekrar, onceden_dk, "
+            "olusturma) VALUES (?, ?, ?, ?, ?, ?)",
+            (tur, baslik, zaman or None, gunler,
+             int(ayar.yukle().get("randevu_oncesi_dk", 60))
+             if tur == "randevu" else 0, su_an.timestamp()))
+        return "Ekledim: %s." % baslik
+
     def duzenle(self, kimlik, baslik, zaman="", tekrar="", su_an=None):
         """Açık bir görev/randevu/rutini düzeltir.
 

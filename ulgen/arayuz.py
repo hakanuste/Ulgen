@@ -1325,7 +1325,7 @@ async function ayarCiz() {
 
 const gunAdlari = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
-function gorevDuzeltFormu(kap, x) {
+function gorevDuzeltFormu(kap, x, ekleme) {
   if (kap.querySelector(".duzeltForm")) return;
   const f = document.createElement("div"); f.className = "duzeltForm"; f.style.marginTop = "8px";
   const alan = (tur, yer, deger) => { const e = document.createElement("input"); e.type = tur; e.value = deger; e.placeholder = yer; e.autocomplete = "off";
@@ -1351,10 +1351,11 @@ function gorevDuzeltFormu(kap, x) {
   v.onclick = () => f.remove();
   k.onclick = async () => {
     k.disabled = true;
-    const c = await istek("/gorev/duzenle", { id: x.id, baslik: ad.value, zaman: zaman.value,
-      tekrar: x.tur === "rutin" ? Array.from(gunler).sort().join(",") : "" });
+    const tekrar = x.tur === "rutin" ? Array.from(gunler).sort().join(",") : "";
+    const c = ekleme ? await istek("/gorev/ekle", { tur: x.tur, baslik: ad.value, zaman: zaman.value, tekrar: tekrar })
+                     : await istek("/gorev/duzenle", { id: x.id, baslik: ad.value, zaman: zaman.value, tekrar: tekrar });
     balonEkle(c.yanit || c.hata, "asistan");
-    if (/^Düzelttim/.test(c.yanit || "")) gorevlerCiz(); else k.disabled = false;
+    if (/^(Düzelttim|Ekledim)/.test(c.yanit || "")) gorevlerCiz(); else k.disabled = false;
   };
   f.appendChild(k); f.appendChild(v); kap.appendChild(f);
 }
@@ -1385,6 +1386,13 @@ async function gorevlerCiz() {
   const g = await istek("/gorevler");
   const k = document.getElementById("pGorevler");
   k.innerHTML = "";
+  const yeni = ekle(k, "Yeni kayıt ekle", "Görev, randevu ya da rutin; sohbetten de yazabilirsiniz.");
+  [["gorev", "+ Görev"], ["randevu", "+ Randevu"], ["rutin", "+ Rutin"]].forEach(([tur, ad]) => {
+    const b = document.createElement("button"); b.className = "dugme aktif"; b.textContent = ad; b.style.cssText = "margin:6px 6px 0 0";
+    b.onclick = () => { const eski = yeni.querySelector(".duzeltForm"); if (eski) eski.remove();
+      gorevDuzeltFormu(yeni, { tur: tur, baslik: "", zaman: "", tekrar: tur === "rutin" ? "0,1,2,3,4,5,6" : "" }, true); };
+    yeni.appendChild(b);
+  });
   baslik(k, "Görevler");
   if (!g.gorev.length) ekle(k, "Açık görev yok.");
   g.gorev.forEach(x => gorevDugmeleri(ekle(k, "#" + x.id + " " + x.baslik, x.zaman || "zamansız"), x, true));

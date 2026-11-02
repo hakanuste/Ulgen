@@ -132,3 +132,31 @@ class HatirlaticiDuzenleTesti(TemizVeri):
         kod, h = istek(p, "/hatirlatici/sil", "POST", json.dumps({"id": kim, "onay": True}), JSON)
         self.assertIn("Sildim", json.loads(h)["yanit"])
         self.assertEqual(json.loads(istek(p, "/ozet")[1])["hatirlaticilar"], [])
+
+
+class GorevEkleFormuTesti(TemizVeri):
+
+    def test_yapilandirilmis_ekleme(self):
+        u = Ulgen()
+        g = u.zamanlayici.gorev
+        gel = (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%dT10:30")
+        self.assertIn("Ekledim", g.ekle("gorev", "Fatura", ""))
+        self.assertIn("Ekledim", g.ekle("randevu", "Diş", gel))
+        self.assertIn("Ekledim", g.ekle("rutin", "Yürüyüş", "07:00", "0,2,4"))
+        self.assertIn("geçmiş", g.ekle("randevu", "Eski", "2020-01-01T10:00"))
+        self.assertIn("gerekli", g.ekle("randevu", "Zamansız", ""))
+        self.assertIn("gün", g.ekle("rutin", "Gün yok", "07:00", ""))
+        self.assertIn("boş", g.ekle("gorev", " ", ""))
+        self.assertIn("Tür", g.ekle("x", "a", ""))
+        self.assertEqual(sorted(x["tur"] for x in g.liste_json()), ["gorev", "randevu", "rutin"])
+
+    def test_http(self):
+        u = Ulgen()
+        srv = sunucu.yerel_sunucu(u, 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        kod, h = istek(srv.server_address[1], "/gorev/ekle", "POST",
+                       json.dumps({"tur": "gorev", "baslik": "Yeni"}), JSON)
+        self.assertEqual(kod, 200)
+        self.assertIn("Ekledim", json.loads(h)["yanit"])
+        self.assertEqual(istek(srv.server_address[1], "/gorev/ekle", "POST", json.dumps({}), JSON)[0], 400)
