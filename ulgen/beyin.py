@@ -167,7 +167,48 @@ class GeminiBeyin(Beyin):
     def _basliklar(self):
         return {"x-goog-api-key": self.anahtar}
 
+    TERCIH = ("flash-lite", "flash", "pro")
+    ELE = ("embed", "image", "vision", "tts", "audio", "live", "robotics",
+           "aqa", "imagen", "veo", "gemma", "learnlm", "computer-use",
+           "thinking", "preview", "exp")
+
+    def _yeni_model(self, eski):
+        adaylar = [m for m in self.modelleri_listele() if m != eski
+                   and not any(e in m.lower() for e in self.ELE)]
+        for tercih in self.TERCIH:
+            sirali = sorted((m for m in adaylar if tercih in m.lower()),
+                            reverse=True)         # en yeni sürüm önce
+            if sirali:
+                return sirali[0]
+        return None
+
     def yanitla(self, sistem, mesajlar, azami_token=700):
+        try:
+            return self._yanitla(sistem, mesajlar, azami_token)
+        except BeyinHatasi as hata:
+            if not re.match(r"HTTP (404|410)\b", str(hata)):
+                raise
+            try:
+                yeni = self._yeni_model(self.model)
+            except BeyinHatasi:
+                yeni = None
+            if not yeni:
+                raise
+            eski, self.model = self.model, yeni
+            try:
+                yanit = self._yanitla(sistem, mesajlar, azami_token)
+            except BeyinHatasi:
+                self.model = eski
+                raise
+            try:
+                ayar.guncelle("gemini_model", yeni)
+                veritabani.gunluge_yaz("bilgi", "model", "gemini modeli %s -> %s"
+                                       % (eski, yeni))
+            except Exception:
+                pass
+            return yanit
+
+    def _yanitla(self, sistem, mesajlar, azami_token=700):
         # Gemini, rollerin user/model olarak art arda değişmesini ister.
         icerik = []
         for mesaj in mesajlar:

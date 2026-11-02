@@ -183,6 +183,7 @@ class Ulgen:
         engelli = self.yonlendirici.engelliler()
         atlanan_duyarli = kota_doldu = False
         son_hata = None
+        hatalar = []                 # (beyin adı, ileti): hepsi gösterilir
         for beyin in adaylar:
             bulut = not beyin.yerel
             if bulut and self._duyarli_tur and not izin:
@@ -192,11 +193,13 @@ class Ulgen:
             self.araclar.kisisel_kullanildi = False
             try:
                 yanit = self._beyinle_yanitla(beyin, metin)
-            except KotaHatasi:
+            except KotaHatasi as hata:
                 kota_doldu = True
+                hatalar.append((beyin.ad, str(hata)))
                 continue
             except BeyinHatasi as hata:
                 self.yonlendirici.sifirla()
+                hatalar.append((beyin.ad, str(hata)))
                 son_hata = (hata, beyin.ad)
                 continue
             except OnayIstegi as istek:
@@ -211,8 +214,12 @@ class Ulgen:
         if atlanan_duyarli or kota_doldu or engelli:
             return "kuyruk", None, None
         if son_hata:
-            return "tamam", "Beyin yanıt veremedi: %s" % son_hata[0], \
-                son_hata[1]
+            if len(hatalar) > 1:
+                ileti = "Beyin yanıt veremedi:\n" + "\n".join(
+                    "- %s: %s" % (ad, m[:220]) for ad, m in hatalar)
+            else:
+                ileti = "Beyin yanıt veremedi: %s" % son_hata[0]
+            return "tamam", ileti, son_hata[1]
         return "yok", ("Şu an düşünen bir beynim yok. Ollama ya da llama.cpp "
                        "sunucusunu başlatın, ya da ücretsiz bir bulut "
                        "anahtarı (Gemini, Groq, Mistral, OpenRouter) "

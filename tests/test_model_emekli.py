@@ -54,3 +54,53 @@ class ModelEmekliTesti(TemizVeri):
         with mock.patch.object(beyin, "_json_gonder", sahte):
             with self.assertRaisesRegex(BeyinHatasi, "410"):
                 b.yanitla("s", [{"role": "user", "content": "x"}])
+
+
+class GeminiEmekliTesti(TemizVeri):
+
+    def test_404_olunca_flash_lite_secilir(self):
+        from ulgen.beyin import GeminiBeyin
+        b = GeminiBeyin("k", "gemini-eski-flash")
+        cagri = []
+
+        def sahte(adres, govde=None, *a, **k):
+            if "pageSize" in adres:
+                return {"models": [
+                    {"name": "models/gemini-2.5-flash",
+                     "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/gemini-2.5-flash-lite", "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/text-embedding", "supportedGenerationMethods": ["embedContent"]}]}
+            cagri.append(adres)
+            if "gemini-eski-flash" in adres:
+                raise BeyinHatasi("HTTP 404: not found")
+            return {"candidates": [{"content": {"parts": [{"text": "selam"}]}}]}
+
+        with mock.patch.object(beyin, "_json_gonder", sahte):
+            self.assertEqual(b.yanitla("s", [{"role": "user", "content": "x"}]), "selam")
+        self.assertEqual(b.model, "gemini-2.5-flash-lite")
+        self.assertEqual(ayar.yukle()["gemini_model"], "gemini-2.5-flash-lite")
+
+
+class HataBirlestirmeTesti(TemizVeri):
+
+    def test_tum_beyinlerin_hatasi_gosterilir(self):
+        from ulgen.cekirdek import Ulgen
+        u = Ulgen()
+
+        class Sahte:
+            yerel = False
+
+            def __init__(self, ad, hata):
+                self.ad, self.hata = ad, hata
+
+        def yanitla(beyin, metin):
+            raise BeyinHatasi(beyin.hata)
+
+        with mock.patch.object(u.yonlendirici, "kullanilabilirler", return_value=[
+                Sahte("Gemini (bulut)", "HTTP 404: model yok"),
+                Sahte("NVIDIA (bulut)", "HTTP 410: Gone")]), \
+                mock.patch.object(u, "_beyinle_yanitla", yanitla):
+            d, y, _ = u._beyinle_dene("merhaba")
+        self.assertEqual(d, "tamam")
+        self.assertIn("Gemini (bulut): HTTP 404", y)
+        self.assertIn("NVIDIA (bulut): HTTP 410", y)
