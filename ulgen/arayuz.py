@@ -374,6 +374,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   <span id="saat"></span>
   <button class="dugme" onclick="kodAcPencere()">&lt;/&gt; Kod</button>
   <button id="sesBtn" class="dugme aktif" onclick="sesDegistir()">Ses: açık</button>
+  <button id="susBtn" class="dugme" onclick="sesiDurdur()">Sus</button>
   <button id="surekliBtn" class="dugme" onclick="surekliDegistir()">Sürekli dinle: kapalı</button>
 </header>
 <div id="kodPanel">
@@ -517,21 +518,53 @@ function cipSec(onek) {
   g.value = onek; g.focus();
 }
 
-function konus(metin) {
+let konusmaNo = 0;
+
+// Her şeyi susturur: yerel ses, bulut sesi, sıradaki parçalar.
+function sesiDurdur() {
+  konusmaNo++;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if (klipSes) { try { klipSes.pause(); } catch (e) {} }
+}
+
+// Uzun metni cümle sınırlarında ≤ 700 karakterlik parçalara böler (bulut sesi sınırı).
+function parcalaMetin(metin) {
+  const cumleler = metin.replace(/\s+/g, " ").trim().match(/[^.!?]+[.!?]*/g) || [metin];
+  const sonuc = []; let o = "";
+  for (let c of cumleler) {
+    c = c.trim(); if (!c) continue;
+    while (c.length > 700) { if (o) { sonuc.push(o); o = ""; } sonuc.push(c.slice(0, 700)); c = c.slice(700); }
+    if ((o + " " + c).trim().length > 700) { sonuc.push(o); o = c; } else o = (o + " " + c).trim();
+  }
+  if (o) sonuc.push(o);
+  return sonuc;
+}
+
+// Her yerde aynı ses: sabit cümle -> kendi klibi; bulut sesi açıksa tüm yanıt (parça parça) aynı sesle.
+async function konus(metin) {
   if (!sesli) return;
+  sesiDurdur();
+  const no = konusmaNo;
   const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
-  if (ad) { klipCal(ad).then(tamam => { if (!tamam) yerelKonus(metin); }); return; }
-  if (bulutSes && metin.length <= 700) { bulutOku(metin).then(tamam => { if (!tamam) yerelKonus(metin); }); return; }
-  yerelKonus(metin);
+  if (ad) { if (!(await klipCal(ad))) yerelKonus(metin); return; }
+  if (!bulutSes) { yerelKonus(metin); return; }
+  const parcalar = parcalaMetin(metin);
+  for (let i = 0; i < parcalar.length; i++) {
+    if (no !== konusmaNo) return;                       // araya "dur" girdi
+    if (!(await bulutOku(parcalar[i], true))) {         // kota/ağ/hassas içerik: kalanı yerel sesle
+      if (no === konusmaNo) yerelKonus(parcalar.slice(i).join(" "), true);
+      return;
+    }
+  }
 }
 
 function sesTercihi() {
   try { return JSON.parse(localStorage.getItem("ulgen_ses") || "{}"); } catch (e) { return {}; }
 }
 
-function yerelKonus(metin) {
+function yerelKonus(metin, sirada) {
   if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
+  if (!sirada) speechSynthesis.cancel();
   const t = sesTercihi();
   const secili = t.ad ? speechSynthesis.getVoices().find(v => v.name === t.ad) : null;
   // Uzun metinler (sabah raporu) tek parça okununca tarayıcıda kesilir;
@@ -550,6 +583,7 @@ function yerelKonus(metin) {
 
 function sesDegistir() {
   sesli = !sesli;
+  if (!sesli) sesiDurdur();
   const b = document.getElementById("sesBtn");
   b.textContent = "Ses: " + (sesli ? "açık" : "kapalı");
   b.classList.toggle("aktif", sesli);
@@ -570,6 +604,9 @@ async function gonderMetin(m) {
   if (window.innerWidth < 900 && aktifSekme === "ana") sekme("sohbet");
   if (!m) return;
   balonEkle(m, "kullanici");
+  if (/^(dur|sus|kes|yeter|sessiz|sessiz ol|konuşma|tamam dur|dur artık|sus artık)[\s.!?]*$/i.test(m)) {
+    sesiDurdur(); balonEkle("Sustum.", "asistan"); return;
+  }
   try {
     const c = await istek("/sohbet", { metin: m });
     balonEkle(c.yanit, "asistan");
@@ -637,15 +674,18 @@ async function sesDurumuYukle() {
 }
 let bulutSes = false;
 // Bulut sesi açıksa (ElevenLabs, kendi sesiniz) yanıt metni oraya gider; olmazsa yerel ses okur.
-async function bulutOku(metin) {
+async function bulutOku(metin, bitenKadar) {
   try {
     const h = { "Content-Type": "application/json" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
     const c = await fetch("/ses/oku", { method: "POST", headers: h, body: JSON.stringify({ metin: metin }) });
     if (!c.ok) return false;
     const url = URL.createObjectURL(await c.blob());
     if (klipSes) klipSes.pause();
-    klipSes = new Audio(url); klipSes.onended = () => URL.revokeObjectURL(url);
-    await klipSes.play(); return true;
+    const ses = new Audio(url); klipSes = ses;
+    const bitti = new Promise(coz => { ses.onended = ses.onpause = ses.onerror = () => { URL.revokeObjectURL(url); coz(); }; });
+    await ses.play();
+    if (bitenKadar) await bitti;
+    return true;
   } catch (e) { return false; }
 }
 // Kendi sesiniz (ElevenLabs'ten bir kez üretilmiş, yerelde saklı) sabit cümleler için çalınır.

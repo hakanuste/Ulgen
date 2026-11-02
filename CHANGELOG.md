@@ -1,6 +1,8 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- "dur / sus / kes / yeter" yazınca ya da söyleyince (ve yeni "Sus" düğmesiyle) tüm konuşma anında kesilir; yeni yanıt eskisini keser.
+- Uzun yanıtlar (araştırma) da bulut sesiyle, ≤700 karakterlik parçalar hâlinde okunur; kota/hassas içerik olursa yalnız kalanı yerel sesle sürer.
 - Hatırlatıcılar da düzeltilebilir ve silinebilir (Görevler sekmesi; silme onaylı).
 - Sağlayıcı modeli emekli olursa (HTTP 404/410; örn. NVIDIA llama-3.3-70b) model listesi sorulup uygun yeni model kendiliğinden seçilir ve ayar.json'a yazılır.
 - Launchpad'de çoğalan Ülgen simgeleri: kurulum sonunda eski/yinelenen kayıtlar silinir (`ulgen/varlik/simge_temizle.sh`; dosya ve veriye dokunmaz).
