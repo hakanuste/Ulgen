@@ -88,6 +88,23 @@ img.sus { display: block; width: 100%; height: 92px; object-fit: cover; border-r
           border: 1px solid var(--kenar); }
 img.pus { display: block; width: 84px; height: 84px; margin: 4px auto 8px; border-radius: 50%; object-fit: cover;
           box-shadow: 0 0 18px rgba(212,175,90,.35); }
+#runlar { position: absolute; left: 270px; top: 22px; color: var(--altin); font-size: 22px; letter-spacing: 8px;
+          font-family: "Apple Symbols", "Noto Sans Old Turkic", "Segoe UI Historic", serif; text-shadow: 0 0 8px rgba(212,175,90,.5); }
+#baslikOrta { top: 6px; } #baslikOrta .egri { position: absolute; left: 50%; top: 60px; width: 640px; margin-left: -320px; height: 70px; opacity: .85; pointer-events: none; }
+#baslikOrta .yd { color: var(--altin); display: inline-block; vertical-align: middle; filter: drop-shadow(0 0 8px rgba(212,175,90,.8)); margin: 0 10px; }
+#baslikOrta .yd svg { width: 30px; height: 30px; }
+#baslikOrta b { display: inline-block !important; vertical-align: middle; }
+#havaYazi { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 6px; font-size: 13px; }
+#havaYazi svg { color: var(--altin); width: 26px; height: 26px; } #havaYazi b { font-size: 15px !important; letter-spacing: 0 !important; display: block; }
+#dagKutu { display: none; }
+.sag3 { display: grid; grid-template-columns: 1.3fr 1fr 1fr; justify-items: center; align-items: center; margin-top: 6px; text-align: center; font-size: 13px; color: var(--yazi); }
+.sag3 .oge svg { width: 30px; height: 30px; display: block; margin: 0 auto 2px; } .sag3 b { display: block; font-size: 18px; }
+.nokta2 { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: #3c4650; }
+.nokta2.y { background: var(--yesil); box-shadow: 0 0 6px var(--yesil); } .nokta2.k { background: var(--kirmizi); }
+.ozetCubuk { display: flex; align-items: center; gap: 10px; margin-top: 8px; } .ozetCubuk .cubuk { flex: 1; margin: 0; }
+.ozetCubuk span { color: var(--yazi); font-size: 13px; }
+#pano .s .sol { display: flex; align-items: center; gap: 8px; }
+.cubuk.mor i { background: linear-gradient(90deg,#8a4fe0,#c07cff); } .cubuk.yes i { background: linear-gradient(90deg,#2bb35f,#5ae08e); }
 /* ---- ÜLGEN teması: gece mavisi + altın ---- */
 :root { --bg:#050b1a; --kart:#0a1530; --kart2:#0e1c40; --yazi:#e9f0ff; --soluk:#8fa0c4; --vurgu:#37a8ff;
         --kullanici:#14437a; --kenar:#1b3166; --altin:#d4af5a; --altin2:#7d6428; --yesil:#3fd07a; --kirmizi:#ff6b5e; }
@@ -100,11 +117,15 @@ svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-widt
 #ana { display: flex; flex-direction: column; flex: 1; min-height: 0; position: relative; }
 #yan { display: contents; }
 #marka, #kullanici, #afis, #serit, #cipler .genis { display: none; }
+#marka .mk, #kapatBtn, #perde, #hamBtn, #mobilLogo, #mobilAlt, #mobilAna, .rz { display: none; }
+.rz { background: var(--kirmizi); color: #fff; font-style: normal; font-size: 12px; min-width: 20px; height: 20px; border-radius: 10px; place-items: center; padding: 0 6px; margin-left: auto; }
+.rz.var { display: inline-grid; }
 #icerik { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 #sohbetKolon { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #pano { display: none; }
 body[data-s="gorevler"] #sohbetKolon, body[data-s="ilac"] #sohbetKolon, body[data-s="bildirim"] #sohbetKolon,
-body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: none; }
+body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon, body[data-s="saglik"] #sohbetKolon, body[data-s="projeler"] #sohbetKolon,
+body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="ayarlar"] #sohbetKolon { display: none; }
 #saat { font-variant-numeric: tabular-nums; color: var(--altin); font-size: 13px; }
 .sat { display: flex; gap: 10px; align-items: flex-end; margin: 8px 0; }
 .sat.sk { flex-direction: row-reverse; }
@@ -144,11 +165,75 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
 .halka span { width: 74px; height: 74px; border-radius: 50%; background: var(--kart); display: grid; place-items: center;
               color: var(--yazi); font-size: 13px; text-align: center; line-height: 1.2; }
 @media (max-width: 899px) {
-  #ana { order: 1; } #yan { display: contents; }
-  #sekmeler { order: 2; border-top: 1px solid var(--altin2); border-bottom: 0;
-              padding: 6px 6px calc(env(safe-area-inset-bottom) + 6px); background: #050b1a; }
-  #sekmeler button svg, #sekmeler .genisSadece { display: none; }
-  #sekmeler button[data-s="sohbet"] { display: none; }
+  #yan { display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; width: 84%; max-width: 340px; z-index: 30;
+         transform: translateX(-105%); transition: transform .25s; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px);
+         background: linear-gradient(180deg,#071027,#050b1a); border-right: 1px solid var(--altin2); overflow-y: auto; }
+  body.menuAcik #yan { transform: none; }
+  #perde { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 25; }
+  body.menuAcik #perde { display: block; }
+  #marka { display: flex; align-items: center; gap: 10px; padding: 0 0 12px; }
+  #marka img { width: 66px; height: auto; }
+  #marka .mk b { color: var(--altin); font-size: 24px; letter-spacing: 2px; margin-right: 8px; }
+  #surumRozet { border: 1px solid var(--altin2); border-radius: 12px; padding: 2px 8px; font-size: 12px; color: var(--yazi); }
+  #kapatBtn { margin-left: auto; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--kenar); background: transparent;
+              color: var(--yazi); display: grid; place-items: center; }
+  #sekmeler { flex-direction: column; border: 0; padding: 0; gap: 2px; overflow: visible; background: none; }
+  #sekmeler button { display: flex; align-items: center; gap: 14px; flex: none; text-align: left; font-size: 16px; padding: 10px 12px; color: var(--yazi);
+                     border: 1px solid transparent; border-radius: 14px; }
+  #sekmeler button svg { color: var(--altin); width: 24px; height: 24px; }
+  #sekmeler button.aktif { background: linear-gradient(90deg,#0f2a5c,#0b1d42); border-color: var(--vurgu); box-shadow: 0 0 14px rgba(55,168,255,.3); }
+  .rz { margin-left: auto; background: var(--kirmizi); color: #fff; font-style: normal; font-size: 12px; min-width: 20px; height: 20px; border-radius: 10px;
+        display: none; place-items: center; padding: 0 6px; } .rz.var { display: grid; }
+  #dagKutu { display: block; height: 90px; margin: auto -14px 8px; background: url(/varlik/afis.webp) 60% 100% / cover; opacity: .85;
+             mask-image: linear-gradient(transparent, #000 45%); -webkit-mask-image: linear-gradient(transparent, #000 45%); flex: none; }
+  #kullanici { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--altin2); border-radius: 16px; font-size: 13px; color: var(--soluk); }
+  #kullanici b { color: var(--yazi); display: block; font-size: 16px; }
+  #ana { order: 1; }
+  #serit, #pano, #runlar, #baslikOrta .egri { display: none; }
+  #afis { display: block; position: relative; height: 58px; flex: none; overflow: hidden; border-bottom: 1px solid var(--altin2); }
+  body[data-s="ana"] #afis { height: 250px; }
+  #afis .arka { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,11,26,.25), rgba(5,11,26,.1) 60%, #050b1a 100%), url(/varlik/afis.webp) center 35% / cover; }
+  #mobilLogo { display: none; position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 8px); width: 170px; margin-left: -85px; filter: drop-shadow(0 0 14px rgba(70,140,255,.5)); }
+  #mobilAlt { display: none; position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; color: #fff; font-size: 15px; text-shadow: 0 1px 4px #000; }
+  body[data-s="ana"] #mobilLogo, body[data-s="ana"] #mobilAlt { display: block; }
+  #baslikOrta { top: calc(env(safe-area-inset-top) + 12px); } #baslikOrta small, #baslikOrta .yd { display: none; }
+  #baslikOrta b { font-size: 22px !important; letter-spacing: 6px !important; }
+  body[data-s="ana"] #baslikOrta { display: none; }
+  #hamBtn, #sagUst .ik { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--altin2); background: rgba(10,21,48,.7); color: var(--altin); display: grid; place-items: center; }
+  #hamBtn { position: absolute; left: 14px; top: calc(env(safe-area-inset-top) + 8px); z-index: 3; cursor: pointer; }
+  #sagUst { position: absolute; right: 14px; top: calc(env(safe-area-inset-top) + 8px); z-index: 3; gap: 8px; display: flex; }
+  #sagUst .ik:not(:first-child) { display: none; }
+  #sagUst .ik { position: relative; } #sagUst .ik em { position: absolute; top: -3px; right: -3px; background: var(--kirmizi); color: #fff; font-style: normal; font-size: 10px; border-radius: 9px; min-width: 16px; text-align: center; padding: 1px 3px; }
+  #saatKutu { display: none; }
+  body[data-s="ana"] #saatKutu { display: flex; align-items: center; margin: 4px 14px 0; padding: 12px 14px; border: 1px solid var(--altin2); border-radius: 18px;
+        background: linear-gradient(180deg,var(--kart2),var(--kart)); box-shadow: 0 0 16px rgba(212,175,90,.15); }
+  #saatKutu .tk { display: flex; align-items: center; gap: 12px; flex: 1; border-right: 1px solid var(--altin2); }
+  #saatKutu .tk svg { width: 30px; height: 30px; color: var(--altin); } #saatKutu small { display: block; font-size: 13px; } #saatKutu b { font-size: 30px; }
+  #havaYazi { flex: 1; justify-content: center; margin: 0; }
+  header { display: none; }
+  body[data-s="sohbet"] header { display: flex; position: static; padding: 6px 12px; gap: 6px; flex-wrap: wrap; }
+  body[data-s="sohbet"] header h1, body[data-s="sohbet"] header #saat { display: none; }
+  #mobilAna { display: none; }
+  body[data-s="ana"] #mobilAna { display: block; flex: 1; overflow-y: auto; }
+  #kareler { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 12px 14px 4px; }
+  .kare { position: relative; aspect-ratio: 1 / .95; border-radius: 18px; border: 1px solid var(--kenar); color: var(--yazi); font-size: 13px;
+          background: linear-gradient(180deg,var(--kart2),var(--kart)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .kare svg { width: 32px; height: 32px; color: var(--altin); }
+  .kare:first-child { border-color: var(--vurgu); box-shadow: 0 0 14px rgba(55,168,255,.35); }
+  .kare .rz { position: absolute; top: -6px; right: -4px; margin: 0; }
+  #mobilOzet { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 12px; }
+  body[data-s="ana"] #sohbetKolon { flex: none; }
+  body[data-s="ana"] #akis, body[data-s="ana"] #cipler, body[data-s="ana"] #yaklasan, body[data-s="ana"] #beyin { display: none; }
+  #alt { flex-direction: column; align-items: stretch; gap: 8px; background: linear-gradient(180deg, rgba(5,11,26,0), #050b1a 30%); }
+  #mikSatir { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  #klavyeBtn { width: 52px; height: 52px; border-radius: 16px; }
+  #mikBtn { width: 76px; height: 76px; }
+  #mikBtn svg { width: 34px; height: 34px; }
+  #mikSatir .dalga { display: flex; flex: 1; justify-content: center; opacity: .8; }
+  #mikSatir .dalga i { animation: none; } body.dinliyor #mikSatir .dalga i { animation: dalga 1.1s ease-in-out infinite; }
+  #yazSatir { display: flex; gap: 8px; align-items: flex-end; }
+  #yazSatir #giris { flex: 1; border-radius: 22px; border: 1px solid var(--altin2); }
+  #dalgaS { transform: scaleX(-1); }
 }
 @media (min-width: 900px) {
   #kok { flex-direction: row; }
@@ -157,7 +242,9 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
          box-shadow: 0 0 22px rgba(201,162,74,.12); }
   #marka { display: block; text-align: center; padding: 0 0 12px; }
   #marka img { width: 100%; max-width: 190px; height: auto; filter: drop-shadow(0 0 14px rgba(70,140,255,.35)); }
-  #sekmeler { flex-direction: column; border: 0; padding: 0; gap: 6px; overflow: visible; }
+  #sekmeler { flex-direction: column; border: 0; padding: 0; gap: 4px; overflow: visible; }
+  #dagKutu { display: block; height: 96px; margin: auto -14px 8px; background: linear-gradient(#071027, rgba(7,16,39,0) 40%), url(/varlik/afis.webp) 60% 100% / cover; opacity: .9; mask-image: linear-gradient(transparent, #000 40%); -webkit-mask-image: linear-gradient(transparent, #000 40%); }
+  #kullanici { margin-top: 0 !important; }
   #sekmeler button { flex: none; display: flex; align-items: center; gap: 12px; text-align: left; font-size: 15px;
                      padding: 11px 14px; color: var(--yazi); border: 1px solid transparent; border-radius: 12px; }
   #sekmeler button svg { color: var(--altin); }
@@ -174,16 +261,22 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
   #baslikOrta b { display: block; font-size: 36px; letter-spacing: 10px; color: #f1e3b5; font-weight: 700;
                   text-shadow: 0 0 18px rgba(212,175,90,.5), 0 2px 0 #7d6428; }
   #baslikOrta small { color: #fff; font-size: 14px; letter-spacing: 1px; text-shadow: 0 0 6px #000, 0 1px 3px #000; }
-  #sagUst { position: absolute; right: 18px; top: 10px; display: flex; gap: 14px; align-items: center; }
+  #sagUst { position: absolute; right: 230px; top: 14px; display: flex; gap: 12px; align-items: center; z-index: 3; }
+  #saatKutu { position: absolute; right: 18px; top: 8px; text-align: right; z-index: 3; }
+  #saatKutu .tk svg { display: none; } #saatKutu .tk { display: block; }
+  #hamBtn, #mobilLogo, #mobilAlt, #mobilAna { display: none; }
+  #mikSatir, #yazSatir { display: contents; } #klavyeBtn, #dalgaS { display: none; } #giris { order: 1; } #dalga { order: 2; } #mikBtn { order: 3; } .gonder { order: 4; }
+  body.dinliyor .dalga { display: flex; }
   #sagUst .ik { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--kenar); background: rgba(10,21,48,.8);
                 display: grid; place-items: center; position: relative; color: var(--yazi); }
   #sagUst .ik em { position: absolute; top: -3px; right: -3px; background: var(--kirmizi); color: #fff; font-style: normal;
                    font-size: 10px; border-radius: 9px; min-width: 16px; text-align: center; padding: 1px 3px; }
   #sagUst .ik i { position: absolute; right: 2px; bottom: 2px; width: 9px; height: 9px; border-radius: 50%; background: #3c4650; }
   #sagUst .ik i.acik { background: var(--yesil); box-shadow: 0 0 6px var(--yesil); }
-  #saatKutu { text-align: right; } #saatKutu small { display: block; color: var(--yazi); font-size: 13px; }
+  #saatKutu small { display: block; color: var(--yazi); font-size: 13px; }
   #saatKutu b { font-size: 34px; letter-spacing: 1px; }
-  header { position: absolute; left: 12px; top: 10px; z-index: 2; border: 0; padding: 0; gap: 8px; justify-content: flex-start; }
+  header { position: absolute; left: 12px; top: 98px; z-index: 4; border: 0; padding: 0; gap: 6px; justify-content: flex-start; }
+  header .dugme { font-size: 11px; padding: 4px 8px; }
   header h1, header #saat { display: none; }
   #serit { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 12px; padding: 14px 16px 4px; }
   #icerik { flex-direction: row; gap: 14px; padding: 12px 16px 14px; }
@@ -213,32 +306,57 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
 <symbol id="i-sag" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
 <symbol id="i-mik" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
 <symbol id="i-gonder" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></symbol>
+<symbol id="i-gunes" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+<symbol id="i-ay" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+<symbol id="i-veri" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+<symbol id="i-cip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+<symbol id="i-klasor" viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3z"/></symbol>
+<symbol id="i-beyin" viewBox="0 0 24 24"><path d="M12 4a3.5 3.5 0 0 0-3.5 3.5A3 3 0 0 0 6 10.5a3 3 0 0 0 1 2.3A3 3 0 0 0 9 18a3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 2-5.2 3 3 0 0 0 1-2.3 3 3 0 0 0-2.5-3A3.5 3.5 0 0 0 12 4zM12 4v16"/></symbol>
+<symbol id="i-dis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></symbol>
+<symbol id="i-yildiz" viewBox="0 0 24 24"><path d="M12 1l2.2 8.8L23 12l-8.8 2.2L12 23l-2.2-8.8L1 12l8.8-2.2z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-kapat" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></symbol>
+<symbol id="i-klavye" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+<symbol id="i-nabiz" viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></symbol>
 </defs></svg>
+<div id="perde" onclick="menuKapat()"></div>
 <div id="kok">
 <aside id="yan">
-  <div id="marka"><img src="/varlik/logo.webp" alt="Ülgen"></div>
+  <div id="marka"><img src="/varlik/logo.webp" alt="Ülgen"><div class="mk"><b>ÜLGEN</b><span id="surumRozet">v</span></div><button id="kapatBtn" class="ik" onclick="menuKapat()" aria-label="Kapat"><svg class="i"><use href="#i-kapat"/></svg></button></div>
   <nav id="sekmeler">
   <button class="aktif" data-s="ana" onclick="sekme('ana')"><svg class="i"><use href="#i-ev"/></svg>Ana Sayfa</button>
   <button data-s="sohbet" onclick="sekme('sohbet')"><svg class="i"><use href="#i-sohbet"/></svg>Sohbet</button>
-  <button data-s="gorevler" onclick="sekme('gorevler')"><svg class="i"><use href="#i-gorev"/></svg>Görevler</button>
-  <button data-s="ilac" onclick="sekme('ilac')"><svg class="i"><use href="#i-kalp"/></svg>Sağlık &amp; İlaç</button>
+  <button data-s="gorevler" onclick="sekme('gorevler')"><svg class="i"><use href="#i-gorev"/></svg>Görevler<em class="rz" id="rzGorev"></em></button>
+  <button data-s="ilac" onclick="sekme('ilac')"><svg class="i"><use href="#i-hap"/></svg>İlaçlar</button>
+  <button data-s="saglik" onclick="sekme('saglik')"><svg class="i"><use href="#i-kalp"/></svg>Sağlık &amp; Ölçümler</button>
+  <button data-s="projeler" onclick="sekme('projeler')"><svg class="i"><use href="#i-katman"/></svg>Projeler</button>
+  <button data-s="bilgi" onclick="sekme('bilgi')"><svg class="i"><use href="#i-veri"/></svg>Hafıza &amp; Bilgi</button>
+  <button data-s="yz" onclick="sekme('yz')"><svg class="i"><use href="#i-cip"/></svg>Yapay Zekâ Modelleri</button>
   <button data-s="kasa" onclick="sekme('kasa')"><svg class="i"><use href="#i-kasa"/></svg>Özel Kasa</button>
-  <button data-s="bildirim" onclick="sekme('bildirim')"><svg class="i"><use href="#i-zil"/></svg>Bildirim</button>
-  <button data-s="sistem" onclick="sekme('sistem')"><svg class="i"><use href="#i-ayar"/></svg>Sistem</button>
+  <button data-s="bildirim" onclick="sekme('bildirim')"><svg class="i"><use href="#i-zil"/></svg>Bildirimler<em class="rz" id="rzBildirim"></em></button>
+  <button data-s="sistem" onclick="sekme('sistem')"><svg class="i"><use href="#i-nabiz"/></svg>Sistem Durumu</button>
+  <button data-s="ayarlar" onclick="sekme('ayarlar')"><svg class="i"><use href="#i-ayar"/></svg>Ayarlar</button>
   </nav>
+  <div id="dagKutu"></div>
   <div id="kullanici"><span class="av ul"></span><div><b>Hakan Üste</b><span id="surumYazi">ÜLGEN</span> <span id="nokta2" class="nokta"></span></div></div>
 </aside>
 <div id="ana">
 <div id="afis">
   <div class="arka"></div>
-  <div id="baslikOrta"><b>ÜLGEN</b><small>Kişisel Yapay Zekâ Yardımcı</small></div>
+  <button id="hamBtn" class="ik" onclick="menuAc()" aria-label="Menü"><svg class="i"><use href="#i-menu"/></svg></button>
+  <img id="mobilLogo" src="/varlik/logo.webp" alt="Ülgen"><div id="mobilAlt">Kişisel Yapay Zekâ Yardımcı</div>
+  <div id="runlar">𐰜𐰇𐰞𐰏𐰤</div>
+  <div id="baslikOrta">
+    <svg class="egri" viewBox="0 0 640 70" aria-hidden="true"><path d="M8 8Q40 62 130 62H510Q600 62 632 8" fill="none" stroke="#d4af5a" stroke-width="1.6"/></svg>
+    <span class="yd"><svg class="i"><use href="#i-yildiz"/></svg></span><b>ÜLGEN</b><span class="yd"><svg class="i"><use href="#i-yildiz"/></svg></span>
+    <small>Kişisel Yapay Zekâ Yardımcı</small></div>
   <div id="sagUst">
     <div class="ik" onclick="sekme('bildirim')" style="cursor:pointer"><svg class="i"><use href="#i-zil"/></svg><em id="zilSayi" style="display:none">0</em></div>
     <div class="ik" title="Mac sunucusu"><svg class="i"><use href="#i-ekran"/></svg><i id="macNokta"></i></div>
     <div class="ik" title="iPhone (son 24 saatte bağlandı mı)"><svg class="i"><use href="#i-tel"/></svg><i id="telNokta"></i></div>
-    <div id="saatKutu"><small id="tarihYazi"></small><b id="saatYazi"></b></div>
-  </div>
+      </div>
 </div>
+<div id="saatKutu"><div class="tk"><svg class="i"><use href="#i-takvim"/></svg><div><small id="tarihYazi"></small><b id="saatYazi"></b></div></div><div id="havaYazi"></div></div>
 <header>
   <h1><span id="nokta" class="nokta"></span>ÜLGEN</h1>
   <span id="saat"></span>
@@ -274,7 +392,25 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
 <div id="pIlac" class="panel"></div>
 <div id="pBildirim" class="panel"></div>
 <div id="pKasa" class="panel"></div>
+<div id="pSaglik" class="panel"></div>
+<div id="pProjeler" class="panel"></div>
+<div id="pBilgi" class="panel"></div>
+<div id="pYz" class="panel"></div>
+<div id="pAyarlar" class="panel"></div>
 <div id="pSistem" class="panel"></div>
+<section id="mobilAna">
+  <div id="kareler">
+    <button class="kare" onclick="sekme('sohbet')"><svg class="i"><use href="#i-sohbet"/></svg>Sohbet</button>
+    <button class="kare" onclick="sekme('gorevler')"><svg class="i"><use href="#i-gorev"/></svg>Görevler<em class="rz" id="kGorev"></em></button>
+    <button class="kare" onclick="sekme('ilac')"><svg class="i"><use href="#i-hap"/></svg>İlaçlar</button>
+    <button class="kare" onclick="sekme('saglik')"><svg class="i"><use href="#i-kalp"/></svg>Sağlık</button>
+    <button class="kare" onclick="sekme('projeler')"><svg class="i"><use href="#i-katman"/></svg>Projeler</button>
+    <button class="kare" onclick="sekme('bilgi')"><svg class="i"><use href="#i-veri"/></svg>Hafıza</button>
+    <button class="kare" onclick="sekme('yz')"><svg class="i"><use href="#i-cip"/></svg>Yapay Zekâ</button>
+    <button class="kare" onclick="sekme('sistem')"><svg class="i"><use href="#i-ayar"/></svg>Sistem</button>
+  </div>
+  <div id="mobilOzet"></div>
+</section>
 <section id="sohbetKolon">
 <div id="yaklasan"></div>
 <div id="beyin" style="font-size:12px;color:var(--soluk);padding:2px 16px"></div>
@@ -283,15 +419,22 @@ body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon { display: 
   <button onclick="cipSec('Derinlemesine düşün: ')">Derin Düşün</button>
   <button onclick="cipSec('Araştır: ')">Araştır</button>
   <button onclick="cipSec('Planla: ')">Planla</button>
+  <button onclick="cipSec('Proje: ')">Proje</button>
   <button onclick="cipSec('Hatırlat: ')">Hatırlat</button>
   <button onclick="cipSec('Not al: ')">Not Al</button>
   <button onclick="kodAcPencere()">Kod</button>
 </div>
 <div id="alt">
-    <textarea id="giris" rows="1" placeholder="Yazın ya da konuşun" onkeydown="tusla(event)"></textarea>
-  <span class="dalga" id="dalga"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-  <button id="mikBtn" class="yuvarlak" onclick="mikrofon()" title="Konuş"><svg class="i"><use href="#i-mik"/></svg></button>
-  <button class="yuvarlak gonder" onclick="gonder()" title="Gönder">➤</button>
+  <div id="mikSatir">
+    <button id="klavyeBtn" class="yuvarlak" onclick="giriseOdak()" title="Yaz"><svg class="i"><use href="#i-klavye"/></svg></button>
+    <span class="dalga" id="dalgaS"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    <button id="mikBtn" class="yuvarlak" onclick="mikrofon()" title="Konuş"><svg class="i"><use href="#i-mik"/></svg></button>
+    <span class="dalga" id="dalga"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+  </div>
+  <div id="yazSatir">
+    <textarea id="giris" rows="1" placeholder="ÜLGEN'e yazın veya konuşun" onkeydown="tusla(event)"></textarea>
+    <button class="yuvarlak gonder" onclick="gonder()" title="Gönder">➤</button>
+  </div>
 </div>
 </section>
 <aside id="pano"><div id="pano1"></div><div id="pano2"></div></aside>
@@ -392,7 +535,12 @@ async function gonder() {
   gonderMetin(m);
 }
 
+function menuAc() { document.body.classList.add("menuAcik"); }
+function menuKapat() { document.body.classList.remove("menuAcik"); }
+function giriseOdak() { sekme("sohbet"); document.getElementById("giris").focus(); }
+
 async function gonderMetin(m) {
+  if (window.innerWidth < 900 && aktifSekme === "ana") sekme("sohbet");
   if (!m) return;
   balonEkle(m, "kullanici");
   try {
@@ -418,7 +566,7 @@ let surekli = false;
 
 function dinleyiciGorunum(acik) {
   document.getElementById("mikBtn").classList.toggle("kayit", acik);
-  const dg = document.getElementById("dalga"); if (dg) dg.style.display = acik ? "flex" : "none";
+  document.body.classList.toggle("dinliyor", acik);
 }
 
 function dinleyiciBaslat() {
@@ -634,13 +782,13 @@ async function kasaOku(ad, acma, istekNo) {
 }
 
 // ---- sekmeler ------------------------------------------------------------
-const paneller = { gorevler: "pGorevler", ilac: "pIlac", bildirim: "pBildirim", kasa: "pKasa", sistem: "pSistem" };
+const paneller = { gorevler: "pGorevler", ilac: "pIlac", bildirim: "pBildirim", kasa: "pKasa", saglik: "pSaglik", projeler: "pProjeler", bilgi: "pBilgi", yz: "pYz", ayarlar: "pAyarlar", sistem: "pSistem" };
 const gecmisBildirim = [];
 let aktifSekme = "ana";
 
 const sohbetli = ad => ad === "ana" || ad === "sohbet";
 function sekme(ad) {
-  if (window.innerWidth < 900 && ad === "sohbet") ad = "ana";
+  menuKapat();
   aktifSekme = ad;
   document.body.dataset.s = ad;
   document.querySelectorAll("#sekmeler button").forEach(b => b.classList.toggle("aktif", b.dataset.s === ad));
@@ -667,7 +815,8 @@ function kartK(ust, baslik, govde, ikon, ek, git) {
 function resimEkle(kap, ad, sinif) {
   const i = document.createElement("img"); i.src = "/varlik/" + ad + ".webp"; i.alt = ""; i.className = sinif; kap.appendChild(i); return i;
 }
-function cubuk(oran) { const c = document.createElement("div"); c.className = "cubuk";
+function uykuYazi(dk) { return dk === null || dk === undefined ? "—" : Math.floor(dk / 60) + "s " + (dk % 60) + "dk"; }
+function cubuk(oran, renk) { const c = document.createElement("div"); c.className = "cubuk" + (renk ? " " + renk : "");
   const i = document.createElement("i"); i.style.width = Math.max(0, Math.min(100, oran)) + "%"; c.appendChild(i); return c; }
 function satirS(kap, a, b, sinif, rozet) { const r = document.createElement("div"); r.className = "s";
   const x = document.createElement("span");
@@ -678,20 +827,51 @@ const ROZET = { gemini: ["G", "#3b7de0"], nvidia: ["N", "#5aa100"], groq: ["g", 
                 openrouter: ["O", "#5a6478"], ollama: ["O", "#7a8499"], "llama.cpp": ["L", "#7a8499"] };
 function rozetBul(ad) { const k = ad.toLowerCase(); for (const a in ROZET) if (k.indexOf(a) >= 0) return ROZET[a]; return [ad[0] || "?", "#5a6478"]; }
 
+function rozetYaz(g, il) {
+  const acik = g.gorev.length;
+  for (const id of ["rzGorev", "kGorev"]) { const e = document.getElementById(id); if (e) { e.textContent = acik; e.classList.toggle("var", acik > 0); } }
+}
+function ozetKarti(kap, g, il, ek) {
+  const alinan = il.filter(x => x.durum === "alindi" || x.durum === "tamamlandi").length;
+  const yuzde = il.length ? Math.round(100 * alinan / il.length) : 0;
+  const k0 = kartK(kap, "Günün Özeti", [g.gorev.length + " görev • " + il.length + " ilaç • " + g.randevu.length + " randevu"], "takvim", ek || "", "gorevler");
+  const oc = document.createElement("div"); oc.className = "ozetCubuk"; oc.appendChild(cubuk(yuzde));
+  const yz = document.createElement("span"); yz.textContent = "%" + yuzde; oc.appendChild(yz); k0.appendChild(oc);
+}
+function ilacKarti(kap, il) {
+  const k1 = kartK(kap, "İlaç Takvimi (Bugün)", [], "hap", "", "ilac");
+  if (!il.length) satirS(k1, "Bugün doz yok", "");
+  il.forEach(x => satirS(k1, "D" + x.id + " – " + x.ilac_ad, x.planli.slice(11, 16) + " " + durumYazi[x.durum].split(" ")[0],
+    x.durum === "alindi" ? "ok" : (x.durum === "bekliyor" ? "bekle" : "")));
+}
+
 async function panoYenile() {
-  if (window.innerWidth < 900) return;
   try {
+    if (window.innerWidth < 900) {
+      const [g, il, sis] = await Promise.all([istek("/gorevler"), istek("/ilac/bugun"), istek("/sistem")]);
+      rozetYaz(g, il);
+      document.getElementById("surumRozet").textContent = "v" + sis.surum;
+      const m = document.getElementById("mobilOzet"); m.replaceChildren();
+      ozetKarti(m, g, il); ilacKarti(m, il);
+      return;
+    }
     const [g, il, sis] = await Promise.all([istek("/gorevler"), istek("/ilac/bugun"), istek("/sistem")]);
+    rozetYaz(g, il);
+    document.getElementById("surumRozet").textContent = "v" + sis.surum;
     const serit = document.getElementById("serit"); serit.replaceChildren();
     const alinan = il.filter(x => x.durum === "alindi" || x.durum === "tamamlandi").length;
     const bek = il.filter(x => x.durum === "bekliyor" || x.durum === "ertelendi" || x.durum === "yanitsiz").length;
     const acik = g.gorev.length;
     const yuzde = il.length ? Math.round(100 * alinan / il.length) : 0;
     const k0 = kartK(serit, "Günün Özeti", [acik + " görev · " + il.length + " ilaç · " + g.randevu.length + " randevu"], "takvim", "", "gorevler");
-    k0.appendChild(cubuk(yuzde)); const yz = document.createElement("div"); yz.style.cssText = "text-align:right;font-size:12px"; yz.textContent = "%" + yuzde + " ilaç alındı"; k0.appendChild(yz);
+    const oc = document.createElement("div"); oc.className = "ozetCubuk"; oc.appendChild(cubuk(yuzde));
+    const yz = document.createElement("span"); yz.textContent = "%" + yuzde; oc.appendChild(yz); k0.appendChild(oc);
     kartK(serit, "İlaçlar", bek ? bek + " bekleyen doz" : "Bekleyen doz yok", "hap", bek ? " uyari" : "", "ilac");
     kartK(serit, "Görevler", acik ? acik + " tamamlanmamış" : "Açık görev yok", "gorev", acik ? " uyari" : "", "gorevler");
-    kartK(serit, "Sağlık", ["Adım, nabız, uyku:", "iPhone Sağlık köprüsü (Aşama 7)"], "kalp", "", "ilac");
+    const sg = await istek("/saglik/bugun");
+    kartK(serit, "Sağlık", sg.veri_var ? ["Adım: " + (sg.adim === null ? "—" : sg.adim.toLocaleString("tr-TR")),
+      "Nabız: " + (sg.nabiz === null ? "—" : sg.nabiz) + " • Uyku: " + uykuYazi(sg.uyku_dk)] :
+      ["Veri yok", "iPhone Kestirmesi kurulunca dolar"], "kalp", "", "ilac");
     kartK(serit, "Sistem", ["ÜLGEN " + sis.surum + " • " + (sis.butunluk.saglam ? "Çalışıyor" : "SORUNLU"),
       "Veritabanı: " + (sis.veritabani_sifreli ? "şifreli" : "ŞİFRESİZ")], "katman", sis.veritabani_sifreli ? "" : " uyari", "sistem");
     document.getElementById("surumYazi").textContent = "ÜLGEN " + sis.surum;
@@ -709,17 +889,25 @@ async function panoYenile() {
     if (!g.gorev.length) satirS(k2, "Açık görev yok", "");
     g.gorev.slice(0, 6).forEach(x => satirS(k2, x.baslik, x.zaman ? x.zaman.slice(5, 16) : "Zamansız"));
     const k5 = kartK(p1, "Sağlık Durumu", [], "kalp");
-    const h = document.createElement("div"); h.className = "halka"; h.style.setProperty("--p", "0%");
-    h.innerHTML = "<span>Adım<br>—</span>"; k5.appendChild(h);
-    const n = document.createElement("div"); n.style.cssText = "text-align:center;font-size:12px"; n.textContent = "iPhone Sağlık köprüsü kurulunca dolar"; k5.appendChild(n);
+    const h = document.createElement("div"); h.className = "halka"; h.style.setProperty("--p", Math.min(100, (sg.adim || 0) / 100) + "%");
+    h.innerHTML = "<span><b></b>adım</span>"; h.querySelector("b").textContent = sg.adim === null ? "—" : sg.adim.toLocaleString("tr-TR");
+    const uc = document.createElement("div"); uc.className = "sag3";
+    const oge = (ikon, renk, deger, ad) => { const d = document.createElement("div"); d.className = "oge";
+      d.innerHTML = '<svg class="i" style="color:' + renk + '"><use href="#i-' + ikon + '"/></svg><b></b>' + ad; d.querySelector("b").textContent = deger; return d; };
+    uc.appendChild(h); uc.appendChild(oge("kalp", "#ff6b5e", sg.nabiz === null ? "—" : sg.nabiz, "nabız")); uc.appendChild(oge("ay", "#8fa8ff", uykuYazi(sg.uyku_dk), "uyku"));
+    k5.appendChild(uc);
+    if (!sg.veri_var) { const n = document.createElement("div"); n.style.cssText = "text-align:center;font-size:12px;color:var(--soluk);margin-top:6px"; n.textContent = "iPhone Kestirmesi kurulunca dolar (SAGLIK_KESTIRME.md)"; k5.appendChild(n); }
     const k3 = kartK(p2, "Yapay Zekâ Modelleri", [], "katman");
-    resimEkle(k3, "kure", "sus");
-    sis.kota.forEach(t => satirS(k3, t.ad, t.engelli ? "Engelli" : "Hazır", t.engelli ? "" : "ok", rozetBul(t.ad)));
+    const aktif = ((sis.beyin && sis.beyin.beyin) || "").toLowerCase();
+    sis.kota.forEach(t => {
+      const durum = t.engelli ? (t.yerel ? "Çevrimdışı" : "Engelli") : (aktif && aktif.indexOf(t.ad.toLowerCase().split(" ")[0]) >= 0 ? "Aktif" : "Hazır");
+      satirS(k3, t.ad, durum, durum === "Hazır" || durum === "Aktif" ? "ok" : "", rozetBul(t.ad));
+    });
     const k4 = kartK(p2, "Sistem Durumu", [], "ayar");
     const d = sis.donanim || {};
-    if (d.cpu !== undefined) { satirS(k4, "CPU", Math.round(d.cpu) + "%"); k4.appendChild(cubuk(d.cpu)); }
-    if (d.ram_toplam) { satirS(k4, "RAM", d.ram_kullanilan + " / " + d.ram_toplam + " GB"); k4.appendChild(cubuk(100 * d.ram_kullanilan / d.ram_toplam)); }
-    if (d.disk_toplam) { satirS(k4, "Disk", d.disk_kullanilan + " / " + d.disk_toplam + " GB"); k4.appendChild(cubuk(100 * d.disk_kullanilan / d.disk_toplam)); }
+    if (d.cpu !== undefined) { satirS(k4, "CPU", Math.round(d.cpu) + "%"); k4.appendChild(cubuk(d.cpu, "yes")); }
+    if (d.ram_toplam) { satirS(k4, "RAM", d.ram_kullanilan + " / " + d.ram_toplam + " GB (%" + Math.round(100 * d.ram_kullanilan / d.ram_toplam) + ")"); k4.appendChild(cubuk(100 * d.ram_kullanilan / d.ram_toplam)); }
+    if (d.disk_toplam) { satirS(k4, "Disk", d.disk_kullanilan + " / " + d.disk_toplam + " GB (%" + Math.round(100 * d.disk_kullanilan / d.disk_toplam) + ")"); k4.appendChild(cubuk(100 * d.disk_kullanilan / d.disk_toplam, "mor")); }
     const ok = document.createElement("div"); ok.style.cssText = "margin-top:8px;color:var(--yesil);font-size:13px";
     ok.textContent = sis.butunluk.saglam ? "✓ Tüm sistemler normal çalışıyor." : "! Veritabanı bütünlüğü sorunlu"; k4.appendChild(ok);
   } catch (e) { /* oturum yoksa istek() zaten bildirir */ }
@@ -733,7 +921,18 @@ function saatYaz() {
   document.getElementById("saatYazi").textContent = sy;
   const z = document.getElementById("zilSayi");
   z.textContent = gecmisBildirim.length; z.style.display = gecmisBildirim.length ? "" : "none";
+  const rb = document.getElementById("rzBildirim"); rb.textContent = gecmisBildirim.length; rb.classList.toggle("var", gecmisBildirim.length > 0);
 }
+async function havaYukle() {
+  try {
+    const h = await istek("/hava");
+    const k = document.getElementById("havaYazi");
+    if (!h || h.sicaklik === undefined) { k.textContent = ""; return; }
+    k.innerHTML = '<svg class="i"><use href="#i-gunes"/></svg><div><b></b><span></span></div>';
+    k.querySelector("b").textContent = h.ad + " • " + h.sicaklik + "°C"; k.querySelector("span").textContent = h.durum;
+  } catch (e) { /* hava isteğe bağlıdır */ }
+}
+setTimeout(havaYukle, 800); setInterval(havaYukle, 1800000);
 saatYaz(); setInterval(saatYaz, 15000); setInterval(() => { if (sohbetli(aktifSekme)) panoYenile(); }, 30000);
 setTimeout(panoYenile, 400);
 
@@ -755,7 +954,86 @@ async function panelYenile(ad) {
     else if (ad === "ilac") await ilacCiz();
     else if (ad === "bildirim") bildirimCiz();
     else if (ad === "sistem") await sistemCiz();
+    else if (ad === "saglik") await saglikCiz();
+    else if (ad === "projeler") await projelerCiz();
+    else if (ad === "bilgi") await bilgiCiz();
+    else if (ad === "yz") await yzCiz();
+    else if (ad === "ayarlar") await ayarCiz();
   } catch (e) { /* bağlantı uyarısı zaten gösteriliyor */ }
+}
+
+async function saglikCiz() {
+  const k = document.getElementById("pSaglik"); k.innerHTML = "";
+  const [b, h] = await Promise.all([istek("/saglik/bugun"), istek("/saglik/gecmis")]);
+  baslik(k, "Bugün");
+  if (!b.veri_var) ekle(k, "Henüz veri yok.", "iPhone Kestirmesi kurulunca adım, nabız ve uyku buraya gelir (SAGLIK_KESTIRME.md).");
+  else {
+    ekle(k, "Adım: " + (b.adim === null ? "—" : b.adim.toLocaleString("tr-TR")));
+    ekle(k, "Son nabız: " + (b.nabiz === null ? "—" : b.nabiz + " atım/dk"), b.nabiz_zaman || "");
+    ekle(k, "Uyku: " + uykuYazi(b.uyku_dk));
+  }
+  baslik(k, "Son 7 gün");
+  if (!h.length) ekle(k, "Kayıt yok.");
+  h.forEach(g => ekle(k, g.gun + "  ·  adım " + (g.adim === null ? "—" : Math.round(g.adim)) + "  ·  ort. nabız " + (g.nabiz === null ? "—" : Math.round(g.nabiz)) +
+    "  ·  uyku " + uykuYazi(g.uyku === null ? null : Math.round(g.uyku))));
+  ekle(k, "Bu veriler yalnızca Mac'inizde durur, buluta gönderilmez. Ülgen tıbbi öneri vermez.");
+}
+
+async function projelerCiz() {
+  const k = document.getElementById("pProjeler"); k.innerHTML = "";
+  const p = await istek("/projeler");
+  baslik(k, "Hafıza projeleri");
+  if (!p.hafiza.length) ekle(k, "Proje yok. Sohbete yazın: proje ekle: Ad");
+  p.hafiza.forEach(a => ekle(k, a));
+  baslik(k, "Kod dosyaları");
+  if (!p.kod.length) ekle(k, "Kayıtlı kod dosyası yok.");
+  p.kod.forEach(a => { const d = ekle(k, typeof a === "string" ? a : (a.ad || JSON.stringify(a)));
+    const b = document.createElement("button"); b.className = "dugme"; b.style.marginLeft = "8px"; b.textContent = "Kod penceresinde aç";
+    const ad = typeof a === "string" ? a : a.ad;
+    b.onclick = () => { kodAcPencere(); setTimeout(() => { document.getElementById("kodDosya").value = ad; kodAc(); }, 400); };
+    d.appendChild(b); });
+  const y = document.createElement("button"); y.className = "dugme aktif"; y.style.marginTop = "10px"; y.textContent = "Yeni kod dosyası";
+  y.onclick = kodAcPencere; k.appendChild(y);
+}
+
+async function bilgiCiz() {
+  const k = document.getElementById("pBilgi"); k.innerHTML = "";
+  baslik(k, "Hafıza ve Obsidian notlarında ara");
+  const g = document.createElement("input"); g.placeholder = "Ne arıyorsunuz?"; g.style.cssText = "width:100%;padding:10px;border-radius:10px;border:1px solid var(--kenar);background:var(--kart);color:var(--yazi)";
+  k.appendChild(g);
+  const sonuc = document.createElement("div"); k.appendChild(sonuc);
+  const ara = async () => {
+    const r = await istek("/bilgi/ara?q=" + encodeURIComponent(g.value));
+    sonuc.innerHTML = "";
+    baslik(sonuc, "Notlar (Obsidian)");
+    if (!r.dizin.hazir) ekle(sonuc, "Not dizini hazır değil.");
+    else if (!g.value) ekle(sonuc, "Aramak için yazın. Kasa: " + r.dizin.kasa);
+    else if (!r.notlar.length) ekle(sonuc, "Eşleşen not yok.");
+    r.notlar.forEach(n => ekle(sonuc, n.baslik, n.alinti));
+    baslik(sonuc, "Hafıza");
+    if (!r.hafiza.length) ekle(sonuc, "Kayıt yok.");
+    r.hafiza.forEach(h => ekle(sonuc, h.metin, h.kategori));
+  };
+  g.addEventListener("input", () => { clearTimeout(g._z); g._z = setTimeout(ara, 300); });
+  await ara();
+}
+
+async function yzCiz() {
+  const s = await istek("/sistem"); const k = document.getElementById("pYz"); k.innerHTML = "";
+  resimEkle(k, "kure", "sus");
+  baslik(k, "Yapay zekâ modelleri (ücretsiz katmanlar, maliyet 0)");
+  ekle(k, "Şu an kullanılan: " + (s.beyin.beyin || "yok"), "Kuyrukta bekleyen istek: " + s.kuyruk);
+  s.kota.forEach(t => { const e = t.tahmini;
+    ekle(k, t.ad + " — " + (t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir"),
+      "bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms + " ms; hata %" + Math.round(t.hata_orani * 100)); });
+  ekle(k, "Bulut anahtarı eklemek için Mac'te: python -m ulgen --sir-kaydet nvidia (gemini, groq, mistral, openrouter)");
+}
+
+async function ayarCiz() {
+  const a = await istek("/ayar/ozet"); const k = document.getElementById("pAyarlar"); k.innerHTML = "";
+  baslik(k, "Ayarlar (salt okunur; API anahtarları gösterilmez)");
+  Object.keys(a).sort().forEach(n => ekle(k, n, typeof a[n] === "object" ? JSON.stringify(a[n]) : String(a[n])));
+  ekle(k, "Değiştirmek için Mac'te ~/ÜlgenVeri/ayar.json dosyasını düzenleyin.", "Güvenlik ayarları (yerel_yetki, sifresiz_veritabani_izni) arayüzden değiştirilemez; bilerek böyle.");
 }
 
 async function gorevlerCiz() {

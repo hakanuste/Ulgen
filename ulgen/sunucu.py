@@ -23,6 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+from . import hava, obsidyen, saglik_veri
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -392,6 +393,36 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": str(hata)})
             if yol == "/gorevler":
                 return self._cevap(200, _gorevler_json())
+            if yol == "/bilgi/ara":
+                q = parse_qs(adres.query).get("q", [""])[0][:200]
+                ogeler = ulgen.hafiza.liste()
+                if q:
+                    ogeler = [o for o in ogeler
+                              if q.lower() in o["metin"].lower()]
+                return self._cevap(200, {
+                    "hafiza": [{"id": o["id"], "metin": o["metin"][:300],
+                                "kategori": o.get("kategori", "")}
+                               for o in ogeler[-20:]],
+                    "notlar": [{"baslik": b, "alinti": al[:400]}
+                               for b, _, al in obsidyen.ara(q, 5)]
+                    if q else [],
+                    "dizin": {"kasa": obsidyen.kasa_yolu(),
+                              "hazir": obsidyen.hazir_mi()}})
+            if yol == "/projeler":
+                return self._cevap(200, {
+                    "hafiza": sorted(ulgen.hafiza.projeler()),
+                    "kod": kodpenceresi.liste()})
+            if yol == "/ayar/ozet":
+                a = ayar.yukle()
+                gizli_alan = ("anahtar", "token", "sifre")
+                return self._cevap(200, {k: v for k, v in a.items()
+                                         if not any(g in k for g in gizli_alan)})
+            if yol == "/hava":
+                return self._cevap(200, hava.getir() or {})
+            if yol == "/saglik/gecmis":
+                return self._cevap(200, saglik_veri.gunluk())
+            if yol == "/saglik/bugun":
+                return self._cevap(200, saglik_veri.bugun())
             if yol == "/kasa/durum":
                 return self._cevap(200, self._kasa_durum())
             if yol == "/sistem":
@@ -438,6 +469,12 @@ def istek_sinifi(ulgen, limit):
                                          .bitir(kimlik)})
             if urlparse(self.path).path == "/ilac/yanit":
                 return self._doz_yanit(veri)
+            if urlparse(self.path).path == "/saglik/veri":
+                try:
+                    e, a = saglik_veri.ekle(veri.get("olcumler"))
+                except saglik_veri.SaglikHatasi as hata:
+                    return self._cevap(400, {"hata": str(hata)})
+                return self._cevap(200, {"eklenen": e, "atlanan": a})
             if urlparse(self.path).path.startswith("/kasa/"):
                 return self._kasa(urlparse(self.path).path, veri)
             if urlparse(self.path).path.startswith("/kod/"):

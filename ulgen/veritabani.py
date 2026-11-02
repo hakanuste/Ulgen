@@ -35,7 +35,7 @@ class VeriTabaniHatasi(Exception):
 DB_HATALARI = (sqlite3.DatabaseError,) + (
     (_sc.DatabaseError,) if _sc is not None else ())
 
-SURUM = 7
+SURUM = 8
 FTS_VAR = False
 
 _KILIT = threading.RLock()
@@ -480,7 +480,14 @@ def _goc_7():
           "yol UNINDEXED, baslik, icerik, tokenize='unicode61')")
 
 
-GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5, 6: _goc_6, 7: _goc_7}
+def _goc_8():
+    """iPhone Sağlık köprüsü ölçümleri."""
+    sorgu("""CREATE TABLE IF NOT EXISTS saglik_olcum (
+        tur TEXT NOT NULL, deger REAL NOT NULL, zaman TEXT NOT NULL,
+        kaynak TEXT, PRIMARY KEY (tur, zaman))""")
+
+
+GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4, 5: _goc_5, 6: _goc_6, 7: _goc_7, 8: _goc_8}
 
 
 def surum():
