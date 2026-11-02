@@ -554,16 +554,25 @@ async function konus(metin) {
   sesiDurdur();
   const no = konusmaNo;
   const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
-  if (ad) { if (!(await klipCal(ad))) yerelKonus(metin); return; }
+  if (ad) { if (!(await klipCal(ad))) yedekKonus(metin); return; }
   if (!bulutSes) { yerelKonus(metin); return; }
   const parcalar = parcalaMetin(metin);
   for (let i = 0; i < parcalar.length; i++) {
     if (no !== konusmaNo) return;                       // araya "dur" girdi
     if (!(await bulutOku(parcalar[i], true))) {         // kota/ağ/hassas içerik: kalanı yerel sesle
-      if (no === konusmaNo) yerelKonus(parcalar.slice(i).join(" "), true);
+      if (no === konusmaNo) yedekKonus(parcalar.slice(i).join(" "), true);
       return;
     }
   }
+}
+
+// "Yalnız benim sesim": bulut sesi (kendi sesiniz) okuyamazsa kadın sistem sesine DÖNME, sessiz kal (yazı görünür).
+function yalnizBenimSes() {
+  try { return localStorage.getItem("ulgen_yalniz_ben") === "1"; } catch (e) { return false; }
+}
+function yedekKonus(metin, sirada) {
+  if (yalnizBenimSes()) return;
+  yerelKonus(metin, sirada);
 }
 
 function sesTercihi() {
@@ -1308,6 +1317,13 @@ async function sesPaneli(k) {
     t.textContent = "Bulut sesi: " + (durum.bulut ? "açık" : "kapalı");
     t.onclick = async () => { await istek("/ses/bulut-ayar", { acik: !durum.bulut }); bulutSes = !durum.bulut; ayarCiz(); };
     b.appendChild(t);
+    const y = ekle(k, "Yalnız benim sesim",
+      "Açıkken kendi sesiniz okuyamadığında (ilaç/sağlık gibi hassas yanıtlar, aylık sınır, ağ hatası) kadın sistem sesine geçilmez; yanıt yalnız yazı olarak kalır. Kapalıyken o yanıtları sistem sesi okur (ilaç hatırlatmalarını duymak için kapalı tutabilirsiniz).");
+    const yb = document.createElement("button"); yb.style.marginTop = "6px";
+    const boya = () => { yb.className = "dugme" + (yalnizBenimSes() ? " aktif" : ""); yb.textContent = "Yalnız benim sesim: " + (yalnizBenimSes() ? "açık" : "kapalı"); };
+    boya();
+    yb.onclick = () => { try { localStorage.setItem("ulgen_yalniz_ben", yalnizBenimSes() ? "0" : "1"); } catch (e) {} boya(); };
+    y.appendChild(yb);
   }
   // 2) Sabit cümleler için kendi mp3 dosyalarınız
   baslik(k, "Kendi ses dosyalarınız (mp3)");

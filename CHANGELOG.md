@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- Ses seçimi > "Yalnız benim sesim": kendi sesiniz (bulut) okuyamazsa kadın sistem sesine geçmez, yanıt yazı olarak kalır (varsayılan kapalı).
 - Kurulum: elle/eski başlatılmış Ülgen sunucuları durdurulur (eski kod sunmaya devam etmesin); kurulum sonunda çalışan sürüm ile kurulan sürüm karşılaştırılır, farklıysa yeniden başlatılır. `/saglik` sürümü de bildirir. Launchpad temizliği silinen kayıtları listeler.
 - Sürüm numarası artık yapıyı da gösterir (2.7.25); hangi yapının çalıştığı arayüzde görülür.
 - Sesle "dur / sus / kes / yeter" ("Ülgen" demeden de) sürekli dinleme açıkken anında yakalanır; konuşmayı ve süren işi durdurur.
