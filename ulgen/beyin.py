@@ -22,8 +22,21 @@ class BeyinHatasi(Exception):
     """Dil modeline ulaşılamadığında ya da yanıt alınamadığında fırlatılır."""
 
 
-def _json_gonder(adres, govde=None, basliklar=None, zaman_asimi=120):
-    """Adrese JSON gönderir (govde yoksa GET) ve JSON yanıtı döndürür."""
+class KotaHatasi(BeyinHatasi):
+    """Sağlayıcının ücretsiz kotası ya da hız sınırı doldu (HTTP 429 vb.)."""
+
+    def __init__(self, mesaj, bekle_sn=60, baslik=None):
+        super().__init__(mesaj)
+        self.bekle_sn = bekle_sn
+        self.baslik = baslik or {}
+
+
+def _json_gonder(adres, govde=None, basliklar=None, zaman_asimi=120,
+                 baslik_don=False):
+    """Adrese JSON gönderir (govde yoksa GET) ve JSON yanıtı döndürür.
+
+    ``baslik_don`` açıksa (yanıt, küçük_harfli_başlıklar) döner. HTTP 429
+    ``KotaHatasi`` olarak fırlatılır (Retry-After okunur)."""
     veri = None if govde is None else json.dumps(govde).encode("utf-8")
     istek = urllib.request.Request(
         adres, data=veri, method="POST" if veri is not None else "GET")
@@ -32,9 +45,20 @@ def _json_gonder(adres, govde=None, basliklar=None, zaman_asimi=120):
         istek.add_header(ad, deger)
     try:
         with urllib.request.urlopen(istek, timeout=zaman_asimi) as yanit:
-            return json.loads(yanit.read().decode("utf-8"))
+            veri_ = json.loads(yanit.read().decode("utf-8"))
+            if baslik_don:
+                return veri_, {k.lower(): v for k, v in yanit.headers.items()}
+            return veri_
     except urllib.error.HTTPError as hata:
         ayrinti = hata.read().decode("utf-8", errors="replace")[:300]
+        basliklar_ = {k.lower(): v for k, v in hata.headers.items()}
+        if hata.code == 429:
+            try:
+                bekle = int(float(basliklar_.get("retry-after", "60")))
+            except ValueError:
+                bekle = 60
+            raise KotaHatasi("HTTP 429: %s" % ayrinti, max(bekle, 1),
+                             basliklar_) from hata
         raise BeyinHatasi("HTTP %d: %s" % (hata.code, ayrinti)) from hata
     except (urllib.error.URLError, OSError, ValueError) as hata:
         raise BeyinHatasi(str(hata)) from hata
@@ -45,6 +69,9 @@ class Beyin:
 
     ad = "beyin"
     yerel = True
+    saglayici = None      # kota sayacındaki ad (yerel beyinlerde de tutulur)
+    model = ""
+    son_kullanim = None   # {"giris", "cikis", "gercek"} son çağrıdan
     sistem_butce = 3000   # sistem isteminin token bütçesi
     gecmis_butce = 1000   # konuşma geçmişinin token bütçesi
 
@@ -121,6 +148,7 @@ class GeminiBeyin(Beyin):
     """Google Gemini (ücretsiz katman). Veri Google'a gider."""
 
     ad = "Gemini (bulut)"
+    saglayici = "gemini"
     yerel = False
     sistem_butce = 6000
     gecmis_butce = 3000
@@ -154,14 +182,13 @@ class GeminiBeyin(Beyin):
                                  "maxOutputTokens": max(azami_token, 1024)},
         }
         adres = "%s/models/%s:generateContent" % (GEMINI_TABAN, self.model)
-        try:
-            veri = _json_gonder(adres, govde, self._basliklar(), 60)
-        except BeyinHatasi as hata:
-            if "HTTP 429" in str(hata):
-                raise BeyinHatasi(
-                    "Gemini ücretsiz günlük kotası doldu. Yarın yeniden "
-                    "deneyin ya da yerel beyni kullanın.") from hata
-            raise
+        veri = _json_gonder(adres, govde, self._basliklar(), 60)
+        kul = veri.get("usageMetadata") or {}
+        if "promptTokenCount" in kul:
+            self.son_kullanim = {
+                "giris": int(kul.get("promptTokenCount", 0)),
+                "cikis": int(kul.get("candidatesTokenCount", 0)),
+                "gercek": True}
         adaylar = veri.get("candidates") or []
         if not adaylar:
             raise BeyinHatasi("Gemini yanıt vermedi (içerik engellenmiş "
@@ -201,51 +228,211 @@ class GeminiBeyin(Beyin):
             if "generateContent" in m.get("supportedGenerationMethods", []))
 
 
-class BeyinYonlendirici:
-    """Ayara göre kullanılabilir ilk beyni seçer.
+class OpenAIUyumluBeyin(Beyin):
+    """Groq, Mistral ve OpenRouter: OpenAI uyumlu sohbet arayüzü (bulut).
 
-    Seçim 20 saniye önbelleğe alınır; böylece kapalı bir yerel sunucu için
-    her mesajda zaman aşımı beklenmez.
-    """
+    Yalnızca ücretsiz katman: OpenRouter'da ``:free`` olmayan model
+    ``ucretsiz_dogrula`` tarafından ağa çıkmadan reddedilir."""
+
+    yerel = False
+    sistem_butce = 6000
+    gecmis_butce = 3000
+    TABANLAR = {"groq": "https://api.groq.com/openai/v1",
+                "mistral": "https://api.mistral.ai/v1",
+                "openrouter": "https://openrouter.ai/api/v1"}
+    ADLAR = {"groq": "Groq", "mistral": "Mistral", "openrouter": "OpenRouter"}
+
+    def __init__(self, saglayici, anahtar, model):
+        self.saglayici = saglayici
+        self.anahtar = anahtar
+        self.model = model
+        self.ad = "%s (bulut)" % self.ADLAR[saglayici]
+
+    def kullanilabilir_mi(self):
+        from . import kota
+        return bool(self.anahtar) and kota.ucretsiz_mi(self.saglayici,
+                                                       self.model)
+
+    def _basliklar(self):
+        return {"Authorization": "Bearer " + self.anahtar}
+
+    def yanitla(self, sistem, mesajlar, azami_token=700):
+        from . import kota
+        kota.ucretsiz_dogrula(self.saglayici, self.model)
+        govde = {"model": self.model, "temperature": 0.6, "stream": False,
+                 "max_tokens": azami_token,
+                 "messages": [{"role": "system", "content": sistem}]
+                 + mesajlar}
+        veri, basliklar = _json_gonder(
+            self.TABANLAR[self.saglayici] + "/chat/completions", govde,
+            self._basliklar(), 60, baslik_don=True)
+        kota.basliklari_isle(self.saglayici, basliklar)
+        kul = veri.get("usage") or {}
+        if "prompt_tokens" in kul:
+            self.son_kullanim = {"giris": int(kul["prompt_tokens"]),
+                                 "cikis": int(kul.get("completion_tokens", 0)),
+                                 "gercek": True}
+        try:
+            metin = (veri["choices"][0]["message"]["content"] or "").strip()
+        except (KeyError, IndexError, TypeError) as hata:
+            raise BeyinHatasi("%s beklenmeyen yanıt verdi." % self.ad) from hata
+        if not metin:
+            raise BeyinHatasi("%s boş yanıt döndürdü." % self.ad)
+        return metin
+
+    def modelleri_listele(self):
+        veri = _json_gonder(self.TABANLAR[self.saglayici] + "/models",
+                            basliklar=self._basliklar(), zaman_asimi=20)
+        sonuc = []
+        for m in veri.get("data", []):
+            kimlik = m.get("id", "")
+            if self.saglayici == "openrouter":
+                fiyat = m.get("pricing") or {}
+                if not (kimlik.endswith(":free") or (
+                        str(fiyat.get("prompt")) in ("0", "0.0")
+                        and str(fiyat.get("completion")) in ("0", "0.0"))):
+                    continue
+            sonuc.append(kimlik)
+        return sorted(sonuc)
+
+
+class KotaliBeyin(Beyin):
+    """Bir beyni sarar: kotayı denetler, her çağrıyı sayar ve süresini ölçer."""
+
+    def __init__(self, ic, ad_kisa):
+        self.ic = ic
+        self.ad = ic.ad
+        self.yerel = ic.yerel
+        self.sistem_butce = ic.sistem_butce
+        self.gecmis_butce = ic.gecmis_butce
+        self.saglayici = ad_kisa
+        self.model = getattr(ic, "model", "")
+
+    def kullanilabilir_mi(self):
+        return self.ic.kullanilabilir_mi()
+
+    def yanitla(self, sistem, mesajlar, azami_token=700):
+        from . import kota
+        engelli, neden, bekle = kota.engel(self.saglayici)
+        if engelli:
+            raise KotaHatasi("%s kullanılamaz: %s" % (self.ad, neden),
+                             bekle or 60)
+        self.ic.son_kullanim = None
+        basla = time.time()
+        giris = sum(len(m["content"]) for m in mesajlar) + len(sistem)
+        try:
+            yanit = self.ic.yanitla(sistem, mesajlar, azami_token)
+        except KotaHatasi as hata:
+            kota.kaydet(self.saglayici, self.model, 0, 0, False, "kota",
+                        int((time.time() - basla) * 1000))
+            kota.engel_koy(self.saglayici, hata.bekle_sn, str(hata)[:160])
+            raise
+        except BeyinHatasi as hata:
+            kota.kaydet(self.saglayici, self.model, 0, 0, False, "hata",
+                        int((time.time() - basla) * 1000), str(hata)[:160])
+            raise
+        kul = self.ic.son_kullanim
+        if kul:
+            g, c, gercek = kul["giris"], kul["cikis"], True
+        else:       # sağlayıcı sayı vermediyse TAHMİN (≈3,5 karakter/token)
+            g, c, gercek = int(giris / 3.5), int(len(yanit) / 3.5), False
+        kota.kaydet(self.saglayici, self.model, g, c, gercek, "ok",
+                    int((time.time() - basla) * 1000))
+        return yanit
+
+    def __getattr__(self, ad):
+        return getattr(self.ic, ad)
+
+
+class BeyinYonlendirici:
+    """Ayara göre kullanılabilir beyinleri sıralar (önce yerel).
+
+    Yerel sunucunun ulaşılabilirliği 20 saniye önbelleğe alınır; kota
+    denetimi her seferinde yeniden yapılır."""
 
     def __init__(self, ayar_oku):
         self._ayar_oku = ayar_oku
-        self._onbellek = (0.0, None)
+        self._yerel_onbellek = (0.0, [])
 
-    def _adaylar(self, a):
+    def _yerel(self, a):
         yerel = []
         tur = a.get("yerel_tur", "otomatik")
         if tur in ("otomatik", "ollama"):
-            yerel.append(OllamaBeyin(a["ollama_adres"], a["ollama_model"]))
+            b = OllamaBeyin(a["ollama_adres"], a["ollama_model"])
+            b.saglayici = "ollama"
+            yerel.append(b)
         if tur in ("otomatik", "llamacpp"):
-            yerel.append(LlamaCppBeyin(a["llamacpp_adres"]))
+            b = LlamaCppBeyin(a["llamacpp_adres"])
+            b.saglayici = "llamacpp"
+            yerel.append(b)
+        return [KotaliBeyin(b, b.saglayici) for b in yerel]
+
+    def _bulut(self, a):
         bulut = []
-        if a.get("gemini_anahtar"):
-            bulut.append(GeminiBeyin(a["gemini_anahtar"], a["gemini_model"]))
+        for ad in a.get("bulut_sirasi", []):
+            anahtar = a.get(ad + "_anahtar")
+            if not anahtar:
+                continue
+            if ad == "gemini":
+                ic = GeminiBeyin(anahtar, a["gemini_model"])
+            elif ad in OpenAIUyumluBeyin.TABANLAR:
+                ic = OpenAIUyumluBeyin(ad, anahtar, a[ad + "_model"])
+            else:
+                continue
+            bulut.append(KotaliBeyin(ic, ad))
+        return bulut
+
+    def _adaylar(self, a):
         mod = a.get("beyin", "otomatik")
         if mod == "yerel":
-            return yerel
+            return self._yerel(a)
         if mod == "bulut":
-            return bulut
-        return yerel + bulut
+            return self._bulut(a)
+        return self._yerel(a) + self._bulut(a)
+
+    def _ulasilabilir(self, aday):
+        if not aday.yerel:
+            return aday.kullanilabilir_mi()
+        zaman, kayit = self._yerel_onbellek
+        if time.time() - zaman >= 20:
+            kayit = {}
+            self._yerel_onbellek = (time.time(), kayit)
+        if aday.saglayici not in kayit:
+            kayit[aday.saglayici] = aday.kullanilabilir_mi()
+        return kayit[aday.saglayici]
+
+    def kullanilabilirler(self):
+        """Şu an yanıt verebilecek beyinler (sıralı)."""
+        from . import kota
+        sonuc = []
+        for aday in self._adaylar(self._ayar_oku()):
+            if not self._ulasilabilir(aday):
+                continue
+            if not aday.yerel and kota.engel(aday.saglayici)[0]:
+                continue
+            sonuc.append(aday)
+        return sonuc
+
+    def engelliler(self):
+        """Anahtarı olup kotası dolu/bekleyen bulut beyinler: (ad, neden, bekle)."""
+        from . import kota
+        sonuc = []
+        for aday in self._adaylar(self._ayar_oku()):
+            if aday.yerel or not aday.kullanilabilir_mi():
+                continue
+            engelli, neden, bekle = kota.engel(aday.saglayici)
+            if engelli:
+                sonuc.append((aday.ad, neden, bekle))
+        return sonuc
 
     def sec(self):
-        """Kullanılabilir beyni döndürür; hiçbiri yoksa None."""
-        simdi = time.time()
-        zaman, onbellekteki = self._onbellek
-        if simdi - zaman < 20:
-            return onbellekteki
-        secilen = None
-        for aday in self._adaylar(self._ayar_oku()):
-            if aday.kullanilabilir_mi():
-                secilen = aday
-                break
-        self._onbellek = (simdi, secilen)
-        return secilen
+        """İlk kullanılabilir beyni döndürür; hiçbiri yoksa None."""
+        liste = self.kullanilabilirler()
+        return liste[0] if liste else None
 
     def sifirla(self):
         """Önbelleği temizler (ayar değişince çağrılır)."""
-        self._onbellek = (0.0, None)
+        self._yerel_onbellek = (0.0, [])
 
     def durum(self):
         """Arayüzde gösterilecek kısa beyin durumu."""

@@ -91,3 +91,11 @@ SORUN GİDERME
     Günlük: ~/ÜlgenVeri/ulgen.log
     Yeniden başlat: launchctl unload ~/Library/LaunchAgents/com.ulgen.sunucu.plist
                     launchctl load   ~/Library/LaunchAgents/com.ulgen.sunucu.plist
+
+EK (Aşama 3) - ÜCRETSİZ BULUT SAĞLAYICILARI
+    Anahtarı Terminal'de kaydedin:  ~/Ülgen/ortam/bin/python -m ulgen --sir-kaydet groq
+    (mistral, openrouter, gemini de aynı). Modelleri görmek: --modeller groq
+    OpenRouter'da yalnızca ":free" ile biten modeller çalışır.
+    Kota durumu: sohbette "kota" yazın. Hepsi dolarsa istek kuyruğa girer ("kuyruk").
+    DİKKAT: anahtarlarınıza fatura kartı eklemeyin; Ülgen ücretli kullanımı kapatır
+    ama sağlayıcıdaki hesabı denetleyemez. Kişisel mesajlar buluta gitmez.

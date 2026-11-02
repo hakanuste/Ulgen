@@ -5,7 +5,7 @@ Kullanım:
   python -m ulgen --terminal      terminalde yazışma
   python -m ulgen --ses           mikrofonla 'Ülgen' diyerek konuşma
   python -m ulgen --sabah         sabah raporunu yazdırır
-  python -m ulgen --modeller      Gemini'de kullanılabilir modelleri listeler
+  python -m ulgen --modeller [gemini|groq|mistral|openrouter]  modelleri listeler
   python -m ulgen --cihaz-ekle AD  yeni cihaz belirteci üretir (bir kez gösterilir)
   python -m ulgen --cihazlar       kayıtlı cihazları listeler
   python -m ulgen --cihaz-iptal N  cihazı iptal eder
@@ -18,7 +18,7 @@ Kullanım:
 import sys
 
 from . import __surum__, ayar, cihazlar, gizli, sunucu, veritabani, yedek
-from .beyin import BeyinHatasi, GeminiBeyin
+from .beyin import BeyinHatasi, GeminiBeyin, OpenAIUyumluBeyin
 from .cekirdek import Ulgen
 
 
@@ -48,13 +48,23 @@ def ses_kipi(ulgen):
     return 0
 
 
-def modelleri_goster():
-    anahtar = ayar.yukle().get("gemini_anahtar")
+def modelleri_goster(saglayici="gemini"):
+    """Seçilen sağlayıcıda kullanılabilir (OpenRouter'da yalnızca ücretsiz)
+    modelleri listeler."""
+    a = ayar.yukle()
+    anahtar = a.get(saglayici + "_anahtar")
     if not anahtar:
-        print("ayar.json içinde gemini_anahtar yok.")
+        print("%s anahtarı yok (--sir-kaydet %s)." % (saglayici, saglayici))
         return 1
     try:
-        for ad in GeminiBeyin(anahtar, "").modelleri_listele():
+        if saglayici == "gemini":
+            beyin = GeminiBeyin(anahtar, "")
+        elif saglayici in OpenAIUyumluBeyin.TABANLAR:
+            beyin = OpenAIUyumluBeyin(saglayici, anahtar, "")
+        else:
+            print("Bilinmeyen sağlayıcı:", saglayici)
+            return 1
+        for ad in beyin.modelleri_listele():
             print(ad)
     except BeyinHatasi as hata:
         print("Hata:", hata)
@@ -154,7 +164,8 @@ def main(argv=None):
     if sonuc is not None:
         return sonuc
     if "--modeller" in argv:
-        return modelleri_goster()
+        sira = argv.index("--modeller") + 1
+        return modelleri_goster(argv[sira] if sira < len(argv) else "gemini")
     ulgen = Ulgen()
     if "--terminal" in argv:
         terminal(ulgen)

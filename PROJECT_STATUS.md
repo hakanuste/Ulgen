@@ -20,3 +20,8 @@ Bekleyen kararlar: ROADMAP.md sonu.
 ## Aşama 2 durumu
 Tamamlandı ve test edildi (benzetim): veritabanı göç/işlem/bütünlük/yedek-kurtarma, hafıza modeli, duyarlı depo ayrımı.
 Kısmen: iPhone arayüzünde geçmiş/hafıza sayfaları geliştirilmedi (Aşama 5); `veri.db` diskte şifresiz (yedekleri şifreli).
+
+## Aşama 3 durumu
+Kodlandı, benzetimde test edildi: sağlayıcı yöneticisi, kota sayacı, kuyruk. Gerçek hesaplarla denenmedi (anahtar gerekir).
+Kısmen: iPhone arayüzünde kota paneli yok (yalnızca `kota` komutu ve `/kota` JSON; panel Aşama 5).
+Not: Groq/Mistral/Gemini'de "ücretsiz" hesap düzeyindedir; anahtarınıza fatura kartı eklemeyin. Ülgen bunu ağdan doğrulayamaz.

@@ -15,7 +15,7 @@ import threading
 
 from . import ayar
 
-SURUM = 2
+SURUM = 3
 FTS_VAR = False
 
 _KILIT = threading.RLock()
@@ -170,7 +170,40 @@ def _goc_2():
     sorgu("INSERT INTO sohbet_fts(sohbet_fts) VALUES ('rebuild')")
 
 
-GOCLER = {1: _goc_1, 2: _goc_2}
+def _goc_3():
+    """Sağlayıcı kotası olayları, kota durumu ve kalıcı istek kuyruğu."""
+    sorgu("""CREATE TABLE IF NOT EXISTS kota_olay (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        saglayici TEXT NOT NULL,
+        model TEXT NOT NULL DEFAULT '',
+        zaman REAL NOT NULL,
+        giris_token INTEGER NOT NULL DEFAULT 0,
+        cikis_token INTEGER NOT NULL DEFAULT 0,
+        gercek INTEGER NOT NULL DEFAULT 0,
+        durum TEXT NOT NULL,
+        gecikme_ms INTEGER NOT NULL DEFAULT 0)""")
+    sorgu("CREATE INDEX IF NOT EXISTS kota_olay_sz ON kota_olay "
+          "(saglayici, zaman)")
+    sorgu("""CREATE TABLE IF NOT EXISTS kota_durum (
+        saglayici TEXT PRIMARY KEY,
+        engel_son REAL NOT NULL DEFAULT 0,
+        engel_neden TEXT NOT NULL DEFAULT '',
+        gercek TEXT NOT NULL DEFAULT '{}',
+        gercek_zaman REAL NOT NULL DEFAULT 0,
+        son_hata TEXT NOT NULL DEFAULT '')""")
+    sorgu("""CREATE TABLE IF NOT EXISTS kuyruk (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        olusturma REAL NOT NULL,
+        metin TEXT NOT NULL,
+        duyarli INTEGER NOT NULL DEFAULT 0,
+        durum TEXT NOT NULL DEFAULT 'bekliyor',
+        deneme INTEGER NOT NULL DEFAULT 0,
+        son_deneme REAL NOT NULL DEFAULT 0,
+        beyin TEXT NOT NULL DEFAULT '',
+        sonuc TEXT NOT NULL DEFAULT '')""")
+
+
+GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3}
 
 
 def surum():

@@ -39,3 +39,7 @@ Güncelleme: Aşama 1 sonu · Durum sütunu yalnızca **testle doğrulananı** "
 - Duyarlı sohbet/hafıza buluta gönderilmez; bulut beynin kişisel araç çağırması kod düzeyinde engellenir (test: AracKapisiTesti).
 - Bozuk veritabanı silinmez, `yedekler/bozuk-*` içine taşınır.
 - Açık: `veri.db` diskte şifresiz.
+
+## Aşama 3 eki
+- Ücretli geçiş koddan kapalı (test: UcretsizGuvenceTesti). Bulut sağlayıcılarda ücretsiz katman verileri eğitim için kullanabilir; bu yüzden kişisel mesajlar hepsinde engelli ve kuyrukta yalnızca yerel beyne gider.
+- API anahtarları Anahtar Zinciri/şifreli dosyada; `--sir-kaydet groq|mistral|openrouter`.

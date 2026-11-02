@@ -13,11 +13,11 @@ import re
 import threading
 from datetime import datetime
 
-from . import ayar, cihazlar, kisilik, veritabani, yedek
+from . import ayar, cihazlar, kisilik, kota, kuyruk, veritabani, yedek
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
-from .beyin import BeyinHatasi, BeyinYonlendirici
+from .beyin import BeyinHatasi, BeyinYonlendirici, KotaHatasi
 from .guvenlik import OnayIstegi, OnayYoneticisi, duyarli_mi, kod_ayikla
 from .hafiza import HafizaYoneticisi
 from .zamanlayici import Zamanlayici
@@ -55,6 +55,7 @@ class Ulgen:
         ayar.sablon_olustur()
         self._kurtarma_mesaji = yedek.veritabani_kurtar()
         veritabani.kur()
+        kuyruk.kurtar()
         cihazlar.eski_anahtari_tasi()
         self.yonlendirici = BeyinYonlendirici(ayar.yukle)
         sec = self.yonlendirici.sec
@@ -157,35 +158,109 @@ class Ulgen:
         if hizli is not None:
             self._duyarli_tur = True    # yerel komut sonuçları buluta gitmez
             return hizli, "hızlı komut"
-        beyin = self.yonlendirici.sec()
-        if beyin is None:
-            return ("Şu an düşünen bir beynim yok. Ollama ya da llama.cpp "
-                    "sunucusunu başlatın, ya da ayar.json içine ücretsiz "
-                    "Gemini anahtarınızı yazın. Saat, ses, hatırlatıcı gibi "
-                    "hızlı komutlar yine de çalışır."), None
-        bulut = not beyin.yerel
-        if bulut and self._duyarli_tur and \
-                not ayar.yukle().get("bulut_kisisel_veri", False):
-            return ("Bu mesaj kişisel ya da duyarlı görünüyor (sağlık, "
-                    "kimlik, finans, parola gibi); buluta GÖNDERMEDİM. "
-                    "Yerel beyin (Ollama/llama.cpp) açık değil. Saat, "
-                    "hatırlatıcı gibi yerel komutlar çalışır."), None
-        self.araclar.bulut_modu = bulut
-        self.araclar.kisisel_kullanildi = False
-        try:
-            yanit = self._beyinle_yanitla(beyin, metin)
-        except BeyinHatasi as hata:
-            self.yonlendirici.sifirla()
-            return "Beyin yanıt veremedi: %s" % hata, beyin.ad
-        except OnayIstegi as istek:
-            return istek.mesaj, beyin.ad
-        if self.araclar.kisisel_kullanildi:
-            self._duyarli_tur = True
-        try:
-            self.hafiza.gozlemle(metin, yanit)
-        except Exception:  # hafıza hatası sohbeti bozmasın
-            pass
-        return yanit, beyin.ad
+        durum, yanit, beyin_adi = self._beyinle_dene(metin)
+        if durum == "kuyruk":
+            return self._kuyruga_al(metin), None
+        return yanit, beyin_adi
+
+    def _beyinle_dene(self, metin):
+        """Kullanılabilir beyinleri sırayla dener.
+
+        ("tamam", yanıt, beyin) | ("yok", mesaj, None) | ("kuyruk", None, None)
+        Kota/yerel kapalı yüzünden hiçbir beyin deneyemediyse "kuyruk".
+        Ücretli servise ASLA geçilmez; yalnızca ücretsiz beyinler denenir."""
+        izin = ayar.yukle().get("bulut_kisisel_veri", False)
+        adaylar = self.yonlendirici.kullanilabilirler()
+        engelli = self.yonlendirici.engelliler()
+        atlanan_duyarli = kota_doldu = False
+        son_hata = None
+        for beyin in adaylar:
+            bulut = not beyin.yerel
+            if bulut and self._duyarli_tur and not izin:
+                atlanan_duyarli = True
+                continue
+            self.araclar.bulut_modu = bulut
+            self.araclar.kisisel_kullanildi = False
+            try:
+                yanit = self._beyinle_yanitla(beyin, metin)
+            except KotaHatasi:
+                kota_doldu = True
+                continue
+            except BeyinHatasi as hata:
+                self.yonlendirici.sifirla()
+                son_hata = (hata, beyin.ad)
+                continue
+            except OnayIstegi as istek:
+                return "tamam", istek.mesaj, beyin.ad
+            if self.araclar.kisisel_kullanildi:
+                self._duyarli_tur = True
+            try:
+                self.hafiza.gozlemle(metin, yanit)
+            except Exception:  # hafıza hatası sohbeti bozmasın
+                pass
+            return "tamam", yanit, beyin.ad
+        if atlanan_duyarli or kota_doldu or engelli:
+            return "kuyruk", None, None
+        if son_hata:
+            return "tamam", "Beyin yanıt veremedi: %s" % son_hata[0], \
+                son_hata[1]
+        return "yok", ("Şu an düşünen bir beynim yok. Ollama ya da llama.cpp "
+                       "sunucusunu başlatın, ya da ücretsiz bir bulut "
+                       "anahtarı (Gemini, Groq, Mistral, OpenRouter) "
+                       "ekleyin. Saat, ses, hatırlatıcı gibi hızlı komutlar "
+                       "yine de çalışır."), None
+
+    def _kuyruga_al(self, metin):
+        kimlik = kuyruk.ekle(metin, self._duyarli_tur)
+        if kimlik is None:
+            return ("Kuyruk dolu (%d istek bekliyor); yeni isteği alamadım. "
+                    "Hatırlatıcılar ve yerel komutlar çalışmaya devam eder."
+                    % kuyruk.AZAMI_BEKLEYEN)
+        nedenler = ["%s: %s" % (ad, neden)
+                    for ad, neden, _ in self.yonlendirici.engelliler()]
+        if self._duyarli_tur:
+            ek = ("Mesaj kişisel göründüğü için yalnızca YEREL beyin "
+                  "yanıtlayacak; buluta göndermem.")
+        else:
+            ek = "Uygun ücretsiz beyin açılınca kendiliğinden yanıtlayacağım."
+        return ("Şu an yanıt verebilecek ücretsiz beyin yok%s. İsteğinizi "
+                "kuyruğa aldım (#%d); %s Ücretli servise geçmem. Saat, "
+                "hatırlatıcı ve ilaç alarmları bundan etkilenmez."
+                % ((" (" + "; ".join(nedenler) + ")") if nedenler else "",
+                   kimlik, ek))
+
+    # ----------------------------------------------------------- kuyruk
+    def kuyruk_isle(self):
+        """Kuyruktan en eski isteği alıp yanıtlamayı dener. İşlendiyse True."""
+        for dolan in kuyruk.suresi_dolanlar():
+            self.bildir("Kuyruktaki isteğin (#%d) süresi doldu, "
+                        "yanıtlanamadı: %s" % (dolan["id"], dolan["metin"][:60]))
+        if not self.yonlendirici.kullanilabilirler():
+            return False
+        kayit = kuyruk.sonrakini_al()
+        if kayit is None:
+            return False
+        with self._sohbet_kilit:
+            self._duyarli_tur = bool(kayit["duyarli"]) or \
+                duyarli_mi(kayit["metin"])
+            durum, yanit, beyin_adi = self._beyinle_dene(kayit["metin"])
+        if durum == "tamam":
+            kuyruk.bitir(kayit["id"], "tamam", beyin_adi or "", yanit)
+            self._kaydet("kullanici", kayit["metin"], self._duyarli_tur)
+            self._kaydet("asistan", yanit, self._duyarli_tur)
+            self.bildir("Kuyruktaki isteğin yanıtlandı (#%d — %s):\n%s"
+                        % (kayit["id"], kayit["metin"][:50], yanit))
+            return True
+        kuyruk.beklemeye_al(kayit["id"])
+        return False
+
+    def kuyruk_dongusu(self, aralik=30):
+        while not self._durdur.wait(aralik):
+            try:
+                while self.kuyruk_isle():
+                    pass
+            except Exception as hata:   # döngü hiçbir zaman ölmesin
+                veritabani.gunluge_yaz("hata", "kuyruk", str(hata)[:200])
 
     def _beyinle_yanitla(self, beyin, metin):
         """Model + araç döngüsü."""
@@ -215,3 +290,4 @@ class Ulgen:
         threading.Thread(target=self.zamanlayici.dongu, daemon=True).start()
         threading.Thread(target=yedek.otomatik_dongu, args=(self._durdur,),
                          daemon=True).start()
+        threading.Thread(target=self.kuyruk_dongusu, daemon=True).start()

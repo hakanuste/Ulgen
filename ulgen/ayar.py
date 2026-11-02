@@ -31,6 +31,14 @@ VARSAYILAN = {
     # Google AI Studio'dan alınan ücretsiz anahtar (isteğe bağlı)
     "gemini_anahtar": "",
     "gemini_model": "gemini-3.5-flash-lite",
+    # Ücretsiz bulut sağlayıcıları (modeller --modeller ile listelenir)
+    "groq_model": "llama-3.3-70b-versatile",
+    "mistral_model": "mistral-small-latest",
+    "openrouter_model": "openrouter/free",     # yalnızca ":free" kabul edilir
+    "bulut_sirasi": ["gemini", "groq", "mistral", "openrouter"],
+    "kota_sinirlari": {},          # örn. {"groq": {"rpm": 20}} belgeden düzeltme
+    "kuyruk_omru_saat": 24,
+    # Ücretli servise geçiş KODDA kapalıdır; böyle bir ayar yoktur.
     # Ücretsiz Gemini katmanında gönderilen metinler Google tarafından
     # ürün geliştirmede kullanılabilir. Bu yüzden hafıza, sağlık verisi ve
     # kasa notları varsayılan olarak buluta GİTMEZ.

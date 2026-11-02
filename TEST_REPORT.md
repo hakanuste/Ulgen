@@ -40,3 +40,7 @@ Ek elle yapılan: gerçek süreçte (`python -m ulgen`) 127.0.0.1'de HTTP, HTTPS
 ## Aşama 2 sonuçları (Linux benzetimi, gerçek Mac/iPhone değil)
 76 test, tümü geçti: göç (eski v1 veritabanı dahil), işlem geri alma, bütünlük denetimi, bozuk veritabanından yedekle kurtarma, hafıza kaynak/güven/eskime/çelişki/düzeltme, duyarlı deponun buluta kapalılığı, disk şifrelemesi, bulutta kişisel araç engeli, hızlı hafıza komutları.
 Denenmedi: Mac Anahtar Zinciri, uzun süreli (günler) çalışma, çok büyük veritabanında FTS başarımı.
+
+## Aşama 3 sonuçları (benzetim: sahte sağlayıcı sunucuları)
+97 test geçti. Kapsanan: gerçek/tahmini token ayrımı, dakikalık/günlük sınır, Pasifik günü, 429 sonrası sıradaki ücretsiz sağlayıcıya geçiş, sunucu hatasında kota harcamadan geçiş, ücretli modelin ağa çıkmadan reddi, kota doluyken kuyruk + hatırlatıcının çalışması, yeniden başlatmada kuyruğun korunması, kişisel mesajın buluta HİÇ gitmemesi, yerel beyin açılınca işlenmesi, süresi dolan istek bildirimi.
+Denenmedi: gerçek Groq/Mistral/OpenRouter/Gemini uç noktaları (anahtarım yok; model adları ve başlık adları belgeden, doğrulanmadı), gerçek 429 davranışı, günler süren kullanım.

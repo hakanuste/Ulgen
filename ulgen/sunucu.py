@@ -22,7 +22,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import ayar, cihazlar, tls, veritabani
+from . import ayar, cihazlar, kota, kuyruk, tls, veritabani
 from .arayuz import SAYFA
 
 YEREL_AD = "localhost"
@@ -234,6 +234,10 @@ def istek_sinifi(ulgen, limit):
                 durum["son_bildirim"] = (bildirimler[-1]["id"]
                                          if bildirimler else 0)
                 return self._cevap(200, durum)
+            if yol == "/kota":
+                return self._cevap(200, kota.tablo())
+            if yol == "/kuyruk":
+                return self._cevap(200, kuyruk.bekleyenler())
             if yol == "/ozet":
                 satirlar = veritabani.sorgu(
                     "SELECT zaman, mesaj FROM hatirlaticilar WHERE "

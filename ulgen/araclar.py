@@ -19,7 +19,7 @@ import sys
 import tempfile
 from datetime import datetime
 
-from . import ayar, veritabani
+from . import ayar, kota, kuyruk, veritabani
 from .ajanlar import DosyaAjani
 from .baglam import kasa_alintilari
 from .beyin import BeyinHatasi, GeminiBeyin
@@ -545,6 +545,15 @@ class Araclar:
         eslesme = re.match(r"^not al[:,]?\s+(.+)$", m, re.IGNORECASE)
         if eslesme:
             return self.not_ekle(eslesme.group(1))
+        if re.fullmatch(r"(kota(?:lar)?|kullan[ıi]m|sa[ğg]lay[ıi]c[ıi]lar)"
+                        r"(?: durumu)?[?.! ]*", k):
+            return kota.metin()
+        if re.fullmatch(r"kuyruk[?.! ]*", k):
+            return kuyruk.metin()
+        e = re.fullmatch(r"kuyruk iptal #?(\d+)", k)
+        if e:
+            return "İptal edildi." if kuyruk.iptal(int(e.group(1))) else \
+                "Bu numarada bekleyen istek yok."
         hizli = self._hafiza_komutu(m)
         if hizli is not None:
             return hizli

@@ -78,3 +78,5 @@ Kural: önce güvenlik ve veri bütünlüğü; her aşama testi geçmeden sonrak
 2. Native iOS uygulaması (C) kaynak kodunu yazayım mı? (Xcode'da sizin derlemeniz gerekir; test edilmemiş kod olarak etiketlenir.)
 
 ## Güncelleme: Aşama 2 bitti (T = tamamlandı ve test edildi, benzetim). Sıradaki: Aşama 3 (sağlayıcı yöneticisi, kota, kalıcı kuyruk).
+
+## Güncelleme: Aşama 3 kodlandı ve benzetimde test edildi. Sıradaki: Aşama 4 (görev motoru, ilaç dozu başına onay).
