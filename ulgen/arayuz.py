@@ -520,6 +520,8 @@ function cipSec(onek) {
 
 let konusmaNo = 0;
 
+const DUR_DESENI = /^(ülgen[,.\s]+)?(dur|sus|kes|yeter|sessiz|sessiz ol|konuşma|tamam dur|dur artık|sus artık|dur ülgen|sus ülgen)[\s.!?]*$/i;
+
 // Konuşmayı keser VE sunucuda süren sohbet/araştırma işini durdurur.
 function hepsiniDurdur() {
   sesiDurdur();
@@ -610,7 +612,7 @@ async function gonderMetin(m) {
   if (window.innerWidth < 900 && aktifSekme === "ana") sekme("sohbet");
   if (!m) return;
   balonEkle(m, "kullanici");
-  if (/^(dur|sus|kes|yeter|sessiz|sessiz ol|konuşma|tamam dur|dur artık|sus artık)[\s.!?]*$/i.test(m)) {
+  if (DUR_DESENI.test(m)) {
     hepsiniDurdur(); balonEkle("Sustum; süren iş varsa durduruyorum.", "asistan"); return;
   }
   try {
@@ -644,12 +646,21 @@ function dinleyiciBaslat() {
   if (!SR) { balonEkle("Bu tarayıcıda ses tanıma yok.", "asistan"); return; }
   const r = new SR();
   r.lang = "tr-TR";
-  r.interimResults = false;
+  r.interimResults = true;                  // "dur" bitmeden, anında yakalansın
   r.continuous = surekli;
+  let durYakalandi = -1;
   r.onresult = (e) => {
-    const son = e.results[e.results.length - 1];
+    const sira = e.results.length - 1;
+    const son = e.results[sira];
+    const ham = son[0].transcript.trim();
+    // "dur" demek, ağırlıklı olarak konuşma sürerken: çağrı sözcüğü gerekmez
+    if (DUR_DESENI.test(ham) && durYakalandi !== sira) {
+      durYakalandi = sira; hepsiniDurdur();
+      if (son.isFinal) balonEkle("Sustum; süren iş varsa durduruyorum.", "asistan");
+      return;
+    }
     if (!son.isFinal) return;
-    const metin = son[0].transcript.trim();
+    const metin = ham;
     if (!surekli) { gonderMetin(metin); return; }
     const eslesme = metin.match(/^(ülgen|ulgen)[,.\s]*(.*)$/i);
     if (!eslesme) return;
