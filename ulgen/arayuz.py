@@ -1195,7 +1195,7 @@ async function yzCiz() {
   await anahtarlarim(k);
 }
 
-const SAGLAYICI_AD = { gemini: "Gemini", nvidia: "NVIDIA", groq: "Groq", mistral: "Mistral", openrouter: "OpenRouter", elevenlabs: "ElevenLabs (ses)", github: "GitHub (özel depo güncellemesi için)" };
+const SAGLAYICI_AD = { gemini: "Gemini", nvidia: "NVIDIA", groq: "Groq", mistral: "Mistral", openrouter: "OpenRouter", elevenlabs: "ElevenLabs (ses)", github: "GitHub (İSTEĞE BAĞLI: yalnız depo özel olursa gerekir; şimdilik boş bırakın)" };
 
 // Hangi sağlayıcıya anahtar girilmiş: görünür, eklenir, değiştirilir, silinir.
 async function anahtarlarim(k) {
