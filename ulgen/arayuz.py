@@ -77,11 +77,93 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
            border-radius: 10px; padding: 10px; font: 14px/1.45 ui-monospace, Menlo, monospace; tab-size: 4; }
 #kodCikti { height: 28%; overflow: auto; margin: 6px 0 0; background: #05080b; border: 1px solid #22303d;
             border-radius: 10px; padding: 8px; font: 13px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+
+/* ---- ÜLGEN teması: koyu lacivert + altın ---- */
+:root { --bg:#060b17; --kart:#0d1730; --kart2:#101d3b; --yazi:#e8eefc; --soluk:#8d9bb8; --vurgu:#37a8ff;
+        --kullanici:#14437a; --kenar:#1a2a4d; --altin:#c9a24a; --altin2:#7d6428; --yesil:#3fd07a; --kirmizi:#ff6b5e; }
+body { background: radial-gradient(1200px 600px at 70% -10%, #0e2150 0%, var(--bg) 60%); }
+.dugme { border-color: var(--kenar); }
+.dugme.aktif { background: linear-gradient(180deg,#4db6ff,#2a8fe0); }
+.balon.asistan, .balon.kullanici { border: 1px solid var(--kenar); }
+.balon.kullanici { background: linear-gradient(180deg,#17508f,#123e72); }
+.satir2 { border: 1px solid var(--kenar); background: var(--kart); }
+#kok { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#ana { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#yan { display: contents; }
+#marka, #kullanici { display: none; }
+#serit { display: none; }
+#icerik { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+#sohbetKolon { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#pano { display: none; }
+body:not([data-s="sohbet"]) #sohbetKolon { display: none; }
+#saat { font-variant-numeric: tabular-nums; color: var(--altin); font-size: 13px; }
+@media (min-width: 900px) {
+  #kok { flex-direction: row; }
+  #yan { display: flex; flex-direction: column; width: 232px; flex-shrink: 0; padding: 18px 14px;
+         border-right: 1px solid var(--altin2); background: linear-gradient(180deg,#081126,#060b17); }
+  #marka { display: block; text-align: center; padding: 10px 0 22px; }
+  #marka b { display: block; font-size: 26px; letter-spacing: 6px; color: var(--altin);
+             text-shadow: 0 0 14px rgba(201,162,74,.35); }
+  #marka small { color: var(--soluk); font-size: 11px; letter-spacing: 1px; }
+  #marka i { display: block; width: 92px; height: 92px; margin: 0 auto 12px; border-radius: 50%;
+             background: radial-gradient(circle at 50% 40%, #1b3d86 0%, #0a1634 62%, #060b17 100%);
+             border: 2px solid var(--altin2); box-shadow: 0 0 24px rgba(55,168,255,.25) inset, 0 0 18px rgba(201,162,74,.2); }
+  #sekmeler { flex-direction: column; border: 0; padding: 0; gap: 6px; overflow: visible; }
+  #sekmeler button { flex: none; text-align: left; font-size: 15px; padding: 11px 14px; color: var(--yazi);
+                     border: 1px solid transparent; border-radius: 12px; }
+  #sekmeler button.aktif { background: linear-gradient(90deg,#0f2a5c,#0b1d42); color: var(--yazi);
+                           border-color: var(--vurgu); box-shadow: 0 0 12px rgba(55,168,255,.25); }
+  #kullanici { display: block; margin-top: auto; padding: 12px 6px 0; border-top: 1px solid var(--kenar);
+               font-size: 13px; color: var(--soluk); }
+  #kullanici b { color: var(--yazi); display: block; font-size: 14px; }
+  header { border-bottom: 1px solid var(--altin2); justify-content: flex-start; gap: 10px; padding-top: 14px; }
+  #saat { margin-right: auto; }
+  header h1 { display: none; }
+  #serit { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; padding: 14px 16px 4px; }
+  .kartK { background: linear-gradient(180deg,var(--kart2),var(--kart)); border: 1px solid var(--kenar);
+           border-radius: 14px; padding: 12px 14px; font-size: 13px; color: var(--soluk); }
+  .kartK b { display: block; color: var(--yazi); font-size: 15px; margin-bottom: 4px; }
+  .kartK.uyari { border-color: #7a3a2f; }
+  .cubuk { height: 6px; background: #0a1226; border-radius: 4px; margin-top: 6px; overflow: hidden; }
+  .cubuk i { display: block; height: 100%; background: linear-gradient(90deg,#2a8fe0,#4db6ff); }
+  #icerik { flex-direction: row; gap: 14px; padding: 12px 16px 14px; }
+  #sohbetKolon { flex: 1 1 58%; border: 1px solid var(--kenar); border-radius: 16px; background: rgba(13,23,48,.55);
+                 overflow: hidden; }
+  body[data-s="sohbet"] #pano { display: flex; flex-direction: column; gap: 12px; flex: 0 0 340px; overflow-y: auto; }
+  .panel { flex: 1; }
+}
+#pano .kartK { color: var(--yazi); }
+#pano h4 { margin: 0 0 8px; font-size: 14px; color: var(--altin); font-weight: 600; }
+#pano .s { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; font-size: 13px;
+           border-top: 1px solid var(--kenar); }
+#pano .s span:last-child { color: var(--soluk); }
+#pano .ok { color: var(--yesil) !important; } #pano .bekle { color: var(--altin) !important; }
+@media (max-width: 899px) {
+  #serit { display: none; }
+  #ana { order: 1; } #yan { display: contents; }
+  #sekmeler { order: 2; border-top: 1px solid var(--altin2); border-bottom: 0;
+              padding: 6px 6px calc(env(safe-area-inset-bottom) + 6px); background: #060b17; }
+}
 </style>
 </head>
 <body>
+<div id="kok">
+<aside id="yan">
+  <div id="marka"><i></i><b>ÜLGEN</b><small>Kişisel Yapay Zekâ Yardımcı</small></div>
+  <nav id="sekmeler">
+  <button class="aktif" data-s="sohbet" onclick="sekme('sohbet')">Ana Sayfa</button>
+  <button data-s="gorevler" onclick="sekme('gorevler')">Görevler</button>
+  <button data-s="ilac" onclick="sekme('ilac')">İlaç</button>
+  <button data-s="bildirim" onclick="sekme('bildirim')">Bildirim</button>
+  <button data-s="kasa" onclick="sekme('kasa')">Özel Kasa</button>
+  <button data-s="sistem" onclick="sekme('sistem')">Sistem</button>
+  </nav>
+  <div id="kullanici"><b>Hakan Üste</b><span id="surumYazi">ÜLGEN</span> <span id="nokta2" class="nokta"></span></div>
+</aside>
+<div id="ana">
 <header>
   <h1><span id="nokta" class="nokta"></span>ÜLGEN</h1>
+  <span id="saat"></span>
   <button class="dugme" onclick="kodAcPencere()">&lt;/&gt; Kod</button>
   <button id="sesBtn" class="dugme aktif" onclick="sesDegistir()">Ses: açık</button>
   <button id="surekliBtn" class="dugme" onclick="surekliDegistir()">Sürekli dinle: kapalı</button>
@@ -108,19 +190,14 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
   <pre id="kodCikti">Çıktı burada görünür. Kod sizin yetkinizle çalışır (kum havuzu değildir).</pre>
 </div>
 <div id="baglanti">Bağlantı koptu; yeniden deneniyor…</div>
-<div id="sekmeler">
-  <button class="aktif" data-s="sohbet" onclick="sekme('sohbet')">Sohbet</button>
-  <button data-s="gorevler" onclick="sekme('gorevler')">Görevler</button>
-  <button data-s="ilac" onclick="sekme('ilac')">İlaç</button>
-  <button data-s="bildirim" onclick="sekme('bildirim')">Bildirim</button>
-  <button data-s="kasa" onclick="sekme('kasa')">Kasa</button>
-  <button data-s="sistem" onclick="sekme('sistem')">Sistem</button>
-</div>
+<div id="serit"></div>
+<div id="icerik">
 <div id="pGorevler" class="panel"></div>
 <div id="pIlac" class="panel"></div>
 <div id="pBildirim" class="panel"></div>
 <div id="pKasa" class="panel"></div>
 <div id="pSistem" class="panel"></div>
+<section id="sohbetKolon">
 <div id="yaklasan"></div>
 <div id="beyin" style="font-size:12px;color:var(--soluk);padding:2px 16px"></div>
 <div id="akis"></div>
@@ -129,6 +206,10 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
   <textarea id="giris" rows="1" placeholder="Yazın ya da konuşun" onkeydown="tusla(event)"></textarea>
   <button class="yuvarlak gonder" onclick="gonder()" title="Gönder">➤</button>
 </div>
+</section>
+<aside id="pano"></aside>
+</div>
+</div></div>
 <div id="anahtarKutu">
   <div class="kart">
     <b>Cihaz belirteci</b>
@@ -456,12 +537,67 @@ let aktifSekme = "sohbet";
 
 function sekme(ad) {
   aktifSekme = ad;
+  document.body.dataset.s = ad;
   document.querySelectorAll("#sekmeler button").forEach(b => b.classList.toggle("aktif", b.dataset.s === ad));
   for (const [k, id] of Object.entries(paneller)) document.getElementById(id).classList.toggle("acik", k === ad);
-  const sohbet = ad === "sohbet";
-  for (const id of ["yaklasan", "beyin", "akis", "alt"]) document.getElementById(id).style.display = sohbet ? "" : "none";
-  if (!sohbet) panelYenile(ad);
+  if (ad === "sohbet") panoYenile(); else panelYenile(ad);
 }
+document.body.dataset.s = "sohbet";
+
+// ---- pano (geniş ekran): özet şeridi + sağ kartlar -------------------------
+function kartK(ust, baslik, govde, ek) {
+  const d = document.createElement("div"); d.className = "kartK" + (ek || "");
+  const b = document.createElement("b"); b.textContent = baslik; d.appendChild(b);
+  (Array.isArray(govde) ? govde : [govde]).forEach(g => {
+    if (g instanceof Node) d.appendChild(g);
+    else { const p = document.createElement("div"); p.textContent = g; d.appendChild(p); }
+  });
+  ust.appendChild(d); return d;
+}
+function cubuk(oran) { const c = document.createElement("div"); c.className = "cubuk";
+  const i = document.createElement("i"); i.style.width = Math.max(0, Math.min(100, oran)) + "%"; c.appendChild(i); return c; }
+function satirS(kap, a, b, sinif) { const r = document.createElement("div"); r.className = "s";
+  const x = document.createElement("span"); x.textContent = a; const y = document.createElement("span"); y.textContent = b;
+  if (sinif) y.className = sinif; r.appendChild(x); r.appendChild(y); kap.appendChild(r); }
+
+async function panoYenile() {
+  if (window.innerWidth < 900) return;
+  try {
+    const [g, il, sis] = await Promise.all([istek("/gorevler"), istek("/ilac/bugun"), istek("/sistem")]);
+    const serit = document.getElementById("serit"); serit.replaceChildren();
+    const bek = il.filter(x => x.durum === "bekliyor" || x.durum === "ertelendi" || x.durum === "yanitsiz").length;
+    const acik = g.gorev.length;
+    kartK(serit, "Günün Özeti", [acik + " görev · " + il.length + " ilaç · " + g.randevu.length + " randevu"]);
+    kartK(serit, "İlaçlar", bek ? bek + " bekleyen doz" : "Bekleyen doz yok", bek ? " uyari" : "");
+    kartK(serit, "Görevler", acik ? acik + " tamamlanmamış" : "Açık görev yok", acik ? " uyari" : "");
+    kartK(serit, "Sağlık", ["Adım, nabız, uyku:", "Aşama 7'de (iPhone Sağlık köprüsü)"]);
+    kartK(serit, "Sistem", ["ÜLGEN " + sis.surum + " · " + (sis.butunluk.saglam ? "Çalışıyor" : "SORUNLU"),
+      "Veritabanı: " + (sis.veritabani_sifreli ? "şifreli" : "ŞİFRESİZ")], sis.veritabani_sifreli ? "" : " uyari");
+    document.getElementById("surumYazi").textContent = "ÜLGEN " + sis.surum;
+    const p = document.getElementById("pano"); p.replaceChildren();
+    const k1 = kartK(p, "İlaç Takvimi", []);
+    if (!il.length) satirS(k1, "Bugün doz yok", "");
+    il.forEach(x => satirS(k1, "D" + x.id + " – " + x.ilac_ad, x.planli.slice(11, 16) + " " + durumYazi[x.durum].split(" ")[0],
+      x.durum === "alindi" ? "ok" : (x.durum === "bekliyor" ? "bekle" : "")));
+    const k2 = kartK(p, "Görevler", []);
+    if (!g.gorev.length) satirS(k2, "Açık görev yok", "");
+    g.gorev.slice(0, 6).forEach(x => satirS(k2, x.baslik, x.zaman ? x.zaman.slice(5, 16) : "Zamansız"));
+    const k3 = kartK(p, "Yapay Zekâ Modelleri", []);
+    sis.kota.forEach(t => satirS(k3, t.ad, t.engelli ? "Engelli" : "Hazır", t.engelli ? "" : "ok"));
+    const k4 = kartK(p, "Sistem Durumu", []);
+    const h = sis.donanim || {};
+    if (h.cpu !== undefined) { satirS(k4, "CPU", Math.round(h.cpu) + "%"); k4.appendChild(cubuk(h.cpu)); }
+    if (h.ram_toplam) { satirS(k4, "RAM", h.ram_kullanilan + " / " + h.ram_toplam + " GB"); k4.appendChild(cubuk(100 * h.ram_kullanilan / h.ram_toplam)); }
+    if (h.disk_toplam) { satirS(k4, "Disk", h.disk_kullanilan + " / " + h.disk_toplam + " GB"); k4.appendChild(cubuk(100 * h.disk_kullanilan / h.disk_toplam)); }
+  } catch (e) { /* oturum yoksa istek() zaten bildirir */ }
+}
+function saatYaz() {
+  const d = new Date();
+  document.getElementById("saat").textContent = d.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" }) +
+    "  " + d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+}
+saatYaz(); setInterval(saatYaz, 20000); setInterval(() => { if (aktifSekme === "sohbet") panoYenile(); }, 30000);
+setTimeout(panoYenile, 400);
 
 function ekle(kap, metin, kucuk) {
   const d = document.createElement("div");

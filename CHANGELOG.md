@@ -79,3 +79,6 @@
 
 ## 2.6 — Aşama 6: Özel Kasa
 - ozelkasa.py, webauthn.py, cbor.py; Kasa sekmesi; kurtarma kodu/paketi; `--ana-anahtar-kurtar`; sslip.io Host/SAN desteği; veritabanı göçü 6.
+
+## 2.6 (devam)
+- Obsidian arama dizini (not_fts, artımlı, yalnız okuma, PDF dahil); yeni arayüz teması ve pano; /sistem'e donanım ölçümü; veritabanı göçü 7.

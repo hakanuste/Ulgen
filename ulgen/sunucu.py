@@ -170,6 +170,46 @@ def _gorevler_json():
             "rutin": [x for x in satirlar if x["tur"] == "rutin"]}
 
 
+def _donanim():
+    """CPU/RAM/disk özeti (sır içermez); okunamayan alan atlanır."""
+    sonuc = {}
+    try:
+        import os
+        import shutil
+        sonuc["cpu"] = min(100.0, os.getloadavg()[0] / (os.cpu_count() or 1)
+                           * 100)
+        d = shutil.disk_usage(os.path.expanduser("~"))
+        sonuc["disk_toplam"] = round(d.total / 1e9)
+        sonuc["disk_kullanilan"] = round((d.total - d.free) / 1e9)
+    except (OSError, AttributeError):
+        pass
+    try:
+        if sys.platform == "darwin":
+            toplam = int(subprocess.run(["sysctl", "-n", "hw.memsize"],
+                                        capture_output=True, text=True,
+                                        timeout=3).stdout)
+            vm = subprocess.run(["vm_stat"], capture_output=True, text=True,
+                                timeout=3).stdout
+            sayfa = int(re.search(r"page size of (\d+)", vm).group(1))
+            bos = sum(int(re.search(a + r":\s+(\d+)", vm).group(1))
+                      for a in ("Pages free", "Pages inactive",
+                                "Pages speculative"))
+            kul = toplam - bos * sayfa
+        else:
+            bilgi = {}
+            with open("/proc/meminfo") as f:
+                for satir in f:
+                    a, _, b = satir.partition(":")
+                    bilgi[a] = int(b.split()[0]) * 1024
+            toplam = bilgi["MemTotal"]
+            kul = toplam - bilgi["MemAvailable"]
+        sonuc["ram_toplam"] = round(toplam / 1e9, 1)
+        sonuc["ram_kullanilan"] = round(kul / 1e9, 1)
+    except (OSError, ValueError, AttributeError, KeyError, subprocess.SubprocessError):
+        pass
+    return sonuc
+
+
 def _sistem_json(ulgen):
     """Yönetim paneli: salt okunur durum özeti (sır içermez)."""
     saglam, ayrinti = veritabani.butunluk_denetimi()
@@ -186,6 +226,7 @@ def _sistem_json(ulgen):
         "yerel_yetki": bool(ayar.yukle().get("yerel_yetki", True)),
         "beyin": ulgen.yonlendirici.durum(),
         "kuyruk": len(kuyruk.bekleyenler()),
+        "donanim": _donanim(),
         "kota": kota.tablo(),
         "gunluk": veritabani.sorgu(
             "SELECT zaman, seviye, kaynak, metin FROM gunluk "

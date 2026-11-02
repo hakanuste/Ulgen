@@ -1,7 +1,7 @@
 # Ülgen — Gerçek Durum Tablosu (TEK KAYNAK)
 
 Bu tablo tek doğru durumdur. CHANGELOG, TEST_REPORT ve ROADMAP buna uyar; çelişirse bu dosya geçerlidir.
-Sürüm 2.5 · Otomatik test: 179 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
+Sürüm 2.5 · Otomatik test: 183 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
 
 Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K** = Kodlandı, gerçek cihaz testi bekliyor ·
 **Kı** = Kısmen · **G** = Geliştirilmedi · **E** = Teknik engel
@@ -17,6 +17,7 @@ Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K**
 | 4 | Zamanlayıcı, doz bazlı ilaç takibi, görevler | K | test_ilac | Hayır (iPhone bildirimi) |
 | 5 | iPhone arayüzü, Kod penceresi, Takvim (.ics) hatırlatma | K | test_kodpenceresi, test_takvim, Chromium | Hayır (Safari, Takvim alarmı) |
 | 5b | Kurulum betiği: yedek, güvenli değişim, geri alma | K | Linux kuru çalıştırma + bozuk sürümle geri alma denendi | Hayır (macOS, launchd, osacompile) |
+| 5c | Yeni arayüz teması (taslağa göre: sol menü, özet şeridi, sağ pano, telefonda alt çubuk) + Obsidian arama dizini (md+pdf) | K | test_obsidyen (4), Chromium ekran görüntüsü (tests/e2e_arayuz.py) | Hayır (iPhone Safari) |
 | 6 | Özel Kasa (AES-256-GCM), Face ID/WebAuthn+PRF, tek kullanımlık kapsamlı onay, parola unutunca Face ID kurtarma, kurtarma kodu/paketi | K | test_ozelkasa (12) + Chromium sanal Face ID (tests/e2e_kasa.py) | Hayır (gerçek Face ID, sslip.io adı, iOS 27.2 PRF) |
 | 7 | Çevrimdışı ses, sağlık köprüsü | G | — | — |
 | 8 | Raporlar, 16 senaryolu bütünleşik test | G | — | — |
