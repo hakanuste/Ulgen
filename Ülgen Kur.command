@@ -32,8 +32,19 @@ chmod 700 "$VERI"
 
 # 2a) Yazan süreç kalmasın diye servis durdurulur; sonra TUTARLI yedek alınır
 #     (WAL işlenir, kopya bit bit ve bütünlük açısından doğrulanır).
+# Elle ya da başka yoldan başlatılmış eski Ülgen sunucuları eski kodu sunmaya devam
+# eder; yeni sürüm kapıyı alamaz. Yalnız "-m ulgen" çalıştıran süreçler durdurulur.
+eski_sunuculari_durdur() {
+  pkill -f "ortam/bin/python -m ulgen" 2>/dev/null
+  local pid
+  for pid in $(lsof -ti tcp:8765 -sTCP:LISTEN 2>/dev/null); do
+    ps -p "$pid" -o command= 2>/dev/null | grep -q "ulgen" && kill "$pid" 2>/dev/null
+  done
+  sleep 1
+}
 servis_ac() { [ "$MAC" = "1" ] && [ -f "$AJAN" ] && launchctl load "$AJAN" 2>/dev/null; }
 [ "$MAC" = "1" ] && [ -f "$AJAN" ] && launchctl unload "$AJAN" 2>/dev/null
+eski_sunuculari_durdur
 sleep 1
 YEDEK="$VERI/yedekler/kurulum-$ZAMAN"
 mkdir -p "$YEDEK" && chmod 700 "$VERI/yedekler" "$YEDEK" 2>/dev/null
@@ -152,6 +163,7 @@ if [ "$MAC" = "1" ]; then
 </dict></plist>
 PLISTEOF
   launchctl unload "$AJAN" 2>/dev/null
+  eski_sunuculari_durdur
   launchctl load "$AJAN" || echo "Uyarı: otomatik başlatma yüklenemedi."
 else
   echo "(Mac dışı ortam: otomatik başlatma atlandı)"
@@ -214,6 +226,15 @@ ASEOF
   sleep 3
   if curl -s -m 3 http://127.0.0.1:8765/saglik | grep -q tamam; then
     echo "Ülgen çalışıyor."
+    BEKLENEN="$("$HEDEF/ortam/bin/python" -c 'import ulgen; print(ulgen.__surum__)' 2>/dev/null)"
+    CALISAN="$(curl -s -m 3 http://127.0.0.1:8765/saglik | sed -n 's/.*"surum": *"\([^"]*\)".*/\1/p')"
+    if [ -n "$BEKLENEN" ] && [ "$BEKLENEN" != "$CALISAN" ]; then
+      echo "Uyarı: çalışan sürüm ($CALISAN) kurulandan ($BEKLENEN) farklı; eski sunucu durdurulup yeniden başlatılıyor."
+      launchctl unload "$AJAN" 2>/dev/null; eski_sunuculari_durdur; launchctl load "$AJAN" 2>/dev/null
+      sleep 4
+      CALISAN="$(curl -s -m 3 http://127.0.0.1:8765/saglik | sed -n 's/.*"surum": *"\([^"]*\)".*/\1/p')"
+    fi
+    echo "Çalışan sürüm: ${CALISAN:-bilinmiyor} (kurulan: $BEKLENEN)"
     bash "$HEDEF/ulgen/varlik/simge_temizle.sh" "$UYGULAMA" || true
     eskileri_temizle
     "$HEDEF/ortam/bin/python" -m ulgen --ac >/dev/null 2>&1 || true

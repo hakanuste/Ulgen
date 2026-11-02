@@ -19,7 +19,7 @@ while IFS= read -r yol; do
   [ -n "$yol" ] || continue
   gercek="$(cd "$yol" 2>/dev/null && pwd -P)"
   [ -n "$gecerli_gercek" ] && [ "$gercek" = "$gecerli_gercek" ] && continue
-  "$LS" -u "$yol" >/dev/null 2>&1 && n=$((n + 1))
+  "$LS" -u "$yol" >/dev/null 2>&1 && { n=$((n + 1)); echo "  silinen kayıt: $yol"; }
 done < <(adaylar)
 "$LS" -f "$GECERLI" >/dev/null 2>&1
 echo "Launchpad: $n eski/yinelenen Ülgen kaydı silindi."

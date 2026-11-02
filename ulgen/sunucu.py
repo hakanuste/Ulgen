@@ -337,7 +337,7 @@ def istek_sinifi(ulgen, limit):
             if yol in ("/", "/index.html"):
                 return self._cevap(200, SAYFA, "text/html; charset=utf-8")
             if yol == "/saglik":
-                return self._cevap(200, {"durum": "tamam"})
+                return self._cevap(200, {"durum": "tamam", "surum": __surum__})
             if yol == "/varlik/uygulama.js":
                 return self._cevap(200, BETIK,
                                    "text/javascript; charset=utf-8")
