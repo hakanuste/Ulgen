@@ -1165,8 +1165,58 @@ async function yzCiz() {
     ekle(k, t.ad + " — " + (t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir"),
       "bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms + " ms; hata %" + Math.round(t.hata_orani * 100)); });
   if (!yerel) { ekle(k, "Anahtar eklemek güvenlik için yalnızca Mac'in kendi tarayıcısından yapılır."); return; }
-  beyinKipi(k);
-  anahtarKutusu(k);
+  await beyinKipi(k);
+  await anahtarlarim(k);
+}
+
+const SAGLAYICI_AD = { gemini: "Gemini", nvidia: "NVIDIA", groq: "Groq", mistral: "Mistral", openrouter: "OpenRouter", elevenlabs: "ElevenLabs (ses)" };
+
+// Hangi sağlayıcıya anahtar girilmiş: görünür, eklenir, değiştirilir, silinir.
+async function anahtarlarim(k) {
+  baslik(k, "API anahtarlarım (Mac'in Anahtar Zinciri'nde saklanır)");
+  let durum = {};
+  try { durum = await istek("/yz/anahtarlar"); } catch (e) { ekle(k, "Anahtar durumu okunamadı."); return; }
+  Object.keys(SAGLAYICI_AD).forEach(ad => {
+    const d = durum[ad] || { var: false };
+    const satir = ekle(k, SAGLAYICI_AD[ad] + " — " + (d.var ? "✔ anahtar VAR" : "✘ anahtar YOK"),
+      d.var ? "Saklandığı yer: " + d.yer + "  ·  son 4 hane: …" + d.son4 : "Eklemek için «Ekle»ye basın.");
+    satir.style.borderLeft = "3px solid " + (d.var ? "var(--ulgen-success)" : "var(--ulgen-offline)");
+    const dugme = (yazi, tehlike) => { const b = document.createElement("button"); b.className = "dugme"; b.textContent = yazi;
+      b.style.cssText = "margin:6px 6px 0 0" + (tehlike ? ";border-color:var(--ulgen-danger);color:var(--ulgen-danger)" : ""); satir.appendChild(b); return b; };
+    const ek = dugme(d.var ? "Değiştir" : "Ekle");
+    ek.onclick = () => {
+      if (satir.querySelector(".duzeltForm")) return;
+      const f = document.createElement("div"); f.className = "duzeltForm"; f.style.marginTop = "8px";
+      const st = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+      const gir = document.createElement("input"); gir.type = "password"; gir.autocomplete = "off"; gir.placeholder = "API anahtarı"; gir.style.cssText = st;
+      let kim = null;
+      if (ad === "elevenlabs") { kim = document.createElement("input"); kim.placeholder = "Ses kimliği (isteğe bağlı)"; kim.autocomplete = "off"; kim.style.cssText = st; }
+      const so = document.createElement("div"); so.style.cssText = "font-size:12px;color:var(--soluk)";
+      const kay = document.createElement("button"); kay.className = "dugme aktif"; kay.textContent = "Kaydet";
+      const va = document.createElement("button"); va.className = "dugme"; va.textContent = "Vazgeç"; va.style.marginLeft = "8px"; va.onclick = () => f.remove();
+      kay.onclick = async () => {
+        kay.disabled = true;
+        const c = await istek("/yz/anahtar", { saglayici: ad, anahtar: gir.value, ses_kimligi: kim ? kim.value : "" });
+        gir.value = "";
+        if (c.tamam) { balonEkle(SAGLAYICI_AD[ad] + " anahtarı kaydedildi (" + c.yer + ").", "asistan"); yzCiz(); }
+        else { so.textContent = c.hata || "Kaydedilemedi."; kay.disabled = false; }
+      };
+      f.appendChild(gir); if (kim) f.appendChild(kim); f.appendChild(kay); f.appendChild(va); f.appendChild(so); satir.appendChild(f);
+    };
+    if (d.var) {
+      const de = dugme("Bağlantıyı dene");
+      de.onclick = async () => { de.disabled = true; balonEkle("Deneniyor: " + SAGLAYICI_AD[ad] + "…", "asistan");
+        try { const c = await istek("/yz/dene", { saglayici: ad }); balonEkle((c.calisti ? "✔ " : "✘ ") + (c.cikti || c.hata || "Yanıt yok."), "asistan"); }
+        finally { de.disabled = false; } };
+      const si = dugme("Sil", true);
+      si.onclick = async () => {
+        if (!confirm(SAGLAYICI_AD[ad] + " anahtarı bu Mac'ten silinecek. Emin misiniz?")) return;
+        si.disabled = true;
+        const c = await istek("/yz/anahtar-sil", { saglayici: ad, onay: true });
+        balonEkle(c.hata ? c.hata : SAGLAYICI_AD[ad] + " anahtarı silindi.", "asistan"); yzCiz();
+      };
+    }
+  });
 }
 
 async function beyinKipi(k) {

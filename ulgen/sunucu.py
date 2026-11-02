@@ -416,6 +416,20 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/yz/anahtarlar":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                sonuc = {}
+                a = ayar.yukle()
+                for ad, alan in ayar.SIRLAR.items():
+                    yer, son4 = gizli.sir_durumu(ad)
+                    if yer is None and a.get(alan) \
+                            and not gizli.sir_oku(ad):
+                        yer, son4 = "ayar.json", str(a[alan])[-4:]
+                    sonuc[ad] = {"var": yer is not None, "yer": yer or "",
+                                 "son4": son4}
+                return self._cevap(200, sonuc)
             if yol == "/ses/klipler":
                 return self._cevap(200, ses_klip.hazir_klipler())
             if yol == "/ses/cumleler":
@@ -704,6 +718,25 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
                 return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
                                          .sil(kimlik)})
+            if urlparse(self.path).path == "/yz/anahtar-sil":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                ad = veri.get("saglayici")
+                if ad not in ayar.SIRLAR or veri.get("onay") is not True:
+                    return self._cevap(400, {"hata": "saglayici ve onay gerekli"})
+                adet = gizli.sir_sil(ad)
+                alan = ayar.SIRLAR[ad]
+                try:                    # ayar.json'da düz yazılmışsa onu da boşalt
+                    with open(ayar.AYAR_DOSYASI, "r", encoding="utf-8") as f:
+                        mevcut = json.load(f)
+                    if mevcut.get(alan):
+                        ayar.guncelle(alan, "")
+                        adet += 1
+                except (OSError, ValueError):
+                    pass
+                veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı silindi" % ad)
+                return self._cevap(200, {"silinen": adet})
             if urlparse(self.path).path == "/yz/mod":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "

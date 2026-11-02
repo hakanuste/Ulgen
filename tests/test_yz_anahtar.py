@@ -43,3 +43,44 @@ class AnahtarKutusu(TemizVeri):
         with mock.patch("ulgen.tani.dene", return_value=0):
             k, h = istek(p, "/yz/dene", "POST", json.dumps({"saglayici": "gemini"}), JSON)
         self.assertEqual((k, json.loads(h)["calisti"]), (200, True))
+
+
+class AnahtarListeSilTesti(AnahtarKutusu):
+
+    def test_durum_ekle_degistir_sil(self):
+        srv, p = self._sunucu()
+        g = json.dumps
+        k, h = istek(p, "/yz/anahtarlar")
+        d = json.loads(h)
+        self.assertEqual(k, 200)
+        self.assertFalse(d["gemini"]["var"])
+        istek(p, "/yz/anahtar", "POST", g({"saglayici": "gemini", "anahtar": "AIza-ILK-ANAHTAR-1111"}), JSON)
+        d = json.loads(istek(p, "/yz/anahtarlar")[1])
+        self.assertTrue(d["gemini"]["var"])
+        self.assertEqual(d["gemini"]["son4"], "1111")
+        self.assertNotIn("ILK", json.dumps(d))
+        istek(p, "/yz/anahtar", "POST", g({"saglayici": "gemini", "anahtar": "AIza-YENI-ANAHTAR-2222"}), JSON)
+        self.assertEqual(gizli.sir_oku("gemini"), "AIza-YENI-ANAHTAR-2222")
+        self.assertEqual(istek(p, "/yz/anahtar-sil", "POST", g({"saglayici": "gemini"}), JSON)[0], 400)
+        kotu = g({"saglayici": "x", "onay": True})
+        self.assertEqual(istek(p, "/yz/anahtar-sil", "POST", kotu, JSON)[0], 400)
+        k, h = istek(p, "/yz/anahtar-sil", "POST", g({"saglayici": "gemini", "onay": True}), JSON)
+        self.assertEqual(k, 200)
+        self.assertFalse(json.loads(istek(p, "/yz/anahtarlar")[1])["gemini"]["var"])
+        self.assertEqual(gizli.sir_oku("gemini"), "")
+
+    def test_ayar_json_icindeki_anahtar_gorunur_ve_silinir(self):
+        from ulgen import ayar
+        srv, p = self._sunucu()
+        ayar.guncelle("groq_anahtar", "gsk-DUZ-METIN-9999")
+        d = json.loads(istek(p, "/yz/anahtarlar")[1])
+        self.assertEqual((d["groq"]["yer"], d["groq"]["son4"]), ("ayar.json", "9999"))
+        istek(p, "/yz/anahtar-sil", "POST", json.dumps({"saglayici": "groq", "onay": True}), JSON)
+        self.assertFalse(json.loads(istek(p, "/yz/anahtarlar")[1])["groq"]["var"])
+
+    def test_uzaktan_reddedilir(self):
+        srv, p = self._sunucu()
+        srv.yerel = False
+        self.assertEqual(istek(p, "/yz/anahtarlar")[0], 403)
+        self.assertEqual(istek(p, "/yz/anahtar-sil", "POST", json.dumps(
+            {"saglayici": "gemini", "onay": True}), JSON)[0], 403)

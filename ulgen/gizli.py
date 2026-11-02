@@ -75,6 +75,18 @@ def _zincire_yaz(hizmet, deger):
     return sonuc.returncode == 0
 
 
+def _zincirden_sil(hizmet):
+    if sys.platform != "darwin":
+        return False
+    try:
+        sonuc = subprocess.run(
+            ["security", "delete-generic-password", "-s", hizmet,
+             "-a", "ulgen"], capture_output=True, timeout=10, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return sonuc.returncode == 0
+
+
 # --------------------------------------------------------- ana anahtar
 
 def _anahtar_coz(metin):
@@ -194,3 +206,35 @@ def sir_oku(ad):
     deger = _zincirden_oku(SIR_HIZMETI + ad) or _sirlari_oku().get(ad, "")
     _SIR_ONBELLEK[ad] = (simdi, deger)
     return deger
+
+
+def sir_sil(ad):
+    """Sırrı Anahtar Zinciri'nden ve şifreli dosyadan siler; silinen yer sayısı."""
+    _SIR_ONBELLEK.pop(ad, None)
+    adet = 0
+    while _zincirden_sil(SIR_HIZMETI + ad):         # yinelenen kayıtlar da gitsin
+        adet += 1
+        if adet > 10:
+            break
+    sirlar = _sirlari_oku()
+    if ad in sirlar:
+        del sirlar[ad]
+        gecici = _sirlar_dosyasi() + ".tmp"
+        with open(gecici, "wb") as f:
+            f.write(sifrele(json.dumps(sirlar).encode("utf-8")))
+        os.chmod(gecici, 0o600)
+        os.replace(gecici, _sirlar_dosyasi())
+        adet += 1
+    _SIR_ONBELLEK.pop(ad, None)
+    return adet
+
+
+def sir_durumu(ad):
+    """Anahtarın nerede durduğu: (yer, son4) ya da (None, '')."""
+    deger = _zincirden_oku(SIR_HIZMETI + ad)
+    if deger:
+        return "Anahtar Zinciri", deger[-4:]
+    deger = _sirlari_oku().get(ad, "")
+    if deger:
+        return "şifreli dosya", deger[-4:]
+    return None, ""
