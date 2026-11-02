@@ -26,7 +26,7 @@ echo "Python: $PY ($("$PY" -V 2>&1))"
 
 adim "2/6  Yedek alınıyor, dosyalar güvenle değiştiriliyor ($HEDEF)"
 ZAMAN="$(date +%Y%m%d-%H%M%S)"
-ESKI="$HEDEF/eski"                      # eski sürümler SİLİNMEZ, buraya taşınır
+ESKI="$HEDEF/eski"                      # eski sürümler önce buraya taşınır; kurulum SAĞLIKLIYSA en yeni 1 tanesi dışında silinir
 mkdir -p "$HEDEF" "$VERI" "$ESKI" || dur "Klasörler oluşturulamadı."
 chmod 700 "$VERI"
 
@@ -157,6 +157,26 @@ else
   echo "(Mac dışı ortam: otomatik başlatma atlandı)"
 fi
 
+# Yeni sürüm çalıştığı doğrulanınca eski sürümleri siler (veri/yedek klasörlerine dokunmaz).
+# En yeni ULGEN_ESKI_SAKLA (varsayılan 1) sürüm geri dönüş için kalır.
+eskileri_temizle() {
+  local sakla="${ULGEN_ESKI_SAKLA:-1}" on n=0 sil=0
+  case "$ESKI" in */eski) ;; *) return 0 ;; esac      # güvenlik: yalnız .../eski
+  [ -d "$ESKI" ] || return 0
+  for on in "ulgen-" "Ülgen.app-" "basarisiz-"; do
+    n=0
+    # adlar zaman damgalı: ters sıralama = en yeni önce
+    while IFS= read -r yol; do
+      [ -n "$yol" ] || continue
+      n=$((n + 1))
+      if [ "$on" = "basarisiz-" ] || [ "$n" -gt "$sakla" ]; then
+        rm -rf -- "$yol" && sil=$((sil + 1))
+      fi
+    done < <(ls -1d "$ESKI/$on"* 2>/dev/null | sort -r)
+  done
+  echo "Eski sürümler temizlendi ($sil öğe silindi; geri dönüş için en yeni $sakla sürüm duruyor)."
+}
+
 adim "6/6  Launchpad uygulaması"
 if [ "$MAC" = "1" ]; then
   UYGULAMA_KLASORU="/Applications"
@@ -194,6 +214,7 @@ ASEOF
   sleep 3
   if curl -s -m 3 http://127.0.0.1:8765/saglik | grep -q tamam; then
     echo "Ülgen çalışıyor."
+    eskileri_temizle
     "$HEDEF/ortam/bin/python" -m ulgen --ac >/dev/null 2>&1 || true
   else
     echo "Sunucu yanıt vermedi; sağlık denetimi başarısız."
@@ -202,12 +223,13 @@ ASEOF
   fi
 else
   echo "(Mac dışı ortam: uygulama atlandı)"
+  eskileri_temizle
 fi
 
 printf '\n==================================================\n'
 echo "Kurulum tamam."
 echo "Mac'te: Launchpad > Ülgen   (tek kullanımlık giriş bağlantısıyla açar)"
-echo "Eski sürümler silinmedi: $ESKI   |   Veri yedeği: $YEDEK"
+echo "Geri dönüş sürümü: $ESKI   |   Veri yedeği (silinmez): $YEDEK"
 echo "Durum denetimi: $HEDEF/ortam/bin/python -m ulgen --tani"
 echo
 echo "iPhone için (bir kez):"
