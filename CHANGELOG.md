@@ -18,3 +18,7 @@
 
 ## [2.0] – temel çizgi
 - İlk modüler sürüm (git etiketi `temel-2.0`).
+
+## [belgeler] – 2026-11-02
+- Ek şartname birleştirildi: tek ana plan (ROADMAP.md), durum sözlüğü, özellik matrisi, teknik engeller, değişmez mimari kararlar (ARCHITECTURE.md).
+- AUDIT_REPORT.md: "mevcut ayrı ilaç arayüzü" varsayımı kod incelemesiyle yanlışlandı.

@@ -16,3 +16,23 @@ Ek elle yapılan: gerçek süreçte (`python -m ulgen`) 127.0.0.1'de HTTP, HTTPS
 
 - Zamanlayıcı/ilaç yeniden başlatma, kota dolması ve kuyruk, çevrimdışı çalışma, uzun süreli çalışma → ilgili aşamalarda.
 - **Mac ve iPhone üzerinde hiçbir test yapılmadı** (Anahtar Zinciri, `launchd`, Safari sertifika yükleme, Face ID, bildirim).
+
+## Planlanan kabul senaryoları (Ek şartname §10) – simülasyon ve gerçek cihaz ayrı
+
+| # | Senaryo | Simülasyon testi (Linux) | Gerçek cihaz testi (sizde) | Durum |
+|---|---------|--------------------------|----------------------------|-------|
+| 1 | Mac kapalıyken iPhone bildirimi | – (fiziksel olarak simüle edilemez) | gerekli | teknik engel |
+| 2 | Mac yeniden açılınca görev geri yükleme | evet (süreç yeniden başlatma) | launchd ile gerekli | Aşama 4 |
+| 3 | iPhone bağlantı kopması/yeniden bağlanma | evet (istemci betiği) | gerekli | Aşama 5 |
+| 4–5 | İlaçların ayrı onayı, tek onay diğerini etkilemez | evet | arayüz kontrolü | Aşama 4 |
+| 6 | Kota dolunca kalıcı kuyruk | evet (sahte sağlayıcı) | – | Aşama 3 |
+| 7 | Ücretsiz sağlayıcılar kullanılamaz | evet | – | Aşama 3 |
+| 8 | Yerel modele geçiş | evet | gerçek Ollama/llama.cpp | Aşama 3 |
+| 9 | Hassas veri buluta gitmez | evet (istek içeriği denetimi) | – | Aşama 3 |
+| 10 | Hafıza senkronizasyonu | evet | gerekli | Aşama 2 |
+| 11 | F800/Joeme Fit aktarımı | örnek dosya ile ayrıştırma | gerçek cihaz/dışa aktarma | Aşama 7 (E) |
+| 12 | Apple Health aktarımı | örnek export.xml ile | gerçek iPhone | Aşama 7 (E) |
+| 13 | Çevrimdışı sesli kullanım | ses dosyasıyla STT | Mac mikrofonu, CPU/RAM ölçümü | Aşama 7 |
+| 14 | Face ID geçersiz/süresi dolmuş | sunucu tarafı (sahte doğrulayıcı) | gerçek Face ID | Aşama 6 |
+| 15 | Kasa yetkisi iptali | evet | – | Aşama 6 |
+| 16 | Rapor doğruluğu | evet (bilinen veriyle) | – | Aşama 8 |

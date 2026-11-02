@@ -1,38 +1,78 @@
-# Yol Haritası
+# ÜLGEN – TEK ANA GELİŞTİRME PLANI
 
-Tamamlanan: Aşama 0 (denetim), Aşama 1 (kritik güvenlik).
+Ana şartname + Ek şartname (2026-11-02) birleştirildi; tekrar eden maddeler tek satırda.
+Kural: önce güvenlik ve veri bütünlüğü; her aşama testi geçmeden sonraki başlamaz; yalnızca arayüzü yapılmış özellik "tamamlandı" sayılmaz.
 
-| Aşama | Kapsam | Durum |
-|-------|--------|-------|
-| 2 | Veritabanı (WAL, sürümlü göç, transaction, bütünlük, zamanlı yedek) + hafıza şeması (tür, proje, kaynak, güven, güncelleme) | sırada |
-| 3 | Sağlayıcı altyapısı (Ollama, llama.cpp, Gemini, Groq, Mistral, OpenRouter `:free`), kota izleme, kalıcı kuyruk | |
-| 4 | Görev/rutin motoru, ilaç/doz takibi (her doz ayrı kimlik ve onay) | |
-| 5 | iPhone arayüzü (sekmeler, PWA, web push) | |
-| 6 | Özel Kasa (AES-256-GCM) + WebAuthn/Face ID onayı | |
-| 7 | Çevrimdışı STT, TTS, otomasyon, sistem izleme | |
-| 8 | Bütünleşik test, uzun süreli çalışma, güvenlik denetimi | |
+## Durum sözlüğü
+- **T** Tamamlandı ve test edildi (simülasyon/Linux testi; gerçek cihaz gerektirmeyen)
+- **C** Kodlandı, gerçek cihaz testi bekliyor
+- **K** Kısmen tamamlandı
+- **G** Geliştirilmedi
+- **E** Teknik engel var
 
-MVP önceliği: 2 → 4 → 5 (çekirdek) → 3 (yerel + Gemini + kuyruk).
+## Özellik matrisi (gerçek kod incelenerek doğrulandı, Aşama 1 sonu)
 
-## Ek gereksinimler (2026-11-02) ve aşamalara dağılımı
+| Özellik | Durum | Aşama | Doğrulanan gerçek durum / not |
+|---|---|---|---|
+| Güvenlik çekirdeği (izin listesi, HTTPS, cihaz belirteci, AES-256-GCM, şifreli yedek) | **T** (Mac/iPhone adımları **C**) | 1 ✔ | 49 test |
+| Mac'te otomatik başlama | **C** | 1 ✔ | launchd LaunchAgent; Mac'te denenmedi. Oturum açılınca başlar, öncesinde değil |
+| iPhone–Mac güvenli eşleştirme, yetkisiz cihaz engeli, uzaktan erişim (ZeroTier) | **T** + **C** | 1 ✔ | Sunucu tarafı testli; iPhone sertifika yükleme denenmedi |
+| Bağlantı kopunca yeniden bağlanma (istemci) | **G** | 5 | arayüzde yok |
+| Ortak hafıza (tek kaynak = Mac; iPhone ayrı veri tutmaz) | **K** | 2 | memory.json var; şema yok. "Senkronizasyon çakışması" iPhone yerel kopya tutarsa doğar → tek kaynak kararıyla çakışma yok; çevrimdışı iPhone kopyası native uygulamaya bağlı |
+| Sohbet/proje geçmişi, geçmişte arama | **K** | 2 | sohbet tablosu var, arama yok |
+| Gelişmiş hafıza: tür, proje, kaynak (kullanıcı/çıkarım ayrımı), güven, güncelleme/düzeltme, eskimiş işareti, hassas ayrı | **G** | 2 | |
+| Veritabanı: WAL, sürümlü göç, transaction, bütünlük, zamanlı yedek | **G** | 2 | yalnızca elle şifreli yedek (**T**) |
+| Sağlayıcılar: Ollama, llama.cpp, Gemini | **T** (sahte sunucuyla) | – | gerçek bağlantı **C** |
+| Sağlayıcılar: Groq, Mistral, OpenRouter(:free) + ortak yönetici, göreve göre model | **G** | 3 | |
+| Kota/kullanım kaydı (RPM, TPM, RPD, token, kalan, yenilenme, gecikme, hata oranı, maliyet=0), gerçek/tahmini ayrımı | **G** | 3 | |
+| Kota dolunca kalıcı kuyruk, yerel modele geçiş, ücretli geçiş yok | **G** | 3 | şu an 429 → hata mesajı |
+| AI çökse de zamanlayıcı/ilaç/bildirim sürer | **K** | 3–4 | zamanlayıcı modelden bağımsız çalışıyor (mimari olarak doğru), testi yok |
+| Görev/rutin/randevu motoru (günlük, haftalık, kalıcı) | **K** | 4 | tek seferlik hatırlatıcı var; rutin/randevu/görev yok |
+| **İlaç takibi: ayrı ilaç/doz kimliği, ayrı onay** | **G** | 4 | **DÜZELTME:** "mevcut ayrı ilaç onay arayüzü" bu kod tabanında YOK (arayüzde "ilaç" geçmiyor, ilaç tablosu yok). Mevcut `tamam` backend'de tüm kalıcı hatırlatmaları toplu onaylıyor — arayüz de ayrı bir onay sunmuyor. Başka bir yerde ayrı arayüz varsa o bu pakette değildir |
+| Bildirim yanıtları: Aldım/Almadım/Ertele/Tamamlandı/Atlandı, yeniden hatırlatma aralığı, geçmiş, tekrar işleme engeli, sessiz kaybolmama | **G** | 4 | 24 tekrar sonrası sessiz vazgeçme hatası var (V4) |
+| İlaç dozunu Ülgen değiştirmez (model araçlarına yazma yok) | **G** | 4 | tasarım kuralı, testle doğrulanacak |
+| Mac kapalıyken iPhone hatırlatması | **E** | 4/5 | Aşağıdaki "Teknik engeller" |
+| iPhone arayüzü (sekmeler, görevler, ilaçlar, onaylar, sistem) | **K** | 5 | yalnızca sohbet + yaklaşan liste |
+| Sistem yönetim paneli (CPU/RAM/disk, sunucu, DB, modeller, kota, kuyruk, zamanlayıcı, bildirim, hata, günlük) | **G** | 5 | `/durum` yalnızca beyin adı |
+| Özel Kasa (AES-256-GCM, dosya/not, erişim kaydı, iptal, kurtarma) | **G** | 6 | şifreleme altyapısı var (**T**), Kasa yok |
+| Face ID/passkey ile tek kullanımlık, süreli, kapsamlı onay; AI kasayı açamaz | **E** (PWA) / **G** | 6 | HTTPS altyapısı var; gerçek Face ID için PWA'da WebAuthn ya da native uygulama; iPhone'da doğrulanamaz |
+| Çevrimdışı STT/TTS (Mac), uyandırma, mikrofon yönetimi | **K** | 7 | Mac TTS `say` çevrimdışı; STT şu an Google (internetli) — **çevrimdışı değil**. Çevrimdışı STT yok |
+| iPhone'da çevrimdışı ses | **E** | 7 | Safari'nin tanıma servisi çevrimdışı güvenilir değil; native uygulama gerekir |
+| Sabah raporu (haber+sağlık) | **K** | 8 | var; görev/ilaç/randevu birleşik rapor yok |
+| Akşam ve haftalık rapor, eksik veri belirtme | **G** | 8 | |
+| Sağlık: CSV/JSON/Apple Health export.xml okuma, içgörü | **K** | 7 | **elle dışa aktarma ile** çalışıyor (**T**); otomatik aktarım, kaynak kaydı, tekilleştirme, gerçek/tahmini ayrımı, aylık karşılaştırma yok |
+| F800 saat / Joeme Fit entegrasyonu | **E** | 7 | veri yolu doğrulanmadı (aşağıda) |
+| Apple Health otomatik aktarım | **E** | 7 | web'den okunamaz; native uygulama ya da Kestirmeler köprüsü gerekir |
+| Dosya/PDF ajanı, araştırma, ekran çözümleme (izinli), müzik | **T** (Mac kısmı **C**) | – | |
 
-| # | Gereksinim | Aşama | Not |
-|---|-----------|-------|-----|
-| 1 | Mac açılınca otomatik başlama | 2 | launchd oturum açılışında başlar; oturum açmadan önce başlamaz (bkz. kısıtlar) |
-| 1 | Tek ortak hafıza (Mac+iPhone), evde yerel ağ / dışarıda internet | 2 | iPhone ayrı veri tutmaz, Mac'teki hafızaya ZeroTier ile bağlanır; "aynı hafıza" budur |
-| 1 | Mac uyurken/kapalıyken kritik hatırlatma | 4 | **Mac'e bağımlı olamaz**; iPhone tarafı alarm katmanı gerekir (bkz. kısıtlar) |
-| 2 | Aldım / Ertele / Alamadım, yanıt gelmezse yeniden hatırlat, kayıt, rapor, randevu+rutin | 4 | doz başına kimlik |
-| 3 | F800 saat + Joeme Fit + Apple Health: adım, nabız, uyku, karşılaştırma, sabah/akşam özeti | 7 | veri yolu doğrulanmadan söz verilmez (bkz. kısıtlar) |
-| 4 | Kota/maliyet paneli, kalan kota, yenilenme, ücretli kapalı, kota bitince yerel | 3 + 5 | |
-| 5 | Groq, Mistral, OpenRouter `:free`, ortak yönetici, göreve göre model, kalıcı kuyruk | 3 | |
-| 6 | Proje/geçmiş/karar hafızası, kaynak, güven, düzeltme, yedek | 2 | |
-| 7 | Çevrimdışı Türkçe STT/TTS, uyandırma kelimesi, Mac+iPhone | 7 | iPhone mikrofonu HTTPS gerektirir (Aşama 1'de var) |
-| 8 | Özel Kasa, passkey/Face ID, işlem bazlı yetki, erişim kaydı, güvenli kurtarma | 6 | |
-| 9 | Sistem yönetim paneli | 5 | |
-| 10 | Günlük/haftalık akıllı rapor (görev, kaçırılan, sağlık, proje) | 7 | Aşama 4 ve 7 verilerini birleştirir |
+## Aşamalar (birleşik)
 
-### Kısıtlar (kanıtlanmış olanlar ve doğrulanmamış olanlar)
-- **Uyuyan/kapalı Mac'te hiçbir Ülgen kodu çalışmaz.** Bu fiziksel bir sınırdır. Çözüm adayları: (a) kritik hatırlatmaları iPhone'un kendi alarm sistemine (Apple Hatırlatıcılar/Takvim, iCloud ile eşleşir) yazmak; (b) `pmset repeat wakeorpoweron` ile Mac'i doz saatinden önce uyandırmak; (c) 7/24 açık küçük bir cihaz. Hiçbiri henüz uygulanmadı.
-- "Mac açıldığında başlasın": launchd **LaunchAgent** kullanıcı oturumu açılınca başlar. Oturumdan önce başlatmak LaunchDaemon ve Anahtar Zinciri/otomatik oturum konularını değiştirir (güvenlik ödünü).
-- iPhone'dan Apple Health verisine Ülgen doğrudan erişemez (yerel uygulama gerekir). Olası yol: iPhone Kestirmeleri (Shortcuts) kişisel otomasyonu ile veriyi Ülgen'e HTTPS ile göndermek. **Doğrulanmadı.**
-- Joeme Fit'in Apple Sağlık'a yazıp yazmadığı **doğrulanamadı** (aramada mağaza kaydı bulundu, HealthKit desteği teyit edilemedi).
+| Aşama | Kapsam | Çıkış ölçütü |
+|---|---|---|
+| 0 ✔ | Denetim | AUDIT_REPORT.md |
+| 1 ✔ | Kritik güvenlik | 49 test |
+| **2** | Veritabanı bütünlüğü + gelişmiş hafıza + geçmişte arama + zamanlı yedek + `veri.db` bütünlük/otomatik kurtarma | göç, geri yükleme, kaynak/güven, düzeltme, FTS arama, hassas ayrı depolama testleri |
+| **3** | Sağlayıcı yöneticisi + kota/kullanım kaydı + kalıcı kuyruk + gizlilik filtresi + yerel yedek model | sahte sağlayıcılarla kota dolması, kuyruk kalıcılığı (yeniden başlatma), ücretli yolun kodla kapalı olması, hassas veri sızmaması |
+| **4** | Görev/rutin/randevu motoru + **doz başına ilaç takibi** + yanıtlar (Aldım/Almadım/Ertele/Tamamlandı/Atlandı) + yeniden hatırlatma + geçmiş | ilaçların ayrı onayı, yeniden başlatmada geri yükleme, çift işleme engeli, AI kapalıyken sürmesi |
+| **5** | iPhone arayüzü (sekmeler, onay ekranı, yeniden bağlanma) + sistem yönetim paneli + bildirim durumu | Playwright (iPhone boyutu) testleri; push/bildirim **gerçek cihaz** |
+| **6** | Özel Kasa + işlem bazlı tek kullanımlık onay (WebAuthn sunucu tarafı) + erişim kaydı + iptal + kurtarma | AI-kasa kapalı testi, kapsam/süre/tek kullanım testleri; Face ID **gerçek cihaz** |
+| **7** | Çevrimdışı STT (Mac) ölçümlü, TTS, sağlık veri köprüsü (tekilleştirme, kaynak, gerçek/tahmini, karşılaştırma) | birim testleri; STT doğruluğu ve CPU/RAM **Mac'te ölçülür**; saat/Apple Health **gerçek cihaz** |
+| **8** | Birleşik sabah/akşam/haftalık rapor + bütünleşik testler (16 senaryo) + güvenlik denetimi | TEST_REPORT'ta simülasyon ve gerçek cihaz ayrı |
+
+10 günlük MVP = 2, 3 (yerel + Gemini + kuyruk), 4, 5 (çekirdek). Kasa, ses, sağlık köprüsü ve birleşik raporlar MVP dışı; ancak MVP'nin "çalışıyor" sayılması için Mac/iPhone üzerinde sizin doğrulamanız gerekir.
+
+## Teknik engeller (doğrulanmış mantık / doğrulanmamış olanlar ayrı)
+
+1. **Mac uyurken/kapalıyken sunucu kodu çalışmaz** (fiziksel). iPhone'un kendi tarafında planlı yerel bildirim gerekir. Safari/PWA **yerel zamanlanmış bildirim kuramaz**; web push ise gönderen sunucunun (Mac) açık olmasını ister. Seçenekler:
+   - **A.** Mac'ten iPhone'a Apple Hatırlatıcılar/Takvim üzerinden alarm (iCloud ile eşleşir). Kapalı Mac'te çalışır. Bedeli: ilaç hatırlatması Apple iCloud'a gider; başlıkta ilaç adı yerine genel ifade ("İlaç 1 – 08:00") kullanılabilir. Yanıtlar (Aldım vb.) Ülgen'e ancak Mac açılınca/iPhone'dan girilince işlenir.
+   - **B.** `pmset repeat wakeorpoweron` ile Mac'i doz saatlerinden önce uyandırmak (sınırlı, pil/ısı; kapak kapalıyken güvenilirliği **doğrulanmadı**).
+   - **C.** Native iOS uygulaması (yerel bildirim + Face ID + HealthKit). Kod yazılabilir ama bu ortamda **derlenemez/denenemez**; Mac'inizdeki Xcode sürümü macOS 12.7.6 ile sınırlı ve iPhone'unuzun iOS sürümüyle uyumu **doğrulanmadı**.
+2. **F800/Joeme Fit**: Joeme Fit'in Apple Sağlık'a yazıp yazmadığı **doğrulanamadı** (kaynak bulunamadı). Doğrulama yolu: iPhone → Sağlık → Paylaşım/Veri Kaynakları'nda Joeme Fit var mı; ya da Joeme Fit'ten dışa aktarma menüsü. Doğrulanmadan entegrasyon "var" sayılmayacak.
+3. **Apple Health otomatik aktarım**: web'den okunamaz. Olası: Kestirmeler (Shortcuts) kişisel otomasyonu → HTTPS ile Ülgen'e gönderme (**doğrulanmadı**) ya da native uygulama (C).
+4. **Çevrimdışı STT**: Mac'te whisper.cpp/Vosk adayı; Türkçe doğruluk ve i5-5350U/8 GB hız **ölçülmeden** vaat edilmez.
+5. **Face ID**: PWA'da WebAuthn ile mümkün görünür (HTTPS var) ama iPhone'da **denenmeden** tamamlandı denmez.
+6. **Hassas veri bulutta olmaz** ilkesi ile A seçeneği (iCloud) çelişir; karar sizindir.
+
+## Bekleyen kararlar
+1. Mac kapalıyken kritik hatırlatma için ara çözüm: **A** (genel başlıkla Apple Hatırlatıcılar), **B**, ya da yalnızca **C**'yi bekle?
+2. Native iOS uygulaması (C) kaynak kodunu yazayım mı? (Xcode'da sizin derlemeniz gerekir; test edilmemiş kod olarak etiketlenir.)

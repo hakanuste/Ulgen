@@ -102,3 +102,10 @@ Belgeler (her aşamada güncellenir): `PROJECT_STATUS.md`, `AUDIT_REPORT.md`, `S
 1. **HTTPS (yerel CA + iPhone'a tek seferlik profil)** onaylanıyor mu? Onay yoksa mikrofon, Face ID ve bildirim **olmaz**.
 2. Terminal aracı **izin listesi** ile sınırlansın (varsayılan: salt okunur komutlar serbest, gerisi ONAY) – uygun mu?
 3. Groq/Mistral/OpenRouter için kendi **ücretsiz** API anahtarlarınızı alacaksınız (kayıt gerekir). Anahtarlar Anahtar Zinciri'nde tutulur. Uygun mu?
+
+---
+## Ek (2026-11-02): Ek şartname doğrulaması
+
+Ek şartname "mevcut ayrı ilaç onay arayüzünü koru" diyor. **Kod incelemesi:** bu pakette böyle bir arayüz yoktur — `arayuz.py` içinde "ilaç" geçmez, veritabanında ilaç/doz tablosu yoktur, yalnızca "kalıcı hatırlatıcı" vardır ve `Zamanlayici.onayla()` bekleyen **tüm** kalıcı hatırlatmaları tek sorguda onaylar. Yani istenen davranış (ayrı onay) şu an **mevcut değil**; "koru" yerine **sıfırdan geliştirilecek** (Aşama 4). Başka bir ortamda ayrı bir ilaç arayüzü kullandıysanız o kod bu paketin parçası değildir.
+
+Diğer doğrulamalar için ROADMAP.md özellik matrisine bakın (her satır gerçek koddan doğrulandı).
