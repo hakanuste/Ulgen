@@ -35,7 +35,10 @@ VARSAYILAN = {
     "groq_model": "llama-3.3-70b-versatile",
     "mistral_model": "mistral-small-latest",
     "openrouter_model": "openrouter/free",     # yalnızca ":free" kabul edilir
-    "bulut_sirasi": ["gemini", "groq", "mistral", "openrouter"],
+    # NVIDIA Build (build.nvidia.com) ücretsiz deneme uç noktaları. Model
+    # adları sürümle değişir: python -m ulgen --modeller nvidia
+    "nvidia_model": "meta/llama-3.3-70b-instruct",
+    "bulut_sirasi": ["gemini", "nvidia", "groq", "mistral", "openrouter"],
     "kota_sinirlari": {},          # örn. {"groq": {"rpm": 20}} belgeden düzeltme
     "kuyruk_omru_saat": 24,
     # Ücretli servise geçiş KODDA kapalıdır; böyle bir ayar yoktur.
@@ -95,6 +98,7 @@ SABLON = {
 
 # Sır adı -> ayar alanı (Anahtar Zinciri'nden okunur)
 SIRLAR = {"gemini": "gemini_anahtar", "groq": "groq_anahtar",
+          "nvidia": "nvidia_anahtar",
           "mistral": "mistral_anahtar", "openrouter": "openrouter_anahtar"}
 
 

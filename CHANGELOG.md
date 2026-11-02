@@ -64,3 +64,9 @@
 - Başlıklar varsayılan GENEL ("Ülgen: ilaç zamanı"; takvim iCloud'a eşlenirse ilaç adı bulutta görünmesin). `takvim_ayrintili: true` ile ad yazılır.
 - Kapalıyken kaçan "yanıtsız" dozlar için arayüzde "Aldım (kaydı düzelt)/Almadım" düğmeleri (`/ilac/duzelt`).
 - Testler 139 → 150.
+
+## NVIDIA Build sağlayıcısı
+- `nvidia` eklendi (OpenAI uyumlu, `https://integrate.api.nvidia.com/v1`): anahtar `--sir-kaydet nvidia` (nvapi-...), modeller `--modeller nvidia`, varsayılan `meta/llama-3.3-70b-instruct` (NVIDIA model adlarını sık değiştirir). Sıra: Gemini → NVIDIA → Groq → Mistral → OpenRouter (`bulut_sirasi`).
+- Kota: resmi sayı yok; yerel sınır 40 istek/dk (üçüncü taraf bildirimi, ayardan düzeltilir). 429'da diğer sağlayıcıya geçer.
+- Uyarı: NVIDIA deneme uç noktaları "araştırma, geliştirme ve test" lisansıyla verilir, üretim için değildir; kişisel kullanımın bu kapsama girip girmediğini lisans metninden siz değerlendirin. Veri bulut sayılır: kişisel mesajlar gitmez.
+- Testler 150 → 151.

@@ -80,6 +80,7 @@ class SaglayiciTabani(TemizVeri):
         cls.yamalar = [
             mock.patch.dict(OpenAIUyumluBeyin.TABANLAR, {
                 "groq": taban + "/groq", "mistral": taban + "/mistral",
+                "nvidia": taban + "/nvidia",
                 "openrouter": taban + "/openrouter"}),
             mock.patch.object(beyin, "GEMINI_TABAN", taban + "/gemini"),
         ]
@@ -165,6 +166,15 @@ class KotaTesti(SaglayiciTabani):
 
 
 class GecisTesti(SaglayiciTabani):
+
+    def test_nvidia_saglayicisi_gemini_dolunca_devreye_girer(self):
+        self.ayar_yaz(nvidia_anahtar="nvapi-x",
+                      bulut_sirasi=["gemini", "nvidia", "groq"])
+        self.sahte.mod["gemini"] = "429"
+        r = self.ulgen().sohbet_isle("merhaba nasılsın")
+        self.assertIn("nvidia yanıtı", r["yanit"])
+        self.assertEqual(kota.SINIRLAR["nvidia"]["rpm"], 40)
+        self.assertIn("NVIDIA", kota.metin())
 
     def test_429_olunca_siradaki_ucretsiz_saglayiciya_gecer(self):
         self.sahte.mod["gemini"] = "429"

@@ -238,9 +238,11 @@ class OpenAIUyumluBeyin(Beyin):
     sistem_butce = 6000
     gecmis_butce = 3000
     TABANLAR = {"groq": "https://api.groq.com/openai/v1",
+                "nvidia": "https://integrate.api.nvidia.com/v1",
                 "mistral": "https://api.mistral.ai/v1",
                 "openrouter": "https://openrouter.ai/api/v1"}
-    ADLAR = {"groq": "Groq", "mistral": "Mistral", "openrouter": "OpenRouter"}
+    ADLAR = {"groq": "Groq", "nvidia": "NVIDIA", "mistral": "Mistral",
+             "openrouter": "OpenRouter"}
 
     def __init__(self, saglayici, anahtar, model):
         self.saglayici = saglayici

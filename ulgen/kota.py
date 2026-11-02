@@ -36,6 +36,12 @@ SINIRLAR = {
              "sifirlama": "utc",
              "kaynak": "console.groq.com/docs/rate-limits: çoğu metin modeli "
                        "30 RPM; kesin değerler hesabınızın Limits sayfasında"},
+    "nvidia": {"rpm": 40, "rpd": None, "tpm": None, "tpd": None,
+               "sifirlama": "utc",
+               "kaynak": "NVIDIA resmi sayı yayımlamıyor (yalnızca 'deneme, "
+                         "değerlendirme ve prototipleme'); ~40 istek/dk "
+                         "üçüncü taraf bildirimi. Hesabınızdaki gerçek değer "
+                         "build.nvidia.com sağ üstte; ayardan düzeltin"},
     "mistral": {"rpm": 60, "rpd": None, "tpm": 500000, "tpd": None,
                 "tpay": 1000000000, "sifirlama": "utc",
                 "kaynak": "help.mistral.ai: ücretsiz katman 1 istek/sn, "
@@ -46,7 +52,7 @@ SINIRLAR = {
                              "istek/dk; 50 istek/gün (10 krediden azsa)"},
 }
 YEREL = ("ollama", "llamacpp")
-ADLAR = {"gemini": "Gemini", "groq": "Groq", "mistral": "Mistral",
+ADLAR = {"gemini": "Gemini", "groq": "Groq", "nvidia": "NVIDIA", "mistral": "Mistral",
          "openrouter": "OpenRouter", "ollama": "Ollama (yerel)",
          "llamacpp": "llama.cpp (yerel)"}
 
@@ -227,7 +233,7 @@ def tablo(simdi=None):
     simdi = time.time() if simdi is None else simdi
     a = ayar.yukle()
     sonuc = []
-    for ad in YEREL + ("gemini", "groq", "mistral", "openrouter"):
+    for ad in YEREL + ("gemini", "nvidia", "groq", "mistral", "openrouter"):
         if ad in ayar.SIRLAR and not a.get(ad + "_anahtar"):
             continue
         k = kullanim(ad, simdi)
