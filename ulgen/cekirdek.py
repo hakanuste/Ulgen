@@ -13,7 +13,7 @@ import re
 import threading
 from datetime import datetime
 
-from . import ayar, cihazlar, kisilik, kota, kuyruk, veritabani, yedek
+from . import ayar, cihazlar, iptal, kisilik, kota, kuyruk, veritabani, yedek
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
@@ -147,8 +147,13 @@ class Ulgen:
         if not metin:
             return {"yanit": "Sizi dinliyorum.", "beyin": None}
         with self._sohbet_kilit:
+            iptal.temizle()
             self._duyarli_tur = duyarli_mi(metin)
-            yanit, beyin_adi = self._isle(metin)
+            try:
+                yanit, beyin_adi = self._isle(metin)
+            except iptal.Iptal:
+                self._kaydet("kullanici", metin, self._duyarli_tur)
+                return {"yanit": "İptal ettim.", "beyin": None}
             duyarli = self._duyarli_tur
         self._kaydet("kullanici", metin, duyarli)
         self._kaydet("asistan", yanit, duyarli)
@@ -185,6 +190,7 @@ class Ulgen:
         son_hata = None
         hatalar = []                 # (beyin adı, ileti): hepsi gösterilir
         for beyin in adaylar:
+            iptal.denetle()
             bulut = not beyin.yerel
             if bulut and self._duyarli_tur and not izin:
                 atlanan_duyarli = True
@@ -286,7 +292,9 @@ class Ulgen:
         mesajlar.append({"role": "user", "content": metin})
         yanit = ""
         for tur in range(AZAMI_ARAC_TURU + 1):
+            iptal.denetle()
             yanit = beyin.yanitla(sistem, mesajlar).strip()
+            iptal.denetle()
             cagri = arac_cagrisi_ayikla(yanit)
             if cagri is None or tur == AZAMI_ARAC_TURU:
                 break

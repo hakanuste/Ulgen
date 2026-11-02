@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import gizli, hava, obsidyen, saglik_veri, ses, ses_klip
+from . import gizli, hava, iptal, obsidyen, saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -619,6 +619,9 @@ def istek_sinifi(ulgen, limit):
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)
             if not self._yetkili():
                 return
+            if urlparse(self.path).path == "/sohbet/iptal":
+                iptal.ayarla()
+                return self._cevap(200, {"tamam": True})
             if urlparse(self.path).path == "/sohbet":
                 return self._cevap(
                     200, ulgen.sohbet_isle(str(veri.get("metin", ""))))

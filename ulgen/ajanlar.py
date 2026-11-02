@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urljoin, urlparse
 
 from . import ayar
+from . import iptal
 from .beyin import BeyinHatasi
 
 KULLANICI_UCU = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -128,6 +129,7 @@ class ArastirmaAjani:
         parcalar = []
         okunan = 0
         for sira, sonuc in enumerate(sonuclar, 1):
+            iptal.denetle()
             govde = sonuc["ozet"]
             if okunan < sayfa_sayisi:
                 try:

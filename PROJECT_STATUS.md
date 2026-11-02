@@ -1,7 +1,7 @@
 # Ülgen — Gerçek Durum Tablosu (TEK KAYNAK)
 
 Bu tablo tek doğru durumdur. CHANGELOG, TEST_REPORT ve ROADMAP buna uyar; çelişirse bu dosya geçerlidir.
-Sürüm 2.7 · Otomatik test: 199 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
+Sürüm 2.7 · Otomatik test: 245 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
 
 Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K** = Kodlandı, gerçek cihaz testi bekliyor ·
 **Kı** = Kısmen · **G** = Geliştirilmedi · **E** = Teknik engel
@@ -25,6 +25,12 @@ Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K**
 | 7b | Çevrimdışı Türkçe ses tanıma (faster-whisper + ffmpeg, `/ses/yaz`, `--ses-modeli-indir`) | K | test_ses_cevrimdisi (sunucu yolu, sahte tanıma); gerçek model çalıştırılmadı | Hayır (model indirme, Mac hızı, iPhone kaydı) |
 | 8a | Sabah / akşam / haftalık raporlar (yerel veriden; `rapor_saatleri`, `/raporlar`, sohbette "akşam raporu") | K | test_rapor (5) | Hayır (zamanında bildirim) |
 | 2b | NVIDIA gerçek bağlantı denemesi: `python -m ulgen --dene nvidia` | K | test_rapor.DeneTesti (sahte yanıt) | **Hayır — kullanıcı çalıştırmalı** |
+| 9a | Görev, randevu, rutin, hatırlatıcı: Ekle / Düzelt / Sil (arayüz formları + sohbet komutları, onaylı silme) | K | test_gorev_duzenle (15), Chromium (tests dışı e2e) | Hayır (Mac/iPhone Safari) |
+| 9b | Yapay zekâ kipi varsayılan "yerel" (sabit); arayüzden onaylı değişim; eski kurulum bir kez yerele alınır | K | test_gorev_duzenle.BeyinKipiTesti | Hayır (Mac'te yerel model kurulu değil) |
+| 9c | "API anahtarlarım": var/yok, ekle, değiştir, dene, sil (Anahtar Zinciri) | K | test_yz_anahtar (7), Chromium | Hayır (Mac Anahtar Zinciri) |
+| 9d | Emekli model onarımı (HTTP 404/410: NVIDIA, Gemini) + tüm beyin hatalarını gösterme | K | test_model_emekli (5) | Hayır (gerçek hesaplar) |
+| 9e | "dur"/Sus: konuşmayı ve sunucudaki sohbet/araştırma işini durdurma; uzun yanıtlar bulut sesiyle parça parça | K | test_iptal (3), Chromium | Hayır (gerçek ElevenLabs sesi, Safari sesi) |
+| 9f | Launchpad yinelenen simge temizleme (`simge_temizle.sh`); Ses seçimi, kendi mp3'ler, bulut sesi, konuma göre hava, Obsidian otomatik bulma | K | test_ses_klip, test_hava, test_obsidyen; betik yalnız söz dizimi denendi | **Hayır** (Launchpad sorunu çözülmedi) |
 | 8 | 16 senaryolu bütünleşik test | G | — | — |
 | — | Yerel iOS uygulaması | G (iOS sürümü bekleniyor) | — | — |
 

@@ -374,7 +374,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   <span id="saat"></span>
   <button class="dugme" onclick="kodAcPencere()">&lt;/&gt; Kod</button>
   <button id="sesBtn" class="dugme aktif" onclick="sesDegistir()">Ses: açık</button>
-  <button id="susBtn" class="dugme" onclick="sesiDurdur()">Sus</button>
+  <button id="susBtn" class="dugme" onclick="hepsiniDurdur()">Sus</button>
   <button id="surekliBtn" class="dugme" onclick="surekliDegistir()">Sürekli dinle: kapalı</button>
 </header>
 <div id="kodPanel">
@@ -520,6 +520,12 @@ function cipSec(onek) {
 
 let konusmaNo = 0;
 
+// Konuşmayı keser VE sunucuda süren sohbet/araştırma işini durdurur.
+function hepsiniDurdur() {
+  sesiDurdur();
+  istek("/sohbet/iptal", {}).catch(() => {});
+}
+
 // Her şeyi susturur: yerel ses, bulut sesi, sıradaki parçalar.
 function sesiDurdur() {
   konusmaNo++;
@@ -605,13 +611,13 @@ async function gonderMetin(m) {
   if (!m) return;
   balonEkle(m, "kullanici");
   if (/^(dur|sus|kes|yeter|sessiz|sessiz ol|konuşma|tamam dur|dur artık|sus artık)[\s.!?]*$/i.test(m)) {
-    sesiDurdur(); balonEkle("Sustum.", "asistan"); return;
+    hepsiniDurdur(); balonEkle("Sustum; süren iş varsa durduruyorum.", "asistan"); return;
   }
   try {
     const c = await istek("/sohbet", { metin: m });
     balonEkle(c.yanit, "asistan");
     beyinEtiketi(c.beyin);
-    konus(c.yanit);
+    if (!/^İptal ettim/.test(c.yanit)) konus(c.yanit);
     ozetYukle();
   } catch (e) {
     balonEkle(e.message, "asistan");

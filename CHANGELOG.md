@@ -1,6 +1,7 @@
 # Değişiklik Günlüğü
 
 ## [2.7] – 2026-11-02
+- "dur" ve "Sus" artık sunucuda süren sohbet/araştırma işini de durdurur (`/sohbet/iptal`, ara adımlarda denetim).
 - Görevler sekmesinde "+ Görev / + Randevu / + Rutin" formları (hiç kayıt yokken de görünür).
 - Yapay Zekâ sayfasında "API anahtarlarım": her sağlayıcı için anahtar VAR/YOK, saklandığı yer, son 4 hane; Ekle, Değiştir, Bağlantıyı dene, Sil (onaylı; yalnız Mac'in kendi tarayıcısı).
 - "Beyin yanıt veremedi" iletisi artık denenen tüm beyinlerin hatasını gösterir; Gemini modeli de emekli olursa (404/410) yenisi seçilir.
