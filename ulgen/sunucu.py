@@ -247,6 +247,9 @@ def istek_sinifi(ulgen, limit):
                                              "icerik": kodpenceresi.oku(ad)})
                 except kodpenceresi.KodHatasi as hata:
                     return self._cevap(400, {"hata": str(hata)})
+            if yol == "/ilac/bugun":
+                return self._cevap(
+                    200, ulgen.zamanlayici.ilac.bugun_json())
             if yol == "/ozet":
                 satirlar = veritabani.sorgu(
                     "SELECT zaman, mesaj FROM hatirlaticilar WHERE "
@@ -267,9 +270,23 @@ def istek_sinifi(ulgen, limit):
             if urlparse(self.path).path == "/sohbet":
                 return self._cevap(
                     200, ulgen.sohbet_isle(str(veri.get("metin", ""))))
+            if urlparse(self.path).path == "/ilac/yanit":
+                return self._doz_yanit(veri)
             if urlparse(self.path).path.startswith("/kod/"):
                 return self._kod(urlparse(self.path).path, veri)
             return self._cevap(404, {"hata": "bulunamadı"})
+
+        def _doz_yanit(self, veri):
+            """TEK doz: {"doz": 12, "yanit": "alindi|ertele|almadi|atlandi",
+            "dk": 15}. Başka hiçbir doza dokunmaz."""
+            doz, yanit = veri.get("doz"), veri.get("yanit")
+            dk = veri.get("dk", 15)
+            if not isinstance(doz, int) or isinstance(doz, bool) \
+                    or not isinstance(yanit, str) \
+                    or not isinstance(dk, int):
+                return self._cevap(400, {"hata": "doz(int) ve yanit gerekli"})
+            return self._cevap(200, {"yanit": ulgen.zamanlayici.ilac.yanit(
+                doz, yanit, dk, "arayuz")})
 
         def _kod(self, yol, veri):
             try:

@@ -81,17 +81,20 @@ class Ulgen:
             self.bildir(self._kurtarma_mesaji)
 
     # --------------------------------------------------------- bildirimler
-    def bildir(self, metin):
-        """Zamanlayıcı gibi arka plan işlerinin kullanıcıya mesajı."""
+    def bildir(self, metin, eylem=None):
+        """Zamanlayıcı gibi arka plan işlerinin kullanıcıya mesajı.
+
+        ``eylem``: arayüzün düğme çizebilmesi için (örn. {"tur": "doz",
+        "doz": 12, "secenekler": [...]})."""
         with self._bildirim_kilit:
             self._sayac += 1
-            self._bildirimler.append((self._sayac, metin))
+            self._bildirimler.append((self._sayac, metin, eylem))
             self._bildirimler = self._bildirimler[-50:]
 
     def bildirimler(self, son_id=0):
         with self._bildirim_kilit:
-            return [{"id": i, "metin": m} for i, m in self._bildirimler
-                    if i > son_id]
+            return [{"id": i, "metin": m, "eylem": e}
+                    for i, m, e in self._bildirimler if i > son_id]
 
     # ---------------------------------------------------------- yardımcı
     @staticmethod

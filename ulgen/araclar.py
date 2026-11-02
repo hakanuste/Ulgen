@@ -439,6 +439,61 @@ class Araclar:
             lambda: "Düzeltildi (yeni kimlik #%s)." % self.hafiza.duzelt(
                 kimlik, yeni_metin))
 
+    def _onay_yonlendir(self, m, k):
+        """tamam/aldım/ertele...: önce İLAÇ dozları (her biri ayrı), sonra
+        genel kalıcı hatırlatıcılar. Çıplak 'tamam' hiçbir ilacı onaylamaz."""
+        z = self.zamanlayici
+        yanit = z.ilac.metinden_yanit(m)
+        if yanit is not None:
+            return yanit
+        e = re.fullmatch(r"(?:tamam|g[öo]rd[üu]m|onayl[ıi]yorum)\s*#(\d+)",
+                         k)
+        if e:
+            return z.onayla(e.group(1))
+        if re.fullmatch(r"(tamam|tamamd[ıi]r|onayl[ıi]yorum|g[öo]rd[üu]m)"
+                        r"[.! ]*", k):
+            return z.onayla() if z.onay_bekleyen_var_mi() else None
+        return None
+
+    def _plan_komutu(self, m, k):
+        """İlaç, görev, randevu ve rutin komutları (yalnızca kullanıcı yazar)."""
+        z = self.zamanlayici
+        e = re.match(r"^ila[çc] ekle[:,]?\s+(.+)$", m, re.IGNORECASE)
+        if e:
+            return z.ilac.ekle(e.group(1))
+        e = re.match(r"^ila[çc] (?:durdur|b[ıi]rak)[:,]?\s+(.+)$", m,
+                     re.IGNORECASE)
+        if e:
+            return z.ilac.durdur(e.group(1))
+        if re.fullmatch(r"ila[çc]lar[ıi]m", k):
+            return z.ilac.listele()
+        if re.fullmatch(r"(bug[üu]nk[üu] )?ila[çc]lar(?: ne durumda)?|"
+                        r"ila[çc] durumu", k):
+            return z.ilac.bugun()
+        if re.fullmatch(r"ila[çc] ge[çc]mi[şs]i", k):
+            return z.ilac.gecmis_metni()
+        e = re.match(r"^g[öo]rev ekle[:,]?\s+(.+)$", m, re.IGNORECASE)
+        if e:
+            return z.gorev.gorev_ekle(e.group(1))
+        e = re.match(r"^randevu ekle[:,]?\s+(.+)$", m, re.IGNORECASE)
+        if e:
+            return z.gorev.randevu_ekle(e.group(1))
+        e = re.match(r"^rutin ekle[:,]?\s+(.+)$", m, re.IGNORECASE)
+        if e:
+            return z.gorev.rutin_ekle(e.group(1))
+        e = re.fullmatch(r"(g[öo]rev|randevu|rutin) (?:tamam|bitti|iptal)"
+                         r"\s*#?(\d+)", k)
+        if e:
+            return z.gorev.bitir(e.group(2), "iptal" if "iptal" in k
+                                 else "tamam")
+        if re.fullmatch(r"g[öo]revlerim|g[öo]revler", k):
+            return z.gorev.listele("gorev")
+        if re.fullmatch(r"randevular[ıi]m|randevular", k):
+            return z.gorev.listele("randevu")
+        if re.fullmatch(r"rutinlerim|rutinler", k):
+            return z.gorev.listele("rutin")
+        return None
+
     def _hafiza_komutu(self, m):
         """Kullanıcının hafıza komutları (kaynak = kullanıcı, güven 1.0)."""
         e = re.match(r"^(hat[ıi]rla|karar|teknik|rutin)"
@@ -529,11 +584,12 @@ class Araclar:
         """Modelsiz çalışan sık komutlar. Eşleşme yoksa None döner."""
         m = metin.strip()
         k = m.lower()
-        if re.fullmatch(r"(tamam|tamamd[ıi]r|onayl[ıi]yorum|g[öo]rd[üu]m|"
-                        r"ald[ıi]m)[.! ]*", k):
-            if self.zamanlayici.onay_bekleyen_var_mi():
-                return self.zamanlayici.onayla()
-            return None
+        yanit = self._onay_yonlendir(m, k)
+        if yanit is not None:
+            return yanit
+        yanit = self._plan_komutu(m, k)
+        if yanit is not None:
+            return yanit
         if re.search(r"saat ka[çc]|g[üu]n(?:lerden)? ne|bug[üu]n.*tarih|"
                      r"tarih ne", k):
             return self.saat_tarih()

@@ -15,7 +15,7 @@ import threading
 
 from . import ayar
 
-SURUM = 3
+SURUM = 4
 FTS_VAR = False
 
 _KILIT = threading.RLock()
@@ -203,7 +203,54 @@ def _goc_3():
         sonuc TEXT NOT NULL DEFAULT '')""")
 
 
-GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3}
+def _goc_4():
+    """İlaç planı, doz örnekleri (her birinin kendi kimliği), görevler."""
+    sorgu("""CREATE TABLE IF NOT EXISTS ilac (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ad TEXT NOT NULL,
+        doz_notu TEXT NOT NULL DEFAULT '',
+        aktif INTEGER NOT NULL DEFAULT 1,
+        olusturma REAL NOT NULL)""")
+    sorgu("""CREATE TABLE IF NOT EXISTS ilac_plan (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ilac_id INTEGER NOT NULL REFERENCES ilac(id),
+        saat TEXT NOT NULL,
+        gunler TEXT NOT NULL DEFAULT '0,1,2,3,4,5,6',
+        aktif INTEGER NOT NULL DEFAULT 1,
+        olusturma REAL NOT NULL)""")
+    sorgu("""CREATE TABLE IF NOT EXISTS doz (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ilac_id INTEGER NOT NULL,
+        plan_id INTEGER NOT NULL,
+        ilac_ad TEXT NOT NULL,
+        doz_notu TEXT NOT NULL DEFAULT '',
+        planli TEXT NOT NULL,
+        durum TEXT NOT NULL DEFAULT 'bekliyor',
+        bildirim_sayisi INTEGER NOT NULL DEFAULT 0,
+        sonraki REAL NOT NULL DEFAULT 0,
+        yanit_zaman REAL NOT NULL DEFAULT 0,
+        kaynak TEXT NOT NULL DEFAULT '',
+        UNIQUE (plan_id, planli))""")
+    sorgu("""CREATE TABLE IF NOT EXISTS doz_gecmis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        doz_id INTEGER NOT NULL,
+        zaman REAL NOT NULL,
+        olay TEXT NOT NULL,
+        ayrinti TEXT NOT NULL DEFAULT '')""")
+    sorgu("""CREATE TABLE IF NOT EXISTS gorev (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tur TEXT NOT NULL,
+        baslik TEXT NOT NULL,
+        zaman TEXT,
+        tekrar TEXT NOT NULL DEFAULT '',
+        durum TEXT NOT NULL DEFAULT 'acik',
+        onceden_dk INTEGER NOT NULL DEFAULT 0,
+        asama INTEGER NOT NULL DEFAULT 0,
+        son_bildirim TEXT NOT NULL DEFAULT '',
+        olusturma REAL NOT NULL)""")
+
+
+GOCLER = {1: _goc_1, 2: _goc_2, 3: _goc_3, 4: _goc_4}
 
 
 def surum():

@@ -80,3 +80,5 @@ Kural: önce güvenlik ve veri bütünlüğü; her aşama testi geçmeden sonrak
 ## Güncelleme: Aşama 2 bitti (T = tamamlandı ve test edildi, benzetim). Sıradaki: Aşama 3 (sağlayıcı yöneticisi, kota, kalıcı kuyruk).
 
 ## Güncelleme: Aşama 3 kodlandı ve benzetimde test edildi. Sıradaki: Aşama 4 (görev motoru, ilaç dozu başına onay).
+
+## Güncelleme: Aşama 4 bitti (benzetimde). Sıradaki: Aşama 5 (iPhone arayüzü sekmeleri, ilaç/görev/kota panelleri, yeniden bağlanma).

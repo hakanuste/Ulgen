@@ -46,3 +46,6 @@ Güncelleme: Aşama 1 sonu · Durum sütunu yalnızca **testle doğrulananı** "
 
 ## Kod penceresi
 Rastgele kod çalıştırma, terminal ile aynı riski taşır. Önlemler: yalnızca düğmeyle, modelden erişilemez, uzaktan varsayılan kapalı, ortamdan sır sızmaz. Kum havuzu yoktur; çalışan kod dosyalarınıza erişebilir.
+
+## Aşama 4 eki
+İlaç verileri yalnızca yerel; kişisel sayılır (buluta gitmez). Model araç listesinde ilaç yazma yok (test). Doz yanıtı tek satıra `WHERE id=?` ve açık durum koşuluyla uygulanır; çifte dokunuş idempotent. Düzeltme kullanıcı komutuyla ve geçmişte iz bırakarak yapılır.

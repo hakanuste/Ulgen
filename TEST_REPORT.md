@@ -46,3 +46,8 @@ Denenmedi: Mac Anahtar Zinciri, uzun süreli (günler) çalışma, çok büyük 
 Denenmedi: gerçek Groq/Mistral/OpenRouter/Gemini uç noktaları (anahtarım yok; model adları ve başlık adları belgeden, doğrulanmadı), gerçek 429 davranışı, günler süren kullanım.
 
 Kod penceresi: 14 birim testi (zaman aşımı, ortam, ad doğrulama, uzak kapı, tek çalıştırma) + Chromium uçtan uca deneme geçti.
+
+## Aşama 4 sonuçları (benzetim + Chromium)
+138 test geçti. Kabul senaryosu: A ilacı 08:00 ve 20:00, B ilacı 08:00; A-08 onayı A-20'yi, B-08'i ve ertesi günkü A-08'i değiştirmedi. Ayrıca: çıplak tamam, belirsiz "aldım", ilgisiz cümle ("marketten ekmek aldım"), çifte dokunuş, ertele, azami hatırlatma sonrası yanıtsız, yeniden başlatma (sayaç korunur), kapalıyken kaçan doz, yapay zekâ kapalıyken çalışma, model araçlarında ilaç yazma yokluğu, gerçek HTTP uç noktasında tek doz, geçersiz gövdeler, görev/randevu/rutin zamanlaması, genel hatırlatıcı toplu onay kusurunun giderildiği.
+Chromium denemesi: iki doz bildirimi, "Aldım" yalnızca ilk dozu kapattı.
+Denenmedi: gerçek iPhone'da bildirim (Safari/PWA kapalıyken yerel bildirim planlayamaz; Mac uykudayken/kapalıyken hiçbir hatırlatma çalışmaz — bkz. ROADMAP, bekleyen karar A/B/C), saat dilimi/yaz saati geçişi, günlerce süren çalışma.

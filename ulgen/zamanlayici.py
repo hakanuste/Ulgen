@@ -11,6 +11,8 @@ import time
 from datetime import datetime, timedelta
 
 from . import veritabani
+from .gorev import Gorevler
+from .ilac import Ilac
 
 BICIM = "%Y-%m-%d %H:%M"
 
@@ -34,6 +36,8 @@ class Zamanlayici:
         # bildir(metin): uyarıyı kullanıcıya ileten işlev
         self._bildir = bildir
         self._durdur = threading.Event()
+        self.ilac = Ilac(bildir)
+        self.gorev = Gorevler(bildir)
 
     # ------------------------------------------------------------ kurma
     def hatirlatici_kur(self, metin, kalici=None, su_an=None):
@@ -99,25 +103,47 @@ class Zamanlayici:
         return "Bekleyen hatırlatıcılarınız: " + "; ".join(parcalar) + "."
 
     # -------------------------------------------------------------- onay
-    def onay_bekleyen_var_mi(self):
-        """Uyarılmış ama henüz onaylanmamış kalıcı hatırlatıcı var mı?"""
-        sayi = veritabani.sorgu(
-            "SELECT COUNT(*) AS n FROM hatirlaticilar WHERE kalici = 1 "
-            "AND bildirildi = 1 AND onaylandi = 0", (), True)
-        return sayi[0]["n"] > 0
+    def onay_bekleyenler(self):
+        """Uyarılmış ama onaylanmamış kalıcı hatırlatıcılar."""
+        return veritabani.sorgu(
+            "SELECT id, zaman, mesaj FROM hatirlaticilar WHERE kalici = 1 "
+            "AND bildirildi = 1 AND onaylandi = 0 ORDER BY id", (), True)
 
-    def onayla(self):
-        """Tüm kalıcı uyarıları onaylar; yinelemeyi durdurur."""
+    def onay_bekleyen_var_mi(self):
+        return bool(self.onay_bekleyenler())
+
+    def onayla(self, kimlik=None):
+        """TEK bir kalıcı hatırlatıcıyı onaylar.
+
+        ``kimlik`` yoksa ve tam bir tane bekliyorsa onu; birden çok varsa
+        hiçbirini onaylamaz, hangisi olduğunu sorar ('tamam #N')."""
+        bekleyen = self.onay_bekleyenler()
+        if not bekleyen:
+            return "Onay bekleyen bir hatırlatma yok."
+        if kimlik is None:
+            if len(bekleyen) > 1:
+                return ("%d hatırlatma onay bekliyor: %s. Hangisi? "
+                        "'tamam #%d' gibi yazın." % (
+                            len(bekleyen), "; ".join(
+                                "#%d %s" % (h["id"], h["mesaj"])
+                                for h in bekleyen), bekleyen[0]["id"]))
+            kimlik = bekleyen[0]["id"]
         adet = veritabani.sorgu(
-            "UPDATE hatirlaticilar SET onaylandi = 1 WHERE kalici = 1 "
-            "AND bildirildi = 1 AND onaylandi = 0", (), sayi=True)
+            "UPDATE hatirlaticilar SET onaylandi = 1 WHERE id = ? AND "
+            "kalici = 1 AND bildirildi = 1 AND onaylandi = 0",
+            (int(kimlik),), sayi=True)
         if adet:
-            return "Onayınız alındı. Hatırlatmayı durdurdum."
-        return "Onay bekleyen bir hatırlatma yok."
+            return "Onayınız alındı (#%s). Yalnızca onu durdurdum." % kimlik
+        return "#%s numaralı onay bekleyen hatırlatma yok." % kimlik
 
     # -------------------------------------------------------- arka plan
     def adim(self, su_an):
         """Zamanı gelen hatırlatıcıları bildirir; bildirilenleri döndürür."""
+        for motor in (self.ilac, self.gorev):
+            try:
+                motor.adim(su_an)
+            except Exception as hata:   # biri bozulsa diğerleri çalışsın
+                veritabani.gunluge_yaz("hata", "zamanlayici", str(hata)[:200])
         zaman_metni = su_an.strftime(BICIM)
         satirlar = veritabani.sorgu(
             "SELECT id, zaman, mesaj, kalici, tekrar FROM hatirlaticilar "
@@ -138,12 +164,13 @@ class Zamanlayici:
                     "zaman = ? WHERE id = ?",
                     (tekrar, sonraki.strftime(BICIM), satir["id"]))
                 if tekrar == 1:
-                    metin = ("Hatırlatma zamanı: %s. Onay verene kadar beş "
-                             "dakikada bir uyaracağım. 'Tamam' deyin."
-                             % satir["mesaj"])
+                    metin = ("Hatırlatma zamanı: %s [#%d]. Onay verene kadar "
+                             "beş dakikada bir uyaracağım. 'Tamam #%d' deyin."
+                             % (satir["mesaj"], satir["id"], satir["id"]))
                 else:
-                    metin = ("Tekrar hatırlatıyorum: %s. Onay için 'tamam' "
-                             "deyin." % satir["mesaj"])
+                    metin = ("Tekrar hatırlatıyorum: %s [#%d]. Onay için "
+                             "'tamam #%d' deyin."
+                             % (satir["mesaj"], satir["id"], satir["id"]))
             else:
                 veritabani.sorgu(
                     "UPDATE hatirlaticilar SET bildirildi = 1 WHERE id = ?",

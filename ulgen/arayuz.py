@@ -257,12 +257,37 @@ function surekliDegistir() {
 
 let sonBildirim = 0;
 
+// Her düğme YALNIZCA kendi dozunun kimliğini gönderir (D12 gibi).
+function dozDugmeleri(doz) {
+  const kap = document.createElement("div");
+  kap.className = "balon bildirim";
+  [["Aldım", "alindi"], ["Ertele 15 dk", "ertele"], ["Almadım", "almadi"], ["Atla", "atlandi"]].forEach(([ad, yanit]) => {
+    const d = document.createElement("button");
+    d.className = "dugme";
+    d.style.margin = "3px";
+    d.textContent = ad;
+    d.onclick = async () => {
+      kap.querySelectorAll("button").forEach(x => x.disabled = true);
+      try {
+        const c = await istek("/ilac/yanit", { doz: doz, yanit: yanit, dk: 15 });
+        balonEkle(c.yanit, "asistan");
+        kap.remove();
+      } catch (e) { balonEkle(e.message, "asistan"); }
+    };
+    kap.appendChild(d);
+  });
+  const a = document.getElementById("akis");
+  a.appendChild(kap);
+  a.scrollTop = a.scrollHeight;
+}
+
 async function bildirimleriAl() {
   try {
     const liste = await istek("/bildirimler?son=" + sonBildirim);
     for (const b of liste) {
       sonBildirim = Math.max(sonBildirim, b.id);
       balonEkle("⏰ " + b.metin, "bildirim");
+      if (b.eylem && b.eylem.tur === "doz") dozDugmeleri(b.eylem.doz);
       konus(b.metin);
     }
     if (liste.length && navigator.vibrate) navigator.vibrate([200, 100, 200]);

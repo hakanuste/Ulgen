@@ -27,3 +27,9 @@ Kısmen: iPhone arayüzünde kota paneli yok (yalnızca `kota` komutu ve `/kota`
 Not: Groq/Mistral/Gemini'de "ücretsiz" hesap düzeyindedir; anahtarınıza fatura kartı eklemeyin. Ülgen bunu ağdan doğrulayamaz.
 
 Kod penceresi: tamamlandı ve test edildi (benzetim + Chromium ekran denemesi). iPhone'da denenmedi; telefon klavyesinde uzun kod yazımı rahat olmayabilir.
+
+## Aşama 4 durumu
+Tamamlandı ve test edildi (benzetim): doz başına onay, hatırlatma döngüsü, yanıtsız kaydı, görev/randevu/rutin.
+Kodlandı, gerçek cihaz testi bekliyor: arayüz düğmeleri iPhone'da.
+Geliştirilmedi / teknik engel: Mac uykudayken ya da kapalıyken hatırlatma (Mac kapalıyken hiçbir kod çalışmaz). Çözüm seçenekleri A/B/C kararınızı bekliyor.
+Not: ilaç dozunu Ülgen değiştirmez; ilaç eklemek/durdurmak yalnızca sizin yazdığınız komutla olur. Tıbbi öneri vermez.
