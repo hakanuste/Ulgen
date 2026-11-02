@@ -51,6 +51,16 @@ def kasa_alintilari(metin, sinir=3000):
     kasa = ayar.yol_ac(ayar.yukle().get("kasa", "~/Documents/Obsidyen"))
     if not os.path.isdir(kasa):
         return ""
+    from . import obsidyen
+    if obsidyen.hazir_mi():
+        parcalar, toplam = [], 0
+        for baslik, _, alinti in obsidyen.ara(metin):
+            if alinti:
+                parcalar.append("## %s\n%s" % (baslik, alinti))
+                toplam += len(alinti)
+                if toplam > sinir:
+                    break
+        return "\n\n".join(parcalar)
     kelimeler = set(k.lower() for k in KELIME_DESENI.findall(metin))
     if not kelimeler:
         return ""
