@@ -109,6 +109,8 @@ class UzakTesti(TemizVeri):
             guncelle._al("http://raw.githubusercontent.com/x")
 
     def test_depo_ayari_ve_surum_karsilastirma(self):
+        self.assertEqual(guncelle.ayarlar()[0], "hakanuste/Ulgen")      # varsayılan
+        ayar.guncelle("guncelleme_depo", "")
         with self.assertRaisesRegex(guncelle.GuncellemeHatasi, "Depo ayarlı değil"):
             guncelle.ayarlar()
         ayar.guncelle("guncelleme_depo", "hakanuste/Ulgen")

@@ -62,7 +62,7 @@ VARSAYILAN = {
     "kasa": "",                    # boşsa Obsidian kasası kendiliğinden aranır
     "elevenlabs_ses_kimligi": "J17lijyP1BHYcM7ld0Rg",  # "dede korkut" (Voices > Copy Voice ID)
     # Kendini güncelleme: "kullanici/depo" (GitHub); özel depo için "github" anahtarı
-    "guncelleme_depo": "",
+    "guncelleme_depo": "hakanuste/Ulgen",
     "guncelleme_dal": "main",
     "elevenlabs_bulut_ses": False,  # True: yanıt metinleri ElevenLabs'e gider (isteğe bağlı)
     "elevenlabs_model": "eleven_flash_v2_5",
