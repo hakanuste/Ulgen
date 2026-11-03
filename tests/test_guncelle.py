@@ -164,3 +164,22 @@ class UcNoktaTesti(TemizVeri):
         d = json.loads(h)
         self.assertFalse(d["tamam"])
         self.assertIn("ağ yok", d["hata"])
+
+
+class CalistirilabilirTesti(TemizVeri):
+    def test_command_ve_sh_calistirilabilir_olur(self):
+        import stat
+        import tempfile
+        from ulgen import guncelle
+        kok = tempfile.mkdtemp()
+        os.makedirs(os.path.join(kok, "ulgen", "varlik"))
+        yollar = [os.path.join(kok, "ulgen", "varlik", "a.command"),
+                  os.path.join(kok, "ulgen", "varlik", "b.sh"),
+                  os.path.join(kok, "ulgen", "x.py")]
+        for y in yollar:
+            open(y, "w").write("x")
+            os.chmod(y, 0o644)
+        guncelle.calistirilabilir_yap(kok)
+        self.assertTrue(os.stat(yollar[0]).st_mode & stat.S_IXUSR)
+        self.assertTrue(os.stat(yollar[1]).st_mode & stat.S_IXUSR)
+        self.assertFalse(os.stat(yollar[2]).st_mode & stat.S_IXUSR)

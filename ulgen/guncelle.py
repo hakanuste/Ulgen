@@ -151,6 +151,20 @@ def _sha(yol):
         return ""
 
 
+def calistirilabilir_yap(kok):
+    """.command ve .sh dosyalarına çalıştırma izni verir (zip açılırken izin kaybolur)."""
+    for dizin, _, dosyalar in os.walk(kok):
+        if os.sep + "ortam" in dizin + os.sep or os.sep + "eski" in dizin + os.sep:
+            continue
+        for d in dosyalar:
+            if d.endswith((".command", ".sh")):
+                yol = os.path.join(dizin, d)
+                try:
+                    os.chmod(yol, os.stat(yol).st_mode | 0o111)
+                except OSError:
+                    pass
+
+
 def uygula_zip(zip_yolu, kok=KOK, bagimlilik_kur=True):
     """Zip'teki kodu kuruluma uygular; {'eski','yeni','yedek'} döndürür."""
     zaman = time.strftime("%Y%m%d-%H%M%S")
@@ -228,6 +242,7 @@ def uygula_zip(zip_yolu, kok=KOK, bagimlilik_kur=True):
             kaynak = os.path.join(gecici, ad)
             if os.path.isfile(kaynak):
                 shutil.copy2(kaynak, os.path.join(kok, ad))
+        calistirilabilir_yap(kok)
         if bagimlilik_kur and eski_req != _sha(os.path.join(kok, "requirements.txt")):
             _bagimlilik_kur(kok)
         return {"eski": eski_surum, "yeni": yeni_surum, "yedek": yedek}

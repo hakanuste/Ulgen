@@ -157,3 +157,6 @@
 
 ## 2.7.45
 - `ulgen/varlik/Yerel Beyin Kur.command`: Ollama olmadan yerel beyin kurulumu (llama.cpp + Gemma 3 4B Q4_K_M, ~2,5 GB, 127.0.0.1:8080, açılışta kendiliğinden). Mac'te denenmedi.
+
+## 2.7.46
+- Güncelleme sonrası `.command` ve `.sh` dosyalarına çalıştırma izni verilir (zip açılırken izin kayboluyor, "yetkiniz yok" hatası çıkıyordu).
