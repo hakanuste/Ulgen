@@ -7,6 +7,7 @@ verisi Apple Sağlık'a yazılıyorsa aynı yoldan gelir (doğrulanmadı).
 Bu veri ASLA buluta gitmez; yalnızca gösterilir. Ülgen tıbbi öneri vermez.
 """
 
+import re
 from datetime import datetime, timedelta
 
 from . import veritabani
@@ -44,6 +45,59 @@ def ekle(olcumler, kaynak="kestirme"):
                 (tur, deger, zaman.isoformat(timespec="seconds"), kaynak))
             eklenen += 1
     return eklenen, atlanan
+
+
+_BINLIK = re.compile(r"^\d{1,3}([.,]\d{3})+$")
+
+
+def sayi_oku(deger):
+    """Kestirme'den gelen sayı ya da metni (örn. '8.421', '72,5') okur."""
+    if isinstance(deger, bool):
+        raise ValueError("sayı değil")
+    if isinstance(deger, (int, float)):
+        return float(deger)
+    metin = str(deger).strip().replace(" ", "").replace("\u00a0", "")
+    if _BINLIK.match(metin):                 # 8.421 / 8,421 → binlik ayracı
+        return float(re.sub(r"[.,]", "", metin))
+    return float(metin.replace(",", "."))
+
+
+ALANLAR = (("adim", "adim", 1), ("nabiz", "nabiz", 1), ("uyku_dk", "uyku", 1),
+           ("uyku_saat", "uyku", 60), ("aktif_dakika", "aktif_dakika", 1),
+           ("kalori", "kalori", 1))
+
+
+def ozet_ekle(veri, simdi=None):
+    """Kestirme için kolay biçim: {"adim": 8421, "nabiz": 72, "uyku_saat": 7.2}.
+
+    Alanlar isteğe bağlıdır; zaman Ülgen'de damgalanır. Adım, uyku, aktif
+    dakika ve kalori günlük toplamdır (aynı gün tekrar gelirse güncellenir);
+    nabız anlıktır. Dönüş: (eklenen, atlanan)."""
+    if not isinstance(veri, dict):
+        raise SaglikHatasi("JSON nesnesi gerekli")
+    simdi = simdi or datetime.now()
+    gun = simdi.strftime("%Y-%m-%d")
+    olcumler, atlanan = [], 0
+    for alan, tur, kat in ALANLAR:
+        if alan not in veri or veri[alan] in (None, ""):
+            continue
+        try:
+            deger = sayi_oku(veri[alan]) * kat
+        except (TypeError, ValueError):
+            atlanan += 1
+            continue
+        if tur == "nabiz":
+            zaman = simdi.isoformat(timespec="seconds")
+        elif tur == "uyku":                  # dün geceki uyku, bu sabah
+            zaman = gun + "T06:00:00"
+        else:
+            zaman = gun + "T12:00:00"
+        olcumler.append({"tur": tur, "deger": deger, "zaman": zaman})
+    if not olcumler and not atlanan:
+        raise SaglikHatasi("Hiç değer yok (adim, nabiz, uyku_saat, "
+                           "uyku_dk, aktif_dakika, kalori)")
+    e, a = ekle(olcumler)
+    return e, a + atlanan
 
 
 def bugun(simdi=None):

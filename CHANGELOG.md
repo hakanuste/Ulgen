@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.54
+- Sağlık kestirmesi kolaylaştı: `/saglik/ozet` ({"adim", "nabiz", "uyku_dk"/"uyku_saat", "aktif_dakika", "kalori"}; hepsi isteğe bağlı, zamanı Ülgen damgalar, "8.421" gibi Türkçe sayılar okunur). `SAGLIK_KESTIRME.md` adım adım yeniden yazıldı (elle `curl` sınaması dahil). Gerçek iPhone/Kestirmeler testi bekliyor.
+
 ## 2.7.53
 - Mac Takvim randevuları ve Hatırlatıcılar Ülgen'e kendiliğinden gelir (10 dakikada bir, yalnız okunur; `ulgen/macsenk.py`). Ülgen'de bitirilen/silinen kayıt geri gelmez; Mac'te silinen/tamamlanan kapanır. Geçmiş tarihli hatırlatıcılar için bildirim yağmuru yok.
 - Ülgen hatırlatmaları (ilaç, randevu, rutin, görev) Mac'in kendi bildirimi olarak da çıkar (Ayarlar'dan kapatılabilir).

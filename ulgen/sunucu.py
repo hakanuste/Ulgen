@@ -909,6 +909,12 @@ def istek_sinifi(ulgen, limit):
                 return self._doz_yanit(veri)
             if urlparse(self.path).path in ("/yz/anahtar", "/yz/dene"):
                 return self._yz_anahtar(urlparse(self.path).path, veri)
+            if urlparse(self.path).path == "/saglik/ozet":
+                try:
+                    e, a = saglik_veri.ozet_ekle(veri)
+                except saglik_veri.SaglikHatasi as hata:
+                    return self._cevap(400, {"hata": str(hata)})
+                return self._cevap(200, {"eklenen": e, "atlanan": a})
             if urlparse(self.path).path == "/saglik/veri":
                 try:
                     e, a = saglik_veri.ekle(veri.get("olcumler"))

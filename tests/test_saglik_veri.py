@@ -8,6 +8,32 @@ from ulgen import saglik_veri, sunucu, veritabani
 from ulgen.cekirdek import Ulgen
 
 
+class KestirmeOzeti(TemizVeri):
+
+    def test_sayi_oku_turkce_bicimler(self):
+        o = saglik_veri.sayi_oku
+        self.assertEqual((o(8421), o("8421"), o("8.421"), o("8,421"), o("72,5")),
+                         (8421, 8421, 8421, 8421, 72.5))
+        self.assertEqual(o("1 234"), 1234)
+        with self.assertRaises(ValueError):
+            o("x")
+
+    def test_ozet_ekle_ve_ayni_gun_guncelleme(self):
+        simdi = datetime(2026, 11, 2, 19, 0)
+        self.assertEqual(saglik_veri.ozet_ekle(
+            {"adim": "6.100", "nabiz": 72, "uyku_saat": 7.5}, simdi), (3, 0))
+        self.assertEqual(saglik_veri.ozet_ekle({"adim": 8421}, simdi), (1, 0))
+        b = saglik_veri.bugun(simdi)
+        self.assertEqual((b["adim"], b["nabiz"], b["uyku_dk"]), (8421, 72, 450))
+
+    def test_gecersiz(self):
+        simdi = datetime(2026, 11, 2, 19, 0)
+        self.assertEqual(saglik_veri.ozet_ekle({"adim": "x", "nabiz": 70}, simdi), (1, 1))
+        for kotu in ({}, {"adim": ""}, [1]):
+            with self.assertRaises(saglik_veri.SaglikHatasi):
+                saglik_veri.ozet_ekle(kotu, simdi)
+
+
 class SaglikVeri(TemizVeri):
 
     def setUp(self):
@@ -49,6 +75,20 @@ class SaglikVeri(TemizVeri):
         kod, ham = istek(port, "/saglik/veri", "POST", json.dumps(
             {"olcumler": [{}] * 501}), JSON)
         self.assertEqual(kod, 400)
+
+    def test_http_ozet(self):
+        srv = sunucu.yerel_sunucu(Ulgen(), 0)
+        sunucu.arka_planda_calistir(srv)
+        self.addCleanup(srv.shutdown)
+        port = srv.server_address[1]
+        govde = json.dumps({"adim": "5.432", "nabiz": 70, "uyku_saat": 7})
+        self.assertEqual(istek(port, "/saglik/ozet", "POST", govde, JSON,
+                               yetkisiz=True)[0], 401)
+        kod, ham = istek(port, "/saglik/ozet", "POST", govde, JSON)
+        self.assertEqual((kod, json.loads(ham)), (200, {"eklenen": 3, "atlanan": 0}))
+        self.assertEqual(istek(port, "/saglik/ozet", "POST", "{}", JSON)[0], 400)
+        b = json.loads(istek(port, "/saglik/bugun")[1])
+        self.assertEqual((b["adim"], b["uyku_dk"]), (5432, 420))
 
 
 if __name__ == "__main__":
