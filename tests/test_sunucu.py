@@ -51,6 +51,18 @@ class YerelSunucu(TemizVeri):
                      json.dumps({"metin": "saat kaç"}), JSON)
         self.assertEqual(d, 200)
 
+    def test_yerel_sunucu_yanlis_belirtecle_kilitlenmez(self):
+        # Eski bir sekmenin geçersiz belirteci kullanıcıyı kendi Mac'inden
+        # kilitlememeli; sonradan geçerli giriş çalışmalı.
+        for _ in range(12):
+            self.assertEqual(istek(self.port, "/gorevler", basliklar={
+                "Authorization": "Bearer yanlis"})[0], 401)
+        anahtar = cihazlar.giris_anahtari_uret()
+        d, _ = istek(self.port, "/giris?t=" + anahtar)
+        self.assertEqual(d, 302)
+        d, _ = istek(self.port, "/giris?t=yanlis")
+        self.assertEqual(d, 403)
+
     def test_loopback_dinleme(self):
         self.assertEqual(self.srv.server_address[0], "127.0.0.1")
 

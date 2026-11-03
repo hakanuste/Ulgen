@@ -307,13 +307,17 @@ def istek_sinifi(ulgen, limit):
             if self.server.yerel and not ayar.yukle().get("yerel_yetki", True):
                 return True          # eski davranış (önerilmez; panelde uyarılır)
             ip = self.client_address[0]
-            if limit.kilitli_mi(ip):
+            # Yalnız 127.0.0.1'e açık sunucuda kilit yoktur: eski bir sekmenin
+            # geçersiz belirteci kullanıcıyı kendi Mac'inden kilitlememeli.
+            yerel = self.server.yerel
+            if not yerel and limit.kilitli_mi(ip):
                 self._cevap(429, {"hata": "çok fazla yanlış deneme"})
                 return False
             if cihazlar.dogrula(self._belirtec()):
                 limit.basarili(ip)
                 return True
-            limit.hata(ip)
+            if not yerel:
+                limit.hata(ip)
             self._cevap(401, {"hata": "yetkisiz", "giris": self.server.yerel})
             return False
 
@@ -988,11 +992,12 @@ def istek_sinifi(ulgen, limit):
             """Tek kullanımlık anahtarı oturum çerezine çevirir (yalnızca
             127.0.0.1). Çerez: HttpOnly, SameSite=Strict, 30 gün."""
             ip = self.client_address[0]
-            if limit.kilitli_mi(ip):
+            if not self.server.yerel and limit.kilitli_mi(ip):
                 return self._cevap(429, {"hata": "çok fazla yanlış deneme"})
             belirtec = cihazlar.giris_anahtari_tuket(anahtar)
             if not belirtec:
-                limit.hata(ip)
+                if not self.server.yerel:
+                    limit.hata(ip)
                 return self._cevap(403, {"hata": "giriş bağlantısı geçersiz "
                                                  "ya da kullanılmış; "
                                                  "Launchpad'den Ülgen'i açın"})

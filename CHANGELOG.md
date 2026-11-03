@@ -131,3 +131,6 @@
 
 ## 2.7.37
 - Pano hata iletisi artık hangi isteğin neden başarısız olduğunu gösterir (örn. "/ilac/bugun → çok fazla yanlış deneme"); sunucu hata gövdesi dönünce "reading length" gibi anlamsız iletiler çıkmaz.
+
+## 2.7.38
+- **Kendi Mac'inden kilitlenme düzeltildi:** yalnız 127.0.0.1'e açık sunucuda "çok fazla yanlış deneme" kilidi kaldırıldı (eski bir sekmenin geçersiz belirteci 5 denemede giriş bağlantısını da engelliyordu; Launchpad simgesi ve Güncelleme açılamıyordu). Uzak (iPhone) sunucuda kilit sürer.
