@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.52
+- iPhone (ana ekran simgesi): üst şerit durum çubuğu payını da kapsıyor; menü ve "‹ Ana Sayfa" düğmeleri artık kesilmiyor. Gerçek cihaz testi bekliyor.
+
 ## 2.7.51
 - iPhone: bölüm sayfalarında görünür "‹ Ana Sayfa" düğmesi; kenardan kaydırarak geri gitme (tarayıcı geçmişi) artık bölümler arasında çalışır. Gerçek cihaz testi bekliyor.
 

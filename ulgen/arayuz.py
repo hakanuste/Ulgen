@@ -202,8 +202,8 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   #kullanici b { color: var(--yazi); display: block; font-size: 16px; }
   #ana { order: 1; }
   #serit, #pano, #runlar, #baslikOrta .egri { display: none; }
-  #afis { display: block; position: relative; height: 58px; flex: none; overflow: hidden; border-bottom: 1px solid var(--altin2); }
-  body[data-s="ana"] #afis { height: 250px; }
+  #afis { display: block; position: relative; height: calc(58px + env(safe-area-inset-top)); flex: none; overflow: hidden; border-bottom: 1px solid var(--altin2); }
+  body[data-s="ana"] #afis { height: calc(250px + env(safe-area-inset-top)); }
   #afis .arka { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3,9,20,.25), rgba(3,9,20,.1) 60%, var(--ulgen-bg) 100%), url(/varlik/afis.webp) center 35% / cover; }
   #mobilLogo { display: none; position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 8px); width: 170px; margin-left: -85px; filter: drop-shadow(0 0 14px rgba(120,223,255,.5)); }
   #mobilAlt { display: none; position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; color: #fff; font-size: 15px; text-shadow: 0 1px 4px #000; }
