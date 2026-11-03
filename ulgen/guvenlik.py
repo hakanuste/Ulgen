@@ -113,7 +113,8 @@ DUYARLI_DESENI = re.compile(
     r"\b(ilaç|ilac|hap\b|tansiyon|insülin|insulin|şeker hastal|teşhis|tedavi|"
     r"reçete|recete|hastal[ıi]k|kanser|ameliyat|doz\b|nab[ıi]z|uyku|"
     r"tc\s*kimlik|kimlik\s*no|iban|kredi\s*kart|kart\s*numaras|şifre|sifre|"
-    r"parola|password|maaş|maas|borcum|banka\s*hesab|sağl[ıi]k)", re.IGNORECASE)
+    r"parola|password|maaş|maas|borcum|banka\s*hesab|sağl[ıi]k|"
+    r"tapu|parsel|arazim|arsam|adresim|konumum|ev\s*adres)", re.IGNORECASE)
 
 
 def duyarli_mi(metin):

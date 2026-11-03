@@ -150,3 +150,7 @@
 
 ## 2.7.43
 - Kılavuz aktarıcısı **Google Earth KML/KMZ** dosyalarını okur: her arazi için alan (m² ve dönüm), çevre, merkez noktası, harita bağlantısı ve köşe koordinatlarıyla `Arazi/<dosya adı>.md` notu yazar (ölçüm yerel düzlem yaklaşımıyla; küçük parsellerde hata binde birin altındadır).
+
+## 2.7.44
+- Arazi, tapu, parsel, adres ve konum soruları duyarlı sayılır: bulut beyne (Gemini vb.) gönderilmez, yerel beyin yoksa kuyruğa alınır.
+- Kişilik yönergesine eklendi: model "mutlak gizlilik protokolü" gibi kural uydurmaz; kullanıcının arazi/ev/proje bilgilerini yerelde tutabilir, gizlilik gerekçesiyle bilgi almayı reddetmez.

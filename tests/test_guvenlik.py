@@ -115,3 +115,12 @@ class Enjeksiyon(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArazDuyarliTesti(unittest.TestCase):
+    def test_arazi_tapu_konum_duyarli_sayilir(self):
+        from ulgen.guvenlik import duyarli_mi
+        for m in ("arazim kaç metrekare?", "tapu bilgilerim neydi", "parsel numarası",
+                  "adresim ne"):
+            self.assertTrue(duyarli_mi(m), m)
+        self.assertFalse(duyarli_mi("zeytin ne zaman budanır"))
