@@ -23,7 +23,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import gizli, guncelle, hava, iptal, kilavuz, obsidyen, saglik_veri, ses, ses_klip
+from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, obsidyen
+from . import saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -316,6 +317,32 @@ def istek_sinifi(ulgen, limit):
             self._cevap(401, {"hata": "yetkisiz", "giris": self.server.yerel})
             return False
 
+        def _ajan_calistir(self, veri):
+            kimlik = veri.get("id")
+            girdi = str(veri.get("girdi", ""))[:300].strip()
+            if kimlik not in ajan_kayit.KATALOG:
+                return self._cevap(400, {"hata": "bilinmeyen ajan"})
+            if any(k["id"] == kimlik and k["durum"] == "calisiyor"
+                   for k in ajan_kayit.liste()):
+                return self._cevap(409, {"hata": "ajan zaten çalışıyor"})
+            if kimlik == "arastirma" and not girdi:
+                return self._cevap(400, {"hata": "aranacak konu gerekli"})
+            is_ = {
+                "arastirma": lambda: ulgen.arastirma.arastir(girdi),
+                "saglik": lambda: ulgen.saglik.rapor(),
+                "sabah": lambda: ulgen.sabah.hazirla(),
+                "dosya": lambda: (ulgen.araclar.dosya_ajani.ara(girdi) if girdi
+                                  else ulgen.araclar.dosya_ajani.en_yeni("")),
+            }[kimlik]
+
+            def kos():
+                try:
+                    is_()
+                except BaseException as hata:   # kayıt zaten hatayı tuttu
+                    veritabani.gunluge_yaz("uyari", "ajan", "%s: %r" % (kimlik, hata))
+            threading.Thread(target=kos, daemon=True).start()
+            return self._cevap(202, {"baslatildi": kimlik})
+
         def _govde(self):
             try:
                 uzunluk = int(self.headers.get("Content-Length", 0) or 0)
@@ -393,6 +420,8 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": str(hata)})
             if yol == "/gorevler":
                 return self._cevap(200, _gorevler_json())
+            if yol == "/ajanlar":
+                return self._cevap(200, ajan_kayit.liste())
             if yol == "/bilgi/ara":
                 q = parse_qs(adres.query).get("q", [""])[0][:200]
                 ogeler = ulgen.hafiza.liste()
@@ -664,6 +693,8 @@ def istek_sinifi(ulgen, limit):
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)
             if not self._yetkili():
                 return
+            if urlparse(self.path).path == "/ajanlar/calistir":
+                return self._ajan_calistir(veri)
             if urlparse(self.path).path == "/sohbet/iptal":
                 iptal.ayarla()
                 return self._cevap(200, {"tamam": True})

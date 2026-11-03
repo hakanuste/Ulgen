@@ -122,3 +122,6 @@
 
 ## 2.7.34
 - Yerel ses denemesi aracı (XTTS-v2): `ulgen/varlik/Yerel Ses Denemesi.command`. Ülgen'e dokunmaz; sesinizi bu Mac'te üretip hızını ölçer. Gerçek cihaz testi bekliyor.
+
+## 2.7.35
+- Yeni **Ajanlar** sekmesi: Araştırma, Sağlık, Dosya ajanları ve Sabah Özeti için durum, son çalışma, süre, sonuç özeti ve "Şimdi çalıştır" düğmesi. Sohbetten yapılan çalıştırmalar da aynı kayda düşer (`ulgen/ajan_kayit.py`, `/ajanlar`, `/ajanlar/calistir`).

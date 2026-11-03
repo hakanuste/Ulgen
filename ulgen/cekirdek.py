@@ -14,6 +14,7 @@ import threading
 from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
+from . import ajan_kayit
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
@@ -66,6 +67,10 @@ class Ulgen:
         self.arastirma = ArastirmaAjani(self.baglam)
         self.saglik = SaglikAjani(self.hafiza)
         self.sabah = SabahOzeti(sec, self.saglik)
+        # Çalıştırmalar (sohbet, araç, Ajanlar sekmesi) tek kayda düşsün diye sarılır.
+        self.arastirma.arastir = ajan_kayit.sar("arastirma", self.arastirma.arastir)
+        self.saglik.rapor = ajan_kayit.sar("saglik", self.saglik.rapor)
+        self.sabah.hazirla = ajan_kayit.sar("sabah", self.sabah.hazirla)
         self.araclar = Araclar(self.zamanlayici, self.hafiza, self.onay,
                                self.arastirma, self.saglik, self.sabah,
                                self.baglam)

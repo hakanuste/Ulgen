@@ -20,6 +20,7 @@ import tempfile
 from datetime import datetime
 
 from . import ayar, kota, kuyruk, veritabani
+from . import ajan_kayit
 from .ajanlar import DosyaAjani
 from . import ozelkasa
 from .baglam import kasa_alintilari
@@ -259,6 +260,8 @@ class Araclar:
         self.dosya = DosyaYoneticisi(onay)
         self.dosya_ajani = DosyaAjani(baglam, self.dosya._izinli_kokler)
         self.dosya.ajan = self.dosya_ajani
+        self.dosya_ajani.ara = ajan_kayit.sar("dosya", self.dosya_ajani.ara)
+        self.dosya_ajani.en_yeni = ajan_kayit.sar("dosya", self.dosya_ajani.en_yeni)
         self.bulut_modu = False
         self.kisisel_kullanildi = False
         self._kayit = self._kayit_olustur()
