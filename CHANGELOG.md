@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.55
+- Yerel ses denemesi: eski torch'un `weights_only` reddi aşıldı (yalnız deneme sürecinde, resmi Coqui modeli). Kurulum notu: Intel Mac'te `llvmlite==0.43.0 numba==0.60.0`, `transformers==4.46.2`, `click==8.1.8 typer==0.12.5` gerekti. Gerçek cihaz testi sürüyor.
+
 ## 2.7.54
 - Sağlık kestirmesi kolaylaştı: `/saglik/ozet` ({"adim", "nabiz", "uyku_dk"/"uyku_saat", "aktif_dakika", "kalori"}; hepsi isteğe bağlı, zamanı Ülgen damgalar, "8.421" gibi Türkçe sayılar okunur). `SAGLIK_KESTIRME.md` adım adım yeniden yazıldı (elle `curl` sınaması dahil). Gerçek iPhone/Kestirmeler testi bekliyor.
 

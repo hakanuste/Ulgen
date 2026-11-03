@@ -37,6 +37,17 @@ def main():
     os.makedirs(cikti, exist_ok=True)
 
     os.environ["COQUI_TOS_AGREED"] = "1"   # kişisel, ticari olmayan kullanım (CPML)
+    # Eski torch (2.2.x, Intel Mac'in son sürümü) Coqui'nin resmi model
+    # yapılandırma sınıfını "güvenli değil" sayıp yüklemeyi reddeder. Model,
+    # Coqui'nin Hugging Face'teki resmi dosyasıdır; kural yalnız bu deneme
+    # sürecinde gevşetilir, Ülgen'in kendisi etkilenmez.
+    import torch
+    _torch_yukle = torch.load
+
+    def _guvenli_degil_yukle(*a, **k):
+        k["weights_only"] = False
+        return _torch_yukle(*a, **k)
+    torch.load = _guvenli_degil_yukle
     t0 = time.time()
     from TTS.api import TTS
     print("Model yükleniyor (ilk seferde ~2 GB iner, sabırlı olun)...")
