@@ -1,7 +1,7 @@
 # Ülgen — Gerçek Durum Tablosu (TEK KAYNAK)
 
 Bu tablo tek doğru durumdur. CHANGELOG, TEST_REPORT ve ROADMAP buna uyar; çelişirse bu dosya geçerlidir.
-Sürüm 2.7 · Otomatik test: 245 geçti (Linux benzetimi) · Gerçek cihaz testi: HİÇBİRİ yapılmadı.
+Sürüm 2.7.49 · Otomatik test: 279 geçti (Linux benzetimi) · Gerçek cihaz testi: kısmen (Mac: Launchpad simgesi, API anahtarları, pano girişi, güncelleme; ayrıntı satırlarda).
 
 Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K** = Kodlandı, gerçek cihaz testi bekliyor ·
 **Kı** = Kısmen · **G** = Geliştirilmedi · **E** = Teknik engel
@@ -31,6 +31,14 @@ Durum sözlüğü: **T** = Tamamlandı ve test edildi (otomatik, Linux) · **K**
 | 9d | Emekli model onarımı (HTTP 404/410: NVIDIA, Gemini) + tüm beyin hatalarını gösterme | K | test_model_emekli (5) | Hayır (gerçek hesaplar) |
 | 9e | "dur"/Sus: konuşmayı ve sunucudaki sohbet/araştırma işini durdurma; uzun yanıtlar bulut sesiyle parça parça | K | test_iptal (3), Chromium | Hayır (gerçek ElevenLabs sesi, Safari sesi) |
 | 9f | Launchpad yinelenen simge temizleme (`simge_temizle.sh`); Ses seçimi, kendi mp3'ler, bulut sesi, konuma göre hava, Obsidian otomatik bulma | K | test_ses_klip, test_hava, test_obsidyen; betik yalnız söz dizimi denendi | **Hayır** (Launchpad sorunu çözülmedi) |
+| 9g | Kendini güncelleme (GitHub `hakanuste/Ulgen`): sürüm denetimi, uygula, geri al, çalıştırma izni (.command/.sh) | K | test_guncelle | **Kısmen** (Mac'te Güncelle düğmesi/komut satırı çalıştı) |
+| 9h | Kılavuz → Obsidian: PDF (içeriğe göre tanıma), Word, HTML (ChatGPT chat.html konuşma başına not), KML/KMZ arazi (alan/çevre/merkez), .md/.txt; bozuk dosya bir kez bildirilir | K | test_kilavuz (13) | Hayır (gerçek PDF/KML/HTML dosyaları denenmedi) |
+| 9i | Ajanlar sekmesi: Araştırma/Sağlık/Dosya/Sabah ajanı durumu, son sonuç, "Şimdi çalıştır" | K | test_ajan_kayit (3), Chromium | Hayır |
+| 9j | Giriş kilidi: yalnız 127.0.0.1 sunucuda "çok fazla yanlış deneme" kilidi yok (kullanıcı kendi Mac'inden kilitleniyordu); pano hataları açık yazılır | K | test_sunucu | **Evet** (Mac'te sorun görüldü ve düzeldi) |
+| 9k | Launchpad uygulaması: çalışma klasörü düzeltmesi, Dock'ta açık kalma, `simge_kur.sh` | K | Yalnız söz dizimi | **Kısmen** (simge açılıyor; Dock'ta kalma denenmedi) |
+| 9l | Beyinleri tek tek aç/kapat; "Hızlı" kip (önce bulut, özel sorular yalnız yerel); arazi/tapu/konum duyarlı sayılır | K | test_yz_anahtar (11), Chromium | Hayır |
+| 9m | Yerel beyin kurulumu (llama.cpp + Gemma 3 4B/1B, `-ngl 0`, kısa istem) | K | Yalnız söz dizimi | **Kısmen** (kuruldu, çalışıyor; eski Mac'te istem işleme ~11 token/sn, çok yavaş) |
+| 9n | Kendi ses dosyası yükleme (Dosya seç, boyut denetimi); yerel ses denemesi aracı (XTTS-v2) | K | Chromium | Hayır (XTTS denemesi çalıştırılmadı; ElevenLabs kredisi bitti) |
 | 8 | 16 senaryolu bütünleşik test | G | — | — |
 | — | Yerel iOS uygulaması | G (iOS sürümü bekleniyor) | — | — |
 
