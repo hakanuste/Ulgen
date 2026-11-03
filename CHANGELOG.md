@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.56
+- Yerel ses klonlama denemesi (XTTS-v2) kaldırıldı: ses benzedi ama bu Mac'te her 1 sn konuşma için ~6 sn üretim gerekiyor (anlık kullanım için yavaş). Betikler depodan silindi; ölçüm sonuçları yukarıdaki 2.7.5x notlarında.
+
 ## 2.7.55
 - Yerel ses denemesi: eski torch'un `weights_only` reddi aşıldı (yalnız deneme sürecinde, resmi Coqui modeli). Kurulum notu: Intel Mac'te `llvmlite==0.43.0 numba==0.60.0`, `transformers==4.46.2`, `click==8.1.8 typer==0.12.5` gerekti. Gerçek cihaz testi sürüyor.
 
