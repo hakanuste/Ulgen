@@ -218,3 +218,17 @@ class Sertifika(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ZeroTierMacTesti(unittest.TestCase):
+    CIKTI = (
+        "lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> mtu 16384\n"
+        "\tinet 127.0.0.1 netmask 0xff000000\n"
+        "en0: flags=8863<UP> mtu 1500\n\tinet 192.168.1.20 netmask 0xffffff00\n"
+        "feth3512: flags=8863<UP> mtu 2800\n\tinet 10.147.17.5 netmask 0xffffff00\n"
+        "feth9999: flags=8863<UP> mtu 2800\n\tinet 169.254.3.4 netmask 0xffff0000\n"
+        "ztabcdef: flags=8863<UP> mtu 2800\n\tinet 172.22.0.9 netmask 0xffff0000\n"
+    )
+
+    def test_feth_ve_zt_arayuzleri_bulunur(self):
+        self.assertEqual(sunucu.mac_ifconfig_ayikla(self.CIKTI), ["10.147.17.5", "172.22.0.9"])

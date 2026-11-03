@@ -169,3 +169,6 @@
 
 ## 2.7.49
 - Yeni beyin kipi **Hızlı**: sıradan sorular önce buluta (Gemini vb., hızlı) gider; arazi, sağlık, kimlik gibi özel sorular buluta GİTMEZ, yalnızca yerel beyinde yanıtlanır (yerel yoksa kuyruğa alınır). Yerel beyin yavaş olan Mac için önerilir.
+
+## 2.7.50
+- **iPhone adresi açılmıyordu:** ZeroTier macOS'ta ağ arayüzünü `zt...` değil `feth...` adıyla açar; Ülgen yalnız `zt` aradığı için HTTPS (8443) ve sertifika (8766) dinleyicileri hiç başlamıyordu. Artık `feth` arayüzleri de bulunur (bağlantı-yerel 169.254 adresler atlanır).

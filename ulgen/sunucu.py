@@ -1122,6 +1122,22 @@ def ca_istek_sinifi(adres_metni, https_port):
     return CaIstek
 
 
+def mac_ifconfig_ayikla(cikti):
+    """macOS ifconfig çıktısından ZeroTier IPv4 adreslerini ayıklar.
+
+    ZeroTier macOS'ta arayüzü ``zt...`` değil ``feth...`` (sahte Ethernet) adıyla
+    açar; ikisi de kabul edilir. Bağlantı-yerel (169.254) adresler atlanır."""
+    adresler, arayuz = [], ""
+    for satir in cikti.splitlines():
+        if satir and not satir[0].isspace():
+            arayuz = satir.split(":")[0]
+        elif arayuz.startswith(("zt", "feth")):
+            eslesme = re.match(r"\s+inet (\d+\.\d+\.\d+\.\d+) ", satir)
+            if eslesme and not eslesme.group(1).startswith("169.254."):
+                adresler.append(eslesme.group(1))
+    return adresler
+
+
 def zerotier_adresleri():
     """ZeroTier arayüzlerinin (zt...) IPv4 adreslerini bulur."""
     komut = (["ifconfig"] if sys.platform == "darwin"
@@ -1133,14 +1149,7 @@ def zerotier_adresleri():
         return []
     adresler = []
     if sys.platform == "darwin":
-        arayuz = ""
-        for satir in cikti.splitlines():
-            if satir and not satir[0].isspace():
-                arayuz = satir.split(":")[0]
-            elif arayuz.startswith("zt"):
-                eslesme = re.match(r"\s+inet (\d+\.\d+\.\d+\.\d+) ", satir)
-                if eslesme:
-                    adresler.append(eslesme.group(1))
+        adresler = mac_ifconfig_ayikla(cikti)
     else:
         for satir in cikti.splitlines():
             eslesme = re.match(r"\d+:\s+(zt\S*)\s+inet (\d+\.\d+\.\d+\.\d+)",

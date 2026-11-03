@@ -159,7 +159,7 @@ def calistir():
                         "açık değilse günlüğe bakın"))
     else:
         ekle(_satir("UYARI" if MAC else "ATLA", "ZeroTier adresi bulunamadı",
-                    "ZeroTier açık mı? 'ifconfig | grep zt' denetleyin; "
+                    "ZeroTier açık mı? 'ifconfig | grep -E "^(zt|feth)"' denetleyin; "
                     "ya da ayar.json 'dinleme_adresleri'"))
     try:
         y = tls.yollar()
