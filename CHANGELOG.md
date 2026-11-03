@@ -128,3 +128,6 @@
 
 ## 2.7.36
 - Launchpad simgesi açılmıyordu: uygulama `python -m ulgen` komutunu paket klasörü dışında çalıştırıyordu ("No module named ulgen"). Artık önce klasöre girer, çıktıyı `~/ÜlgenVeri/simge.log` dosyasına yazar ve hata olursa pencere gösterir. Simge oluşturma `ulgen/varlik/simge_kur.sh` dosyasına taşındı; güncellemeden sonra elle de çalıştırılabilir.
+
+## 2.7.37
+- Pano hata iletisi artık hangi isteğin neden başarısız olduğunu gösterir (örn. "/ilac/bugun → çok fazla yanlış deneme"); sunucu hata gövdesi dönünce "reading length" gibi anlamsız iletiler çıkmaz.

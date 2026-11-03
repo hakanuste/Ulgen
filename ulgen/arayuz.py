@@ -1041,14 +1041,14 @@ function ilacKarti(kap, il) {
 async function panoYenile() {
   try {
     if (window.innerWidth < 900) {
-      const [g, il, sis] = await Promise.all([istek("/gorevler"), istek("/ilac/bugun"), istek("/sistem")]);
+      const [g, il, sis] = await Promise.all([panoIstek("/gorevler"), panoIstek("/ilac/bugun"), panoIstek("/sistem")]);
       rozetYaz(g, il);
       document.getElementById("surumRozet").textContent = "v" + sis.surum;
       const m = document.getElementById("mobilOzet"); m.replaceChildren();
       ozetKarti(m, g, il); ilacKarti(m, il);
       return;
     }
-    const [g, il, sis] = await Promise.all([istek("/gorevler"), istek("/ilac/bugun"), istek("/sistem")]);
+    const [g, il, sis] = await Promise.all([panoIstek("/gorevler"), panoIstek("/ilac/bugun"), panoIstek("/sistem")]);
     rozetYaz(g, il);
     document.getElementById("surumRozet").textContent = "v" + sis.surum;
     const serit = document.getElementById("serit"); serit.replaceChildren();
@@ -1061,7 +1061,7 @@ async function panoYenile() {
     const yz = document.createElement("span"); yz.textContent = "%" + yuzde; oc.appendChild(yz); k0.appendChild(oc);
     kartK(serit, "İlaçlar", bek ? bek + " bekleyen doz" : "Bekleyen doz yok", "hap", bek ? " uyari" : "", "ilac");
     kartK(serit, "Görevler", acik ? acik + " tamamlanmamış" : "Açık görev yok", "gorev", acik ? " uyari" : "", "gorevler");
-    const sg = await istek("/saglik/bugun");
+    const sg = await panoIstek("/saglik/bugun");
     kartK(serit, "Sağlık", sg.veri_var ? ["Adım: " + (sg.adim === null ? "—" : sg.adim.toLocaleString("tr-TR")),
       "Nabız: " + (sg.nabiz === null ? "—" : sg.nabiz) + " • Uyku: " + uykuYazi(sg.uyku_dk)] :
       ["Veri yok", "iPhone Kestirmesi kurulunca dolar"], "kalp", "", "ilac");
@@ -1185,6 +1185,12 @@ async function saglikCiz() {
   ekle(k, "Bu veriler yalnızca Mac'inizde durur, buluta gönderilmez. Ülgen tıbbi öneri vermez.");
 }
 
+// Pano istekleri: sunucu hata gövdesi dönerse (ör. 429, 403) hangi istekte olduğunu açıkça söyler.
+async function panoIstek(yol) {
+  const j = await istek(yol);
+  if (j && !Array.isArray(j) && typeof j === "object" && j.hata) throw new Error(yol + " → " + j.hata);
+  return j;
+}
 let ajanZamani = null;
 async function ajanlarCiz() {
   const k = document.getElementById("pAjanlar");
