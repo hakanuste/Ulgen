@@ -483,6 +483,8 @@ class BeyinYonlendirici:
             return self._yerel(a)
         if mod == "bulut":
             return self._bulut(a)
+        if mod == "hizli":     # önce bulut (hızlı); özel sorular çekirdekte buluttan atlanır
+            return self._bulut(a) + self._yerel(a)
         return self._yerel(a) + self._bulut(a)
 
     def _ulasilabilir(self, aday):

@@ -122,3 +122,31 @@ class BeyinAcKapatTesti(TemizVeri):
         d, _ = istek(self.port, "/yz/saglayici", "POST",
                      json.dumps({"saglayici": "x", "acik": False}), self.b)
         self.assertEqual(d, 400)
+
+
+class HizliKipTesti(TemizVeri):
+    def test_hizli_kipta_bulut_once_yerel_sonra(self):
+        ayar.guncelle("beyin", "hizli")
+        ayar.guncelle("beyin_sabit", True)
+        ayar.guncelle("gemini_anahtar", "AIzaTEST")
+        ayar.guncelle("bulut_sirasi", ["gemini"])
+        u = Ulgen()
+        sira = [b.saglayici for b in u.yonlendirici._adaylar(ayar.yukle())]
+        self.assertEqual(sira[0], "gemini")
+        self.assertIn("llamacpp", sira)
+
+    def test_hizli_kipta_ozel_soru_buluta_gitmez(self):
+        ayar.guncelle("beyin", "hizli")
+        ayar.guncelle("beyin_sabit", True)
+        ayar.guncelle("gemini_anahtar", "AIzaTEST")
+        ayar.guncelle("bulut_sirasi", ["gemini"])
+        u = Ulgen()
+        cagrilar = []
+        with mock.patch("ulgen.beyin.GeminiBeyin.yanitla",
+                        side_effect=lambda *a, **k: cagrilar.append(1) or "bulut"), \
+                mock.patch("ulgen.beyin.GeminiBeyin.kullanilabilir_mi", return_value=True), \
+                mock.patch("ulgen.beyin.LlamaCppBeyin.kullanilabilir_mi", return_value=False), \
+                mock.patch("ulgen.beyin.OllamaBeyin.kullanilabilir_mi", return_value=False):
+            u.yonlendirici.sifirla()
+            u.sohbet_isle("arazim kaç metrekare?")
+        self.assertEqual(cagrilar, [])

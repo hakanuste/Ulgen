@@ -1367,9 +1367,9 @@ async function anahtarlarim(k) {
 async function beyinKipi(k) {
   baslik(k, "Yapay zekâ kipi");
   const a = await istek("/ayar/ozet");
-  const kap = ekle(k, "Şu an: " + ({ yerel: "yalnız yerel (sabit)", otomatik: "önce yerel, olmazsa bulut", bulut: "yalnız bulut" }[a.beyin] || a.beyin),
+  const kap = ekle(k, "Şu an: " + ({ yerel: "yalnız yerel (sabit)", otomatik: "önce yerel, olmazsa bulut", hizli: "hızlı: önce bulut; özel sorular yalnız yerelde", bulut: "yalnız bulut" }[a.beyin] || a.beyin),
     "Yerel kipte hiçbir soru Mac'ten dışarı çıkmaz. Bulut kipleri sorularınızı ücretsiz bulut sağlayıcılarına gönderir.");
-  [["yerel", "Yalnız yerel"], ["otomatik", "Önce yerel, sonra bulut"], ["bulut", "Yalnız bulut"]].forEach(([m, ad]) => {
+  [["yerel", "Yalnız yerel"], ["hizli", "Hızlı (özel sorular yerelde)"], ["otomatik", "Önce yerel, sonra bulut"], ["bulut", "Yalnız bulut"]].forEach(([m, ad]) => {
     const b = document.createElement("button"); b.className = "dugme" + (a.beyin === m ? " aktif" : ""); b.textContent = ad; b.style.cssText = "margin:6px 6px 0 0";
     b.onclick = async () => {
       if (m !== "yerel" && !confirm("Bu kipte sorularınız bulut sağlayıcılarına gidebilir. Onaylıyor musunuz?")) return;

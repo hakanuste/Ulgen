@@ -872,8 +872,8 @@ def istek_sinifi(ulgen, limit):
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
                                                      "tarayıcısından"})
-                if veri.get("mod") not in ("yerel", "otomatik", "bulut"):
-                    return self._cevap(400, {"hata": "mod: yerel|otomatik|bulut"})
+                if veri.get("mod") not in ("yerel", "otomatik", "hizli", "bulut"):
+                    return self._cevap(400, {"hata": "mod: yerel|otomatik|hizli|bulut"})
                 if veri["mod"] != "yerel" and veri.get("onay") is not True:
                     return self._cevap(400, {"hata": "bulut kipi için onay gerekli"})
                 ayar.guncelle("beyin", veri["mod"])

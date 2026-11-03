@@ -166,3 +166,6 @@
 
 ## 2.7.48
 - Yerel beyin hızlandırma (log: istem işleme saniyede ~11 token; her yanıt ~2 dk sürüyordu): llama-server yalnız işlemciyle çalışır (`-ngl 0`, eski Intel Mac'te ekran kartı belleği taşırıyor); yerel beynin istemi kısaltıldı (sistem 2200, geçmiş 700 token); zaman aşımı 300 sn; yavaş Mac için `ULGEN_MODEL=1b` ile Gemma 3 1B seçeneği.
+
+## 2.7.49
+- Yeni beyin kipi **Hızlı**: sıradan sorular önce buluta (Gemini vb., hızlı) gider; arazi, sağlık, kimlik gibi özel sorular buluta GİTMEZ, yalnızca yerel beyinde yanıtlanır (yerel yoksa kuyruğa alınır). Yerel beyin yavaş olan Mac için önerilir.
