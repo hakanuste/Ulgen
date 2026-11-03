@@ -192,7 +192,37 @@ def otomatik_al():
         shutil.rmtree(gecici, ignore_errors=True)
     for eski in otomatik_listele()[OTOMATIK_SAKLA:]:
         os.remove(os.path.join(otomatik_dizin(), eski))
+    eskiyi_temizle()
     return hedef
+
+
+ESKI_ONEKLER = ("kurulum-", "bozuk-", "onceki-")
+ESKI_SAKLA = 3
+
+
+def eskiyi_temizle(sakla=ESKI_SAKLA):
+    """``yedekler`` içinde kurulum/bozuk/önceki kopyalarının her türünden
+    yalnızca en yeni ``sakla`` tanesini bırakır (adlardaki zamana göre).
+    Otomatik yedekler kendi kuralıyla (7 tane) yönetilir. Silinen adları
+    döndürür."""
+    kok = os.path.join(ayar.KLASOR, "yedekler")
+    if not os.path.isdir(kok):
+        return []
+    silinen = []
+    for onek in ESKI_ONEKLER:
+        adlar = sorted((a for a in os.listdir(kok) if a.startswith(onek)),
+                       reverse=True)
+        for ad in adlar[sakla:]:
+            yol = os.path.join(kok, ad)
+            try:
+                if os.path.isdir(yol) and not os.path.islink(yol):
+                    shutil.rmtree(yol)
+                else:
+                    os.remove(yol)
+                silinen.append(ad)
+            except OSError:
+                pass
+    return silinen
 
 
 def otomatik_son_zaman():
@@ -279,6 +309,10 @@ def veritabani_kurtar():
 def otomatik_dongu(durdur):
     """Günde bir otomatik yedek alan arka plan döngüsü (durdur: Event)."""
     import time
+    try:
+        eskiyi_temizle()
+    except Exception:
+        pass
     while not durdur.is_set():
         try:
             if time.time() - otomatik_son_zaman() > OTOMATIK_ARALIK:

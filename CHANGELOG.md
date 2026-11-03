@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.57
+- Yedek klasörü kendiliğinden temizlenir: `kurulum-…`, `bozuk-…`, `onceki-…` kopyalarının her türünden yalnız en yeni 3 tanesi kalır (açılışta ve günlük yedekte). Otomatik yedekler (7 tane) ve diğer dosyalar değişmedi.
+
 ## 2.7.56
 - Yerel ses klonlama denemesi (XTTS-v2) kaldırıldı: ses benzedi ama bu Mac'te her 1 sn konuşma için ~6 sn üretim gerekiyor (anlık kullanım için yavaş). Betikler depodan silindi; ölçüm sonuçları yukarıdaki 2.7.5x notlarında.
 
