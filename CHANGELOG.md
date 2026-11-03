@@ -147,3 +147,6 @@
 
 ## 2.7.42
 - Kılavuz aktarıcısı **HTML** dosyalarını da alır (.html/.htm): ChatGPT dışa aktarımındaki `chat.html` konuşma başına bir Obsidian notuna (`Yapay Zekâ Konuşmaları/ChatGPT/`), diğer HTML dosyaları (Gemini vb.) okunur Markdown'a çevrilir (`Yapay Zekâ Konuşmaları/<dosya adı>/`).
+
+## 2.7.43
+- Kılavuz aktarıcısı **Google Earth KML/KMZ** dosyalarını okur: her arazi için alan (m² ve dönüm), çevre, merkez noktası, harita bağlantısı ve köşe koordinatlarıyla `Arazi/<dosya adı>.md` notu yazar (ölçüm yerel düzlem yaklaşımıyla; küçük parsellerde hata binde birin altındadır).

@@ -12,13 +12,15 @@ import re
 import shutil
 import threading
 import time
+import math
+import xml.etree.ElementTree as ET
 from datetime import date, datetime
 from html.parser import HTMLParser
 
 from . import ayar, obsidyen
 
 PARCA_BOYU = 50
-UZANTILAR = (".pdf", ".docx", ".html", ".htm", ".md", ".txt")
+UZANTILAR = (".pdf", ".docx", ".html", ".htm", ".kml", ".kmz", ".md", ".txt")
 DOCX_PARCA = 40000      # karakter
 _KILIT = threading.Lock()
 _DURUM = {"calisiyor": False, "dosya": "", "bitti": 0, "toplam": 0,
@@ -151,6 +153,8 @@ def _tur(yol):
     low = yol.lower()
     if low.endswith((".md", ".txt")):
         return "metin"
+    if low.endswith((".kml", ".kmz")):
+        return "kml"
     if low.endswith((".html", ".htm")):
         return "html"
     try:
@@ -334,6 +338,139 @@ def _html_aktar(yol, kasa):
     return len(adlar)
 
 
+YARICAP = 6371008.8      # m
+
+
+def _ad_alani_temiz(etiket):
+    return etiket.rsplit("}", 1)[-1]
+
+
+def _koordinatlar(metin):
+    """'boylam,enlem,yükseklik ...' dizgisini [(enlem, boylam)] yapar."""
+    sonuc = []
+    for parca in (metin or "").split():
+        sayilar = parca.split(",")
+        try:
+            sonuc.append((float(sayilar[1]), float(sayilar[0])))
+        except (ValueError, IndexError):
+            continue
+    return sonuc
+
+
+def _duzlem(noktalar):
+    """Küçük bir bölge için (enlem, boylam) -> yerel metre (x, y)."""
+    en0 = sum(n[0] for n in noktalar) / len(noktalar)
+    bo0 = sum(n[1] for n in noktalar) / len(noktalar)
+    k = math.cos(math.radians(en0))
+    return en0, bo0, [(math.radians(bo - bo0) * YARICAP * k,
+                       math.radians(en - en0) * YARICAP) for en, bo in noktalar]
+
+
+def alan_olc(noktalar):
+    """Çokgenin (alan m², çevre m, merkez (enlem, boylam)); en az 3 nokta gerekir."""
+    if len(noktalar) > 1 and noktalar[0] == noktalar[-1]:
+        noktalar = noktalar[:-1]
+    if len(noktalar) < 3:
+        return None
+    en0, bo0, xy = _duzlem(noktalar)
+    a2 = cx = cy = 0.0
+    cevre = 0.0
+    for i, (x1, y1) in enumerate(xy):
+        x2, y2 = xy[(i + 1) % len(xy)]
+        c = x1 * y2 - x2 * y1
+        a2 += c
+        cx += (x1 + x2) * c
+        cy += (y1 + y2) * c
+        cevre += math.hypot(x2 - x1, y2 - y1)
+    if abs(a2) < 1e-9:
+        return None
+    cx, cy = cx / (3 * a2), cy / (3 * a2)
+    k = math.cos(math.radians(en0))
+    merkez = (en0 + math.degrees(cy / YARICAP),
+              bo0 + math.degrees(cx / (YARICAP * k)))
+    return abs(a2) / 2.0, cevre, merkez
+
+
+def kml_oku(yol):
+    """KML/KMZ dosyasından [{ad, aciklama, cokgenler:[[(en,bo)...]], noktalar:[(en,bo)]}]."""
+    if yol.lower().endswith(".kmz"):
+        import zipfile
+        with zipfile.ZipFile(yol) as z:
+            ad = next((x for x in z.namelist() if x.lower().endswith(".kml")), None)
+            if not ad:
+                raise ValueError("KMZ içinde KML yok")
+            ham = z.read(ad)
+    else:
+        with open(yol, "rb") as f:
+            ham = f.read()
+    kok = ET.fromstring(ham)
+    sonuc = []
+    for pm in kok.iter():
+        if _ad_alani_temiz(pm.tag) != "Placemark":
+            continue
+        kayit = {"ad": "", "aciklama": "", "cokgenler": [], "noktalar": []}
+        for e in pm.iter():
+            t = _ad_alani_temiz(e.tag)
+            if t == "name" and not kayit["ad"]:
+                kayit["ad"] = (e.text or "").strip()
+            elif t == "description" and not kayit["aciklama"]:
+                kayit["aciklama"] = re.sub(r"<[^>]+>", " ", e.text or "").strip()
+            elif t == "Polygon":
+                for r in e.iter():
+                    if _ad_alani_temiz(r.tag) == "coordinates":
+                        kayit["cokgenler"].append(_koordinatlar(r.text))
+                        break          # yalnız dış sınır
+            elif t == "Point":
+                for r in e.iter():
+                    if _ad_alani_temiz(r.tag) == "coordinates":
+                        kayit["noktalar"] += _koordinatlar(r.text)
+        if kayit["cokgenler"] or kayit["noktalar"]:
+            sonuc.append(kayit)
+    return sonuc
+
+
+def _kml_aktar(yol, kasa):
+    """KML/KMZ'deki arazileri alan/çevre/merkez ile tek bir Obsidian notuna yazar."""
+    yerler = kml_oku(yol)
+    if not yerler:
+        raise ValueError("KML içinde çokgen ya da nokta bulunamadı")
+    ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
+    hedef = os.path.join(kasa, "Arazi")
+    os.makedirs(hedef, exist_ok=True)
+    satirlar = ["---", "kaynak: %s" % os.path.basename(yol),
+                "aktarim: %s" % date.today().isoformat(), "tags: [arazi]", "---", "",
+                "# " + ad, ""]
+    for i, y in enumerate(yerler, 1):
+        satirlar += ["## %s" % (y["ad"] or "Alan %d" % i), ""]
+        if y["aciklama"]:
+            satirlar += [y["aciklama"][:500], ""]
+        for cokgen in y["cokgenler"]:
+            sonuc = alan_olc(cokgen)
+            if not sonuc:
+                continue
+            alan, cevre, (en, bo) = sonuc
+            satirlar += ["- Alan: **%s m²** (%s dönüm)" % (
+                             format(round(alan), ",").replace(",", "."),
+                             ("%.2f" % (alan / 1000)).replace(".", ",")),
+                         "- Çevre: %s m" % format(round(cevre), ",").replace(",", "."),
+                         "- Merkez: %.6f, %.6f" % (en, bo),
+                         "- Harita: https://www.google.com/maps?q=%.6f,%.6f" % (en, bo),
+                         "- Köşe sayısı: %d" % (
+                             len(cokgen) - (1 if cokgen[0] == cokgen[-1] else 0)), "",
+                         "Köşeler (enlem, boylam):", ""]
+            satirlar += ["%d. %.6f, %.6f" % (k, a, b)
+                         for k, (a, b) in enumerate(cokgen, 1)]
+            satirlar.append("")
+        for en, bo in y["noktalar"]:
+            satirlar += ["- Nokta: %.6f, %.6f  (https://www.google.com/maps?q=%.6f,%.6f)" % (
+                en, bo, en, bo), ""]
+    gecici = os.path.join(hedef, ad + ".md.tmp")
+    with open(gecici, "w", encoding="utf-8") as f:
+        f.write("\n".join(satirlar))
+    os.replace(gecici, os.path.join(hedef, ad + ".md"))
+    return len(yerler)
+
+
 def _metin_aktar(yol, kasa):
     ad = dosya_adi_temizle(os.path.basename(yol))
     shutil.copy2(yol, os.path.join(kasa, ad))
@@ -342,7 +479,7 @@ def _metin_aktar(yol, kasa):
 def _eski_aktarim_var(yol, kasa):
     """Eski 'Kılavuz Aktar' aracı bu dosyayı zaten aktardıysa True."""
     ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
-    if yol.lower().endswith((".html", ".htm")):
+    if yol.lower().endswith((".html", ".htm", ".kml", ".kmz")):
         return False
     if yol.lower().endswith((".pdf", ".docx")):
         return os.path.isfile(os.path.join(kasa, ad, ad + " - Dizin.md"))
@@ -379,6 +516,8 @@ def aktar(kaynak=None, kasa=None):
                         _docx_aktar(yol, kasa)
                     elif tur == "html":
                         _html_aktar(yol, kasa)
+                    elif tur == "kml":
+                        _kml_aktar(yol, kasa)
                     elif tur == "metin":
                         _metin_aktar(yol, kasa)
                     else:

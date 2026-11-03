@@ -205,3 +205,51 @@ class KilavuzHtmlTesti(TemizVeri):
         self.assertIn("- bir", t)
         self.assertIn("kod satırı", t)
         self.assertNotIn("gizli", t)
+
+
+class KilavuzKmlTesti(TemizVeri):
+
+    KML = """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>Zeytinlik</name>
+<description>Deneme <b>parsel</b></description><Polygon><outerBoundaryIs><LinearRing>
+<coordinates>%s</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+</Document></kml>"""
+
+    def setUp(self):
+        super().setUp()
+        self.kaynak = tempfile.mkdtemp()
+        self.kasa = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.kasa, ".obsidian"))
+
+    @staticmethod
+    def _kare(en=37.85, bo=27.80, kenar=100.0):
+        import math
+        d_en = kenar / 111195.0
+        d_bo = kenar / (111195.0 * math.cos(math.radians(en)))
+        n = [(bo, en), (bo + d_bo, en), (bo + d_bo, en + d_en), (bo, en + d_en), (bo, en)]
+        return " ".join("%.8f,%.8f,0" % x for x in n)
+
+    def test_alan_olcumu_dogru(self):
+        k = kilavuz._koordinatlar(self._kare())
+        alan, cevre, merkez = kilavuz.alan_olc(k)
+        self.assertAlmostEqual(alan, 10000, delta=60)
+        self.assertAlmostEqual(cevre, 400, delta=2)
+        self.assertAlmostEqual(merkez[0], 37.85 + 50 / 111195.0, places=4)
+
+    def test_kml_notu_yazilir(self):
+        with open(os.path.join(self.kaynak, "arsa.kml"), "w", encoding="utf-8") as f:
+            f.write(self.KML % self._kare())
+        s = kilavuz.aktar(self.kaynak, self.kasa)
+        self.assertEqual((s["yeni"], s["hata"]), (1, []))
+        t = open(os.path.join(self.kasa, "Arazi", "arsa.md"), encoding="utf-8").read()
+        self.assertIn("## Zeytinlik", t)
+        self.assertIn("m²", t)
+        self.assertIn("tags: [arazi]", t)
+
+    def test_kmz_okunur(self):
+        import zipfile
+        with zipfile.ZipFile(os.path.join(self.kaynak, "arsa.kmz"), "w") as z:
+            z.writestr("doc.kml", self.KML % self._kare())
+        s = kilavuz.aktar(self.kaynak, self.kasa)
+        self.assertEqual((s["yeni"], s["hata"]), (1, []))
+        self.assertTrue(os.path.isfile(os.path.join(self.kasa, "Arazi", "arsa.md")))
