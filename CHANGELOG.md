@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.58
+- `Ülgen/eski` klasörü her güncellemeden sonra budanır: güncelleme yedeklerinden en yeni 3, eski uygulama simgesi ve eski kod kopyasından en yeni 1 kalır. Geri alma (Ayarlar > Güncelleme) en yeni yedekle çalışmaya devam eder.
+
 ## 2.7.57
 - Yedek klasörü kendiliğinden temizlenir: `kurulum-…`, `bozuk-…`, `onceki-…` kopyalarının her türünden yalnız en yeni 3 tanesi kalır (açılışta ve günlük yedekte). Otomatik yedekler (7 tane) ve diğer dosyalar değişmedi.
 

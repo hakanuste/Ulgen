@@ -245,6 +245,7 @@ def uygula_zip(zip_yolu, kok=KOK, bagimlilik_kur=True):
         calistirilabilir_yap(kok)
         if bagimlilik_kur and eski_req != _sha(os.path.join(kok, "requirements.txt")):
             _bagimlilik_kur(kok)
+        eskiyi_temizle(kok)
         return {"eski": eski_surum, "yeni": yeni_surum, "yedek": yedek}
     finally:
         shutil.rmtree(gecici, ignore_errors=True)
@@ -268,6 +269,33 @@ def depodan_guncelle(kok=KOK):
             os.remove(zip_yolu)
         except OSError:
             pass
+
+
+ESKI_KURALLARI = (("guncelleme-", 3), ("Ülgen.app-", 1), ("ulgen-", 1))
+
+
+def eskiyi_temizle(kok=KOK):
+    """``eski/`` içinde birikenleri budar: güncelleme yedeklerinden en yeni 3,
+    eski uygulama simgesinden ve eski kod kopyasından en yeni 1 kalır. Silinen
+    adları döndürür. Hata olursa sessizce geçer (güncellemeyi bozmaz)."""
+    klasor = os.path.join(kok, "eski")
+    if not os.path.isdir(klasor):
+        return []
+    silinen = []
+    for onek, sakla in ESKI_KURALLARI:
+        adlar = sorted((a for a in os.listdir(klasor) if a.startswith(onek)),
+                       reverse=True)
+        for ad in adlar[sakla:]:
+            yol = os.path.join(klasor, ad)
+            try:
+                if os.path.isdir(yol) and not os.path.islink(yol):
+                    shutil.rmtree(yol)
+                else:
+                    os.remove(yol)
+                silinen.append(ad)
+            except OSError:
+                pass
+    return silinen
 
 
 def yedekler(kok=KOK):
