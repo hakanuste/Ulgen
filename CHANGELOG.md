@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.7.53
+- Mac Takvim randevuları ve Hatırlatıcılar Ülgen'e kendiliğinden gelir (10 dakikada bir, yalnız okunur; `ulgen/macsenk.py`). Ülgen'de bitirilen/silinen kayıt geri gelmez; Mac'te silinen/tamamlanan kapanır. Geçmiş tarihli hatırlatıcılar için bildirim yağmuru yok.
+- Ülgen hatırlatmaları (ilaç, randevu, rutin, görev) Mac'in kendi bildirimi olarak da çıkar (Ayarlar'dan kapatılabilir).
+- Ayarlar: "Mac Takvim ve Hatırlatıcılar ⇄ Ülgen" bölümü (Şimdi eşitle, kendiliğinden eşitle, Mac bildirimi). Veritabanı göçü 10 (`gorev.kaynak`, `gorev.dis_kimlik`).
+- Sınırlar: tekrarlayan olayların yalnız ilk kaydı gelir, tüm gün olayları alınmaz, Ülgen kapalıyken çalışmaz. Gerçek cihaz testi (macOS izinleri, AppleScript) bekliyor.
+
 ## 2.7.52
 - iPhone (ana ekran simgesi): üst şerit durum çubuğu payını da kapsıyor; menü ve "‹ Ana Sayfa" düğmeleri artık kesilmiyor. Gerçek cihaz testi bekliyor.
 

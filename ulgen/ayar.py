@@ -42,6 +42,10 @@ VARSAYILAN = {
     "bulut_sirasi": ["gemini", "nvidia", "groq", "mistral", "openrouter"],
     # Arayüzden kapatılan beyinler (örn. ["gemini"]); kapalı beyin hiç denenmez.
     "kapali_beyinler": [],
+    # Mac Takvim/Hatırlatıcılar → Ülgen eşitlemesi ve Ülgen → Mac bildirimi
+    "mac_senk": True,
+    "mac_senk_dk": 10,
+    "mac_bildirim": True,
     "kota_sinirlari": {},          # örn. {"groq": {"rpm": 20}} belgeden düzeltme
     "kuyruk_omru_saat": 24,
     # Ücretli servise geçiş KODDA kapalıdır; böyle bir ayar yoktur.

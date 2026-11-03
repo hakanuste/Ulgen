@@ -1559,8 +1559,33 @@ async function kilavuzPaneli(k) {
   kay.onclick = async () => { const c = await istek("/kilavuz/ayar", { klasor: gir.value }); balonEkle(c.hata ? c.hata : "Kılavuz klasörü: " + c.kaynak, "asistan"); ayarCiz(); };
 }
 
+async function macPaneli(k) {
+  baslik(k, "Mac Takvim ve Hatırlatıcılar ⇄ Ülgen");
+  let d;
+  try { d = await istek("/mac/durum"); } catch (e) { ekle(k, "Mac eşitleme durumu okunamadı."); return; }
+  const son = d.son ? new Date(d.son * 1000).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : "henüz yok";
+  const sy = d.sayilar || {};
+  const kap = ekle(k, "Mac'teki randevular ve hatırlatıcılar Ülgen'e kendiliğinden gelir (yalnız okunur; Mac'ten dışarı çıkmaz).",
+    "Son eşitleme: " + son + (d.calisiyor ? "  ·  ŞİMDİ EŞİTLENİYOR" : "") +
+    (sy.yeni !== undefined ? "  ·  yeni: " + sy.yeni + ", güncellenen: " + sy.guncel + ", kapanan: " + sy.kapandi : "") +
+    (d.hata && d.hata.length ? "  ·  Sorun: " + d.hata.join("; ") : "") +
+    (d.mac ? "" : "  ·  (bu bilgisayar macOS değil; eşitleme çalışmaz)"));
+  const dug = (yazi, ac) => { const b = document.createElement("button"); b.className = "dugme" + (ac ? " aktif" : ""); b.textContent = yazi; b.style.cssText = "margin:6px 6px 0 0"; kap.appendChild(b); return b; };
+  const sim = dug("Şimdi eşitle", true);
+  sim.onclick = async () => {
+    sim.disabled = true; await istek("/mac/esitle", {});
+    balonEkle("Mac Takvim ve Hatırlatıcılar eşitleniyor. İlk seferde macOS izin sorabilir; 'Tamam' deyin.", "asistan");
+    setTimeout(ayarCiz, 8000);
+  };
+  const oto = dug("Kendiliğinden eşitle: " + (d.senk ? "açık" : "kapalı"), d.senk);
+  oto.onclick = async () => { await istek("/mac/ayar", { senk: !d.senk }); ayarCiz(); };
+  const bil = dug("Mac bildirimi: " + (d.bildirim ? "açık" : "kapalı"), d.bildirim);
+  bil.onclick = async () => { await istek("/mac/ayar", { bildirim: !d.bildirim }); ayarCiz(); };
+}
+
 async function ayarCiz() {
   const a = await istek("/ayar/ozet"); const k = document.getElementById("pAyarlar"); k.innerHTML = "";
+  if (yerel) await macPaneli(k);
   if (yerel) await kilavuzPaneli(k);
   if (yerel) await guncellemePaneli(k);
   await sesPaneli(k);

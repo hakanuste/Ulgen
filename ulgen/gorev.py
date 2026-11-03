@@ -289,7 +289,13 @@ class Gorevler:
         g = self._acik(kimlik)
         if g is None:
             return "#%s numaralı açık kayıt yok." % kimlik
-        veritabani.sorgu("DELETE FROM gorev WHERE id=?", (g["id"],))
+        if g.get("kaynak"):
+            # Mac'ten gelen kayıt silinirse eşitleme yeniden getirmesin diye
+            # iz bırakılır (kaynakta Ülgen silmez, yalnız burada gizlenir).
+            veritabani.sorgu("UPDATE gorev SET durum='iptal' WHERE id=?",
+                             (g["id"],))
+        else:
+            veritabani.sorgu("DELETE FROM gorev WHERE id=?", (g["id"],))
         return "Sildim: #%d %s." % (g["id"], g["baslik"])
 
     def duzenle_metin(self, kimlik, metin, su_an=None):

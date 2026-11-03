@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, obsidyen
+from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
 from . import saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
@@ -451,6 +451,11 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/mac/durum":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                return self._cevap(200, macsenk.durum())
             if yol == "/kilavuz/durum":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
@@ -816,6 +821,18 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
                 return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
                                          .sil(kimlik)})
+            if urlparse(self.path).path in ("/mac/esitle", "/mac/ayar"):
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                if urlparse(self.path).path == "/mac/esitle":
+                    return self._cevap(200, {"basladi":
+                                             macsenk.arka_planda_esitle()})
+                for alan, ad in (("senk", "mac_senk"),
+                                 ("bildirim", "mac_bildirim")):
+                    if isinstance(veri.get(alan), bool):
+                        ayar.guncelle(ad, veri[alan])
+                return self._cevap(200, macsenk.durum())
             if urlparse(self.path).path in ("/kilavuz/aktar", "/kilavuz/ayar"):
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "

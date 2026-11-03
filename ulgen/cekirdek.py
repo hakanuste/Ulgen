@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
-from . import ajan_kayit
+from . import ajan_kayit, macsenk
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .baglam import BaglamYoneticisi, kasa_alintilari
@@ -101,6 +101,7 @@ class Ulgen:
             self._sayac += 1
             self._bildirimler.append((self._sayac, metin, eylem))
             self._bildirimler = self._bildirimler[-50:]
+        macsenk.bildirim_goster(metin)
 
     def bildirimler(self, son_id=0):
         with self._bildirim_kilit:
@@ -320,5 +321,7 @@ class Ulgen:
         threading.Thread(target=yedek.otomatik_dongu, args=(self._durdur,),
                          daemon=True).start()
         threading.Thread(target=self.kuyruk_dongusu, daemon=True).start()
+        threading.Thread(target=macsenk.otomatik_dongu, args=(self._durdur,),
+                         daemon=True).start()
         threading.Thread(target=kilavuz.otomatik_dongu, args=(self._durdur,),
                          daemon=True).start()
