@@ -1429,19 +1429,33 @@ async function sesPaneli(k) {
     y.appendChild(yb);
   }
   // 2) Sabit cümleler için kendi mp3 dosyalarınız
-  baslik(k, "Kendi ses dosyalarınız (mp3)");
+  baslik(k, "Kendi ses dosyalarınız (her biri tek cümle, mp3, en çok 4 MB)");
   const cumleler = await istek("/ses/cumleler");
   cumleler.forEach(c => {
     const d = ekle(k, c.metin, c.var ? "Kendi dosyanız yüklü" : "Dosya yok (yerel ses okur)");
-    const f = document.createElement("input"); f.type = "file"; f.accept = "audio/mpeg,.mp3"; f.style.cssText = "display:block;margin-top:6px;max-width:100%";
+    const f = document.createElement("input"); f.type = "file"; f.accept = "audio/mpeg,.mp3,audio/*"; f.style.display = "none";
+    const sec = document.createElement("button"); sec.className = "dugme aktif"; sec.textContent = c.var ? "Dosyayı değiştir (mp3)" : "Dosya seç (mp3)";
+    sec.style.marginTop = "6px"; sec.onclick = () => f.click();
+    const durum = document.createElement("small"); durum.style.marginTop = "4px";
     f.onchange = async () => {
-      if (!f.files[0]) return;
-      const h = { "Content-Type": "audio/mpeg" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
-      const r = await fetch("/ses/klip/" + c.ad, { method: "POST", headers: h, body: f.files[0] });
-      const v = await r.json(); balonEkle(r.ok ? "Ses dosyası yüklendi." : (v.hata || "Yüklenemedi."), "asistan");
-      klipler = await istek("/ses/klipler"); ayarCiz();
+      const dosya = f.files[0];
+      if (!dosya) return;
+      if (dosya.size > 4 * 1024 * 1024) {
+        durum.style.color = "var(--ulgen-danger)";
+        durum.textContent = "Dosya çok büyük: " + (dosya.size / 1048576).toFixed(1) + " MB (en çok 4 MB). Tek cümlelik kısa bir kayıt seçin.";
+        f.value = ""; return;
+      }
+      durum.style.color = ""; durum.textContent = "Yükleniyor: " + dosya.name + "…";
+      try {
+        const h = { "Content-Type": "audio/mpeg" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+        const r = await fetch("/ses/klip/" + c.ad, { method: "POST", headers: h, body: dosya });
+        const v = await r.json().catch(() => ({}));
+        if (!r.ok) { durum.style.color = "var(--ulgen-danger)"; durum.textContent = v.hata || ("Yüklenemedi (HTTP " + r.status + ")."); return; }
+        balonEkle("Ses dosyası yüklendi.", "asistan");
+        klipler = await istek("/ses/klipler"); ayarCiz();
+      } catch (e) { durum.style.color = "var(--ulgen-danger)"; durum.textContent = "Yüklenemedi: " + (e && e.message ? e.message : e); }
     };
-    d.appendChild(f);
+    d.appendChild(sec); d.appendChild(f); d.appendChild(durum);
     if (c.var) {
       const b = document.createElement("button"); b.className = "dugme"; b.textContent = "Dinle"; b.style.margin = "6px 6px 0 0"; b.onclick = () => klipCal(c.ad);
       const s = document.createElement("button"); s.className = "dugme"; s.textContent = "Kaldır"; s.style.marginTop = "6px";

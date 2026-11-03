@@ -137,3 +137,6 @@
 
 ## 2.7.39
 - Launchpad uygulaması açık kalır (Dock'ta görünür): "stay open" uygulama olarak yeniden oluşturulur; Dock simgesine tekrar tıklayınca Ülgen yeniden açılır. Mac'te denenmedi.
+
+## 2.7.40
+- Ayarlar > "Kendi ses dosyalarınız": çıplak dosya kutusu yerine **Dosya seç (mp3)** düğmesi; 4 MB üstü dosya yüklenmeden önce açık iletiyle bildirilir; yükleme hatası artık sessiz kalmaz, nedeni yazılır.
