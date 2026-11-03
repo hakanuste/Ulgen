@@ -1287,7 +1287,31 @@ async function yzCiz() {
       "bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms + " ms; hata %" + Math.round(t.hata_orani * 100)); });
   if (!yerel) { ekle(k, "Anahtar eklemek güvenlik için yalnızca Mac'in kendi tarayıcısından yapılır."); return; }
   await beyinKipi(k);
+  await beyinAcKapat(k);
   await anahtarlarim(k);
+}
+
+const BEYIN_AD = { llamacpp: "Yerel (llama.cpp)", ollama: "Yerel (Ollama)", gemini: "Gemini (bulut)", nvidia: "NVIDIA (bulut)",
+  groq: "Groq (bulut)", mistral: "Mistral (bulut)", openrouter: "OpenRouter (bulut)" };
+// Her beyin ayrı ayrı açılıp kapatılabilir; kapalı beyin hiç denenmez.
+async function beyinAcKapat(k) {
+  baslik(k, "Beyinleri aç / kapat");
+  let d = {};
+  try { d = await istek("/yz/saglayicilar"); } catch (e) { ekle(k, "Beyin listesi okunamadı."); return; }
+  Object.keys(BEYIN_AD).forEach(ad => {
+    const acik = !(d[ad] && d[ad].acik === false);
+    const satir = ekle(k, BEYIN_AD[ad], acik ? "Açık: sırası gelince denenir." : "Kapalı: hiç kullanılmaz.");
+    satir.style.borderLeft = "3px solid " + (acik ? "var(--ulgen-success)" : "var(--ulgen-offline)");
+    const b = document.createElement("button"); b.className = "dugme" + (acik ? " aktif" : ""); b.textContent = acik ? "Kapat" : "Aç";
+    b.style.marginTop = "6px";
+    b.onclick = async () => {
+      b.disabled = true;
+      const c = await istek("/yz/saglayici", { saglayici: ad, acik: !acik });
+      if (c.hata) balonEkle(c.hata, "asistan");
+      yzCiz();
+    };
+    satir.appendChild(b);
+  });
 }
 
 const SAGLAYICI_AD = { gemini: "Gemini", nvidia: "NVIDIA", groq: "Groq", mistral: "Mistral", openrouter: "OpenRouter", elevenlabs: "ElevenLabs (ses)", github: "GitHub (İSTEĞE BAĞLI: yalnız depo özel olursa gerekir; şimdilik boş bırakın)" };

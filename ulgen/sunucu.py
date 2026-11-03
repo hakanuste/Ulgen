@@ -33,6 +33,8 @@ from .arayuz import BETIK, SAYFA
 YEREL_AD = "localhost"
 AZAMI_ESZAMANLI = 32
 DENEME_SINIRI = 5
+BEYIN_ADLARI = ("llamacpp", "ollama", "gemini", "nvidia", "groq", "mistral",
+                "openrouter")
 ENGEL_SURESI = 300
 
 GUVENLIK_BASLIKLARI = {
@@ -462,6 +464,13 @@ def istek_sinifi(ulgen, limit):
                 d["depo"] = ayar.yukle().get("guncelleme_depo", "")
                 d["geri_alinabilir"] = bool(guncelle.yedekler())
                 return self._cevap(200, d)
+            if yol == "/yz/saglayicilar":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                kapali = set(ayar.yukle().get("kapali_beyinler") or [])
+                return self._cevap(200, {ad: {"acik": ad not in kapali}
+                                         for ad in BEYIN_ADLARI})
             if yol == "/yz/anahtarlar":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
@@ -844,6 +853,21 @@ def istek_sinifi(ulgen, limit):
                     pass
                 veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı silindi" % ad)
                 return self._cevap(200, {"silinen": adet})
+            if urlparse(self.path).path == "/yz/saglayici":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                ad, acik = veri.get("saglayici"), veri.get("acik")
+                if ad not in BEYIN_ADLARI or not isinstance(acik, bool):
+                    return self._cevap(400, {"hata": "saglayici ve acik(bool) "
+                                                     "gerekli"})
+                kapali = set(ayar.yukle().get("kapali_beyinler") or [])
+                (kapali.discard if acik else kapali.add)(ad)
+                ayar.guncelle("kapali_beyinler", sorted(kapali))
+                ulgen.yonlendirici.sifirla()
+                veritabani.gunluge_yaz("bilgi", "ayar", "beyin %s: %s" % (
+                    ad, "açık" if acik else "kapalı"))
+                return self._cevap(200, {"saglayici": ad, "acik": acik})
             if urlparse(self.path).path == "/yz/mod":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "

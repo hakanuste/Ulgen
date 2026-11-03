@@ -446,11 +446,12 @@ class BeyinYonlendirici:
     def _yerel(self, a):
         yerel = []
         tur = a.get("yerel_tur", "otomatik")
-        if tur in ("otomatik", "ollama"):
+        kapali = set(a.get("kapali_beyinler") or [])
+        if tur in ("otomatik", "ollama") and "ollama" not in kapali:
             b = OllamaBeyin(a["ollama_adres"], a["ollama_model"])
             b.saglayici = "ollama"
             yerel.append(b)
-        if tur in ("otomatik", "llamacpp"):
+        if tur in ("otomatik", "llamacpp") and "llamacpp" not in kapali:
             b = LlamaCppBeyin(a["llamacpp_adres"])
             b.saglayici = "llamacpp"
             yerel.append(b)
@@ -458,9 +459,10 @@ class BeyinYonlendirici:
 
     def _bulut(self, a):
         bulut = []
+        kapali = set(a.get("kapali_beyinler") or [])
         for ad in a.get("bulut_sirasi", []):
             anahtar = a.get(ad + "_anahtar")
-            if not anahtar:
+            if not anahtar or ad in kapali:
                 continue
             if ad == "gemini":
                 ic = GeminiBeyin(anahtar, a["gemini_model"])

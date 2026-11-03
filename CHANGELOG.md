@@ -160,3 +160,6 @@
 
 ## 2.7.46
 - Güncelleme sonrası `.command` ve `.sh` dosyalarına çalıştırma izni verilir (zip açılırken izin kayboluyor, "yetkiniz yok" hatası çıkıyordu).
+
+## 2.7.47
+- Yapay Zekâ Modelleri: **Beyinleri aç / kapat** bölümü. Yerel (llama.cpp, Ollama) ve bulut (Gemini, NVIDIA, Groq, Mistral, OpenRouter) beyinlerin her biri ayrı ayrı kapatılıp açılabilir; kapalı beyin hiç denenmez (`kapali_beyinler` ayarı, `/yz/saglayici`).

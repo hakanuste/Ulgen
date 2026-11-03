@@ -3,7 +3,7 @@ from unittest import mock
 
 from .temel import TemizVeri
 from .test_sunucu import istek, JSON
-from ulgen import gizli, sunucu, veritabani
+from ulgen import ayar, cihazlar, gizli, sunucu, veritabani
 from ulgen.cekirdek import Ulgen
 
 
@@ -84,3 +84,41 @@ class AnahtarListeSilTesti(AnahtarKutusu):
         self.assertEqual(istek(p, "/yz/anahtarlar")[0], 403)
         self.assertEqual(istek(p, "/yz/anahtar-sil", "POST", json.dumps(
             {"saglayici": "gemini", "onay": True}), JSON)[0], 403)
+
+
+class BeyinAcKapatTesti(TemizVeri):
+
+    def setUp(self):
+        super().setUp()
+        self.ulgen = Ulgen()
+        self.srv = sunucu.yerel_sunucu(self.ulgen, 0)
+        sunucu.arka_planda_calistir(self.srv)
+        self.port = self.srv.server_address[1]
+        self.tok = cihazlar.olustur("t", 1)[1]
+        self.b = {"Authorization": "Bearer " + self.tok, "Content-Type": "application/json"}
+
+    def tearDown(self):
+        self.srv.shutdown()
+        self.srv.server_close()
+
+    def test_kapali_beyin_adaylardan_cikar(self):
+        ayar.guncelle("beyin", "bulut")
+        ayar.guncelle("gemini_anahtar", "AIzaTEST")
+        ayar.guncelle("bulut_sirasi", ["gemini"])
+        self.ulgen.yonlendirici.sifirla()
+        adlar = lambda: [b.saglayici for b in self.ulgen.yonlendirici._adaylar(ayar.yukle())]  # noqa
+        self.assertIn("gemini", adlar())
+        d, v = istek(self.port, "/yz/saglayici", "POST",
+                     json.dumps({"saglayici": "gemini", "acik": False}), self.b)
+        self.assertEqual(d, 200)
+        self.assertNotIn("gemini", adlar())
+        d, v = istek(self.port, "/yz/saglayicilar", basliklar=self.b)
+        self.assertFalse(json.loads(v)["gemini"]["acik"])
+        istek(self.port, "/yz/saglayici", "POST",
+              json.dumps({"saglayici": "gemini", "acik": True}), self.b)
+        self.assertIn("gemini", adlar())
+
+    def test_gecersiz_ad_reddedilir(self):
+        d, _ = istek(self.port, "/yz/saglayici", "POST",
+                     json.dumps({"saglayici": "x", "acik": False}), self.b)
+        self.assertEqual(d, 400)

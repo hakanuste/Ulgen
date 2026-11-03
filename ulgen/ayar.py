@@ -40,6 +40,8 @@ VARSAYILAN = {
     # adları sürümle değişir: python -m ulgen --modeller nvidia
     "nvidia_model": "meta/llama-3.3-70b-instruct",
     "bulut_sirasi": ["gemini", "nvidia", "groq", "mistral", "openrouter"],
+    # Arayüzden kapatılan beyinler (örn. ["gemini"]); kapalı beyin hiç denenmez.
+    "kapali_beyinler": [],
     "kota_sinirlari": {},          # örn. {"groq": {"rpm": 20}} belgeden düzeltme
     "kuyruk_omru_saat": 24,
     # Ücretli servise geçiş KODDA kapalıdır; böyle bir ayar yoktur.
