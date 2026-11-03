@@ -1,14 +1,22 @@
 #!/bin/bash
 # Yerel beyin kurulumu (Ollama gerekmez): llama.cpp + Gemma 3 4B (Türkçe iyi, ~2,5 GB).
+# -ngl 0: yalnız işlemci. (Eski Intel Mac'lerde ekran kartı kullanımı belleği taşırıp çok yavaşlatıyor.)
 # Yaptıkları: llama.cpp'yi Homebrew ile kurar, modeli ~/ÜlgenVeri/modeller/ klasörüne indirir
 # (yarıda kesilirse kaldığı yerden sürer), arka planda 127.0.0.1:8080 adresinde çalıştırır.
 # Hiçbir veri dışarı gitmez; yalnızca model dosyası Hugging Face'ten indirilir.
 set -u
 VERI="$HOME/ÜlgenVeri"
 MODELLER="$VERI/modeller"
-MODEL="$MODELLER/gemma-3-4b-it-Q4_K_M.gguf"
-ADRES="https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf"
-BOYUT_ALT=2400000000          # indirme bütünlük denetimi (~2,49 GB beklenir)
+# Varsayılan: Gemma 3 4B (~2,5 GB, daha akıllı). Yavaş Mac için: ULGEN_MODEL=1b bash "Yerel Beyin Kur.command"
+if [ "${ULGEN_MODEL:-4b}" = "1b" ]; then
+  MODEL="$MODELLER/gemma-3-1b-it-Q4_K_M.gguf"
+  ADRES="https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf"
+  BOYUT_ALT=800000000           # ~806 MB beklenir
+else
+  MODEL="$MODELLER/gemma-3-4b-it-Q4_K_M.gguf"
+  ADRES="https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf"
+  BOYUT_ALT=2400000000          # ~2,49 GB beklenir
+fi
 AJAN="$HOME/Library/LaunchAgents/com.ulgen.yerelbeyin.plist"
 adim() { printf '\n==> %s\n' "$1"; }
 dur() { printf '\nHATA: %s\n' "$1"; read -r -p "Kapatmak için Enter'a basın." _; exit 1; }
@@ -43,6 +51,7 @@ cat > "$AJAN" <<PLISTEOF
   <key>ProgramArguments</key><array>
     <string>$SUNUCU</string><string>-m</string><string>$MODEL</string>
     <string>--host</string><string>127.0.0.1</string><string>--port</string><string>8080</string>
+    <string>-ngl</string><string>0</string>
     <string>-c</string><string>4096</string>
   </array>
   <key>RunAtLoad</key><true/>

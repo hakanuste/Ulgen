@@ -163,3 +163,6 @@
 
 ## 2.7.47
 - Yapay Zekâ Modelleri: **Beyinleri aç / kapat** bölümü. Yerel (llama.cpp, Ollama) ve bulut (Gemini, NVIDIA, Groq, Mistral, OpenRouter) beyinlerin her biri ayrı ayrı kapatılıp açılabilir; kapalı beyin hiç denenmez (`kapali_beyinler` ayarı, `/yz/saglayici`).
+
+## 2.7.48
+- Yerel beyin hızlandırma (log: istem işleme saniyede ~11 token; her yanıt ~2 dk sürüyordu): llama-server yalnız işlemciyle çalışır (`-ngl 0`, eski Intel Mac'te ekran kartı belleği taşırıyor); yerel beynin istemi kısaltıldı (sistem 2200, geçmiş 700 token); zaman aşımı 300 sn; yavaş Mac için `ULGEN_MODEL=1b` ile Gemma 3 1B seçeneği.

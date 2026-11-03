@@ -123,6 +123,9 @@ class LlamaCppBeyin(Beyin):
     """llama.cpp 'llama-server' (OpenAI uyumlu arayüz)."""
 
     ad = "llama.cpp (yerel)"
+    # Eski Mac'lerde istem işleme saniyede ~10 token olabilir: istem kısa tutulur.
+    sistem_butce = 2200
+    gecmis_butce = 700
 
     def __init__(self, adres):
         self.adres = adres.rstrip("/")
@@ -141,7 +144,8 @@ class LlamaCppBeyin(Beyin):
             "temperature": 0.6,
             "stream": False,
         }
-        veri = _json_gonder(self.adres + "/v1/chat/completions", govde)
+        veri = _json_gonder(self.adres + "/v1/chat/completions", govde,
+                            zaman_asimi=300)
         try:
             return veri["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as hata:
