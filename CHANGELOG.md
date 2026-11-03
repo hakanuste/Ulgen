@@ -125,3 +125,6 @@
 
 ## 2.7.35
 - Yeni **Ajanlar** sekmesi: Araştırma, Sağlık, Dosya ajanları ve Sabah Özeti için durum, son çalışma, süre, sonuç özeti ve "Şimdi çalıştır" düğmesi. Sohbetten yapılan çalıştırmalar da aynı kayda düşer (`ulgen/ajan_kayit.py`, `/ajanlar`, `/ajanlar/calistir`).
+
+## 2.7.36
+- Launchpad simgesi açılmıyordu: uygulama `python -m ulgen` komutunu paket klasörü dışında çalıştırıyordu ("No module named ulgen"). Artık önce klasöre girer, çıktıyı `~/ÜlgenVeri/simge.log` dosyasına yazar ve hata olursa pencere gösterir. Simge oluşturma `ulgen/varlik/simge_kur.sh` dosyasına taşındı; güncellemeden sonra elle de çalıştırılabilir.
