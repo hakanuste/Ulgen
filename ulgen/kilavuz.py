@@ -12,12 +12,13 @@ import re
 import shutil
 import threading
 import time
-from datetime import date
+from datetime import date, datetime
+from html.parser import HTMLParser
 
 from . import ayar, obsidyen
 
 PARCA_BOYU = 50
-UZANTILAR = (".pdf", ".docx", ".md", ".txt")
+UZANTILAR = (".pdf", ".docx", ".html", ".htm", ".md", ".txt")
 DOCX_PARCA = 40000      # karakter
 _KILIT = threading.Lock()
 _DURUM = {"calisiyor": False, "dosya": "", "bitti": 0, "toplam": 0,
@@ -150,6 +151,8 @@ def _tur(yol):
     low = yol.lower()
     if low.endswith((".md", ".txt")):
         return "metin"
+    if low.endswith((".html", ".htm")):
+        return "html"
     try:
         with open(yol, "rb") as f:
             bas = f.read(8)
@@ -201,6 +204,136 @@ def _docx_aktar(yol, kasa):
     return len(adlar)
 
 
+class _HtmlMetin(HTMLParser):
+    """HTML'i okunur Markdown metnine çevirir (betik/stil atılır)."""
+    BLOK = {"p", "div", "section", "article", "tr", "table", "ul", "ol", "blockquote", "br"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.cikti, self._atla, self._kod = [], 0, 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style", "head", "noscript", "svg"):
+            self._atla += 1
+        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            self.cikti.append("\n\n" + "#" * int(tag[1]) + " ")
+        elif tag == "li":
+            self.cikti.append("\n- ")
+        elif tag == "pre":
+            self._kod += 1
+            self.cikti.append("\n\n```\n")
+        elif tag in self.BLOK:
+            self.cikti.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "head", "noscript", "svg"):
+            self._atla = max(0, self._atla - 1)
+        elif tag == "pre":
+            self._kod = max(0, self._kod - 1)
+            self.cikti.append("\n```\n\n")
+        elif tag in self.BLOK or tag in ("h1", "h2", "h3", "h4", "h5", "h6", "li"):
+            self.cikti.append("\n")
+
+    def handle_data(self, veri):
+        if self._atla:
+            return
+        self.cikti.append(veri if self._kod else re.sub(r"\s+", " ", veri))
+
+    def metin(self):
+        t = "".join(self.cikti)
+        t = re.sub(r"[ \t]+\n", "\n", t)
+        return re.sub(r"\n{3,}", "\n\n", t).strip()
+
+
+def _chatgpt_konusmalar(ham):
+    """chat.html içindeki 'var jsonData = [...]' konuşma listesini verir; yoksa None."""
+    i = ham.find("var jsonData")
+    if i < 0:
+        return None
+    k = ham.find("[", i)
+    if k < 0:
+        return None
+    try:
+        veri, _ = json.JSONDecoder().raw_decode(ham[k:])
+    except ValueError:
+        return None
+    return veri if isinstance(veri, list) else None
+
+
+def _chatgpt_mesajlar(konusma):
+    """Konuşmanın mesajlarını (rol, metin) sırasıyla verir."""
+    harita = konusma.get("mapping") or {}
+    kimlik, zincir = konusma.get("current_node"), []
+    while kimlik and kimlik in harita and len(zincir) < 5000:
+        zincir.append(harita[kimlik])
+        kimlik = harita[kimlik].get("parent")
+    sonuc = []
+    for d in reversed(zincir):
+        m = d.get("message") or {}
+        rol = (m.get("author") or {}).get("role")
+        parcalar = (m.get("content") or {}).get("parts") or []
+        metin = "\n".join(x for x in parcalar if isinstance(x, str)).strip()
+        if rol in ("user", "assistant") and metin:
+            sonuc.append(("Ben" if rol == "user" else "Yapay zekâ", metin))
+    return sonuc
+
+
+def _konusma_yaz(klasor, ad, kaynak, zaman, mesajlar):
+    os.makedirs(klasor, exist_ok=True)
+    govde = ["---", "kaynak: %s" % kaynak, "tarih: %s" % zaman, "tags: [konuşma]", "---", "",
+             "# " + ad, ""]
+    for rol, metin in mesajlar:
+        govde += ["## " + rol, "", metin, ""]
+    yol = os.path.join(klasor, dosya_adi_temizle("%s %s" % (zaman, ad))[:120] + ".md")
+    gecici = yol + ".tmp"
+    with open(gecici, "w", encoding="utf-8") as f:
+        f.write("\n".join(govde))
+    os.replace(gecici, yol)
+
+
+def _html_aktar(yol, kasa):
+    """HTML'i notlara çevirir; ChatGPT dışa aktarımıysa konuşma başına bir not yazar."""
+    with open(yol, "r", encoding="utf-8", errors="replace") as f:
+        ham = f.read()
+    ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
+    konusmalar = _chatgpt_konusmalar(ham)
+    if konusmalar:
+        klasor = os.path.join(kasa, "Yapay Zekâ Konuşmaları", "ChatGPT")
+        n = 0
+        for k in konusmalar:
+            if not isinstance(k, dict):
+                continue
+            mesajlar = _chatgpt_mesajlar(k)
+            if not mesajlar:
+                continue
+            try:
+                zaman = datetime.fromtimestamp(
+                    float(k.get("create_time") or 0)).strftime("%Y-%m-%d")
+            except (ValueError, OSError, OverflowError):
+                zaman = "tarihsiz"
+            _konusma_yaz(klasor, str(k.get("title") or "Başlıksız"), "ChatGPT", zaman, mesajlar)
+            n += 1
+        return n
+    ayrac = _HtmlMetin()
+    ayrac.feed(ham)
+    metin = ayrac.metin()
+    hedef = os.path.join(kasa, "Yapay Zekâ Konuşmaları", ad)
+    os.makedirs(hedef, exist_ok=True)
+    parcalar = [metin[i:i + DOCX_PARCA] for i in range(0, len(metin), DOCX_PARCA)] or [""]
+    adlar = []
+    for n, govde in enumerate(parcalar, 1):
+        parca_ad = "%s - Bölüm %d" % (ad, n)
+        icerik = ["---", "kaynak: %s" % os.path.basename(yol),
+                  "aktarim: %s" % date.today().isoformat(), "tags: [konuşma]", "---", "",
+                  "# " + parca_ad, "", govde or "*(metin yok)*", ""]
+        gecici = os.path.join(hedef, parca_ad + ".md.tmp")
+        with open(gecici, "w", encoding="utf-8") as f:
+            f.write("\n".join(icerik))
+        os.replace(gecici, os.path.join(hedef, parca_ad + ".md"))
+        adlar.append(parca_ad)
+    return len(adlar)
+
+
 def _metin_aktar(yol, kasa):
     ad = dosya_adi_temizle(os.path.basename(yol))
     shutil.copy2(yol, os.path.join(kasa, ad))
@@ -209,6 +342,8 @@ def _metin_aktar(yol, kasa):
 def _eski_aktarim_var(yol, kasa):
     """Eski 'Kılavuz Aktar' aracı bu dosyayı zaten aktardıysa True."""
     ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
+    if yol.lower().endswith((".html", ".htm")):
+        return False
     if yol.lower().endswith((".pdf", ".docx")):
         return os.path.isfile(os.path.join(kasa, ad, ad + " - Dizin.md"))
     return os.path.isfile(os.path.join(kasa, dosya_adi_temizle(
@@ -242,6 +377,8 @@ def aktar(kaynak=None, kasa=None):
                         _pdf_aktar(yol, kasa)
                     elif tur == "docx":
                         _docx_aktar(yol, kasa)
+                    elif tur == "html":
+                        _html_aktar(yol, kasa)
                     elif tur == "metin":
                         _metin_aktar(yol, kasa)
                     else:

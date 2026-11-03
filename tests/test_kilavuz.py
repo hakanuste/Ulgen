@@ -159,3 +159,49 @@ class KilavuzIcerikTesti(TemizVeri):
         self.assertEqual(len(s["hata"]), 1)
         self.assertIn("resimler.pdf", s["hata"][0])
         self.assertEqual(kilavuz.bekleyenler(self.kaynak), [])
+
+
+class KilavuzHtmlTesti(TemizVeri):
+
+    def setUp(self):
+        super().setUp()
+        self.kaynak = tempfile.mkdtemp()
+        self.kasa = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.kasa, ".obsidian"))
+
+    def test_chatgpt_dokumu_konusma_basina_not(self):
+        veri = [{"title": "Zeytin budama", "create_time": 1760000000, "current_node": "c",
+                 "mapping": {
+                     "a": {"parent": None, "message": None},
+                     "b": {"parent": "a", "message": {"author": {"role": "user"},
+                                                      "content": {"parts": ["Ne zaman budamalı?"]}}},
+                     "c": {"parent": "b", "message": {"author": {"role": "assistant"},
+                                                      "content": {"parts": ["Şubat sonu uygundur."]}}}}}]
+        html = "<html><script>var jsonData = %s;</script></html>" % json.dumps(veri)
+        with open(os.path.join(self.kaynak, "chat.html"), "w", encoding="utf-8") as f:
+            f.write(html)
+        s = kilavuz.aktar(self.kaynak, self.kasa)
+        self.assertEqual((s["yeni"], s["hata"]), (1, []))
+        klasor = os.path.join(self.kasa, "Yapay Zekâ Konuşmaları", "ChatGPT")
+        dosyalar = os.listdir(klasor)
+        self.assertEqual(len(dosyalar), 1)
+        t = open(os.path.join(klasor, dosyalar[0]), encoding="utf-8").read()
+        self.assertIn("## Ben", t)
+        self.assertIn("Ne zaman budamalı?", t)
+        self.assertIn("Şubat sonu uygundur.", t)
+
+    def test_genel_html_metne_cevrilir_betik_atilir(self):
+        html = ("<html><head><title>x</title><style>p{}</style></head><body>"
+                "<script>gizli()</script><h2>Başlık</h2><p>Merhaba <b>dünya</b></p>"
+                "<ul><li>bir</li><li>iki</li></ul><pre>kod satırı</pre></body></html>")
+        with open(os.path.join(self.kaynak, "gemini.html"), "w", encoding="utf-8") as f:
+            f.write(html)
+        s = kilavuz.aktar(self.kaynak, self.kasa)
+        self.assertEqual((s["yeni"], s["hata"]), (1, []))
+        t = open(os.path.join(self.kasa, "Yapay Zekâ Konuşmaları", "gemini",
+                              "gemini - Bölüm 1.md"), encoding="utf-8").read()
+        self.assertIn("## Başlık", t)
+        self.assertIn("Merhaba dünya", t)
+        self.assertIn("- bir", t)
+        self.assertIn("kod satırı", t)
+        self.assertNotIn("gizli", t)

@@ -144,3 +144,6 @@
 ## 2.7.41
 - Kılavuz aktarımı içeriğe bakar: adı .pdf olan Word/zip dosyaları artık tanınır (Word dosyaları Obsidian notuna çevrilir), okunamayan dosya bir kez bildirilip değişene dek atlanır; .docx uzantısı da desteklenir.
 - `simge_kur.sh` sonunda `simge_temizle.sh` çalıştırır: yeniden kurulumdan sonra Launchpad'de çift Ülgen simgesi kalmaz.
+
+## 2.7.42
+- Kılavuz aktarıcısı **HTML** dosyalarını da alır (.html/.htm): ChatGPT dışa aktarımındaki `chat.html` konuşma başına bir Obsidian notuna (`Yapay Zekâ Konuşmaları/ChatGPT/`), diğer HTML dosyaları (Gemini vb.) okunur Markdown'a çevrilir (`Yapay Zekâ Konuşmaları/<dosya adı>/`).
