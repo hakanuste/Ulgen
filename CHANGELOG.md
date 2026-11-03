@@ -134,3 +134,6 @@
 
 ## 2.7.38
 - **Kendi Mac'inden kilitlenme düzeltildi:** yalnız 127.0.0.1'e açık sunucuda "çok fazla yanlış deneme" kilidi kaldırıldı (eski bir sekmenin geçersiz belirteci 5 denemede giriş bağlantısını da engelliyordu; Launchpad simgesi ve Güncelleme açılamıyordu). Uzak (iPhone) sunucuda kilit sürer.
+
+## 2.7.39
+- Launchpad uygulaması açık kalır (Dock'ta görünür): "stay open" uygulama olarak yeniden oluşturulur; Dock simgesine tekrar tıklayınca Ülgen yeniden açılır. Mac'te denenmedi.

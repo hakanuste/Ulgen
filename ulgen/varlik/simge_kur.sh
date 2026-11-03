@@ -13,7 +13,20 @@ TMPAS="$(mktemp -t ulgen).applescript"
 mkdir -p "$ESKI"
 # NOT: "python -m ulgen" paketi çalışma klasöründe arar; bu yüzden önce klasöre girilir.
 cat > "$TMPAS" <<ASEOF
+-- Uygulama açık kalır (Dock'ta görünür); Dock simgesine yeniden tıklanınca Ülgen tekrar açılır.
 on run
+  my baslat()
+end run
+
+on reopen
+  my baslat()
+end reopen
+
+on idle
+  return 3600
+end idle
+
+on baslat()
   try
     do shell script "/usr/bin/curl -s -m 2 http://127.0.0.1:8765/saglik"
   on error
@@ -26,9 +39,9 @@ on run
   on error mesaj
     display dialog "Ülgen açılamadı: " & mesaj buttons {"Tamam"} default button 1
   end try
-end run
+end baslat
 ASEOF
-if osacompile -o "$YENIUYG" "$TMPAS"; then
+if osacompile -s -o "$YENIUYG" "$TMPAS"; then
   [ -e "$UYGULAMA" ] && mv "$UYGULAMA" "$ESKI/Ülgen.app-$ZAMAN"
   if [ -f "$HEDEF/ulgen/varlik/ulgen.icns" ]; then
     cp "$HEDEF/ulgen/varlik/ulgen.icns" "$YENIUYG/Contents/Resources/applet.icns" 2>/dev/null
