@@ -17,7 +17,8 @@ from datetime import date
 from . import ayar, obsidyen
 
 PARCA_BOYU = 50
-UZANTILAR = (".pdf", ".md", ".txt")
+UZANTILAR = (".pdf", ".docx", ".md", ".txt")
+DOCX_PARCA = 40000      # karakter
 _KILIT = threading.Lock()
 _DURUM = {"calisiyor": False, "dosya": "", "bitti": 0, "toplam": 0,
           "son": None, "hata": []}
@@ -144,6 +145,62 @@ def _pdf_aktar(yol, kasa):
     return toplam, len(parcalar), bos
 
 
+def _tur(yol):
+    """Dosyanın gerçek türü (içeriğe göre): pdf | docx | zip | metin | bilinmiyor."""
+    low = yol.lower()
+    if low.endswith((".md", ".txt")):
+        return "metin"
+    try:
+        with open(yol, "rb") as f:
+            bas = f.read(8)
+    except OSError:
+        return "bilinmiyor"
+    if bas.startswith(b"%PDF"):
+        return "pdf"
+    if bas.startswith(b"PK"):
+        import zipfile
+        try:
+            with zipfile.ZipFile(yol) as z:
+                return "docx" if "word/document.xml" in z.namelist() else "zip"
+        except (zipfile.BadZipFile, OSError):
+            return "zip"
+    return "pdf" if low.endswith(".pdf") else "bilinmiyor"
+
+
+def _docx_aktar(yol, kasa):
+    """Word dosyasını Markdown notlarına yazar; (parça sayısı,) döndürür."""
+    import zipfile
+    with zipfile.ZipFile(yol) as z:
+        xml = z.read("word/document.xml").decode("utf-8", "replace")
+    xml = re.sub(r"</w:p>", "\n", xml)
+    metin = re.sub(r"<[^>]+>", "", xml)
+    for kod, kar in (("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'), ("&apos;", "'"),
+                     ("&amp;", "&")):
+        metin = metin.replace(kod, kar)
+    metin = re.sub(r"\n{3,}", "\n\n", metin).strip()
+    ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
+    hedef = os.path.join(kasa, ad)
+    os.makedirs(hedef, exist_ok=True)
+    parcalar = [metin[i:i + DOCX_PARCA] for i in range(0, len(metin), DOCX_PARCA)] or [""]
+    adlar = []
+    for n, govde in enumerate(parcalar, 1):
+        parca_ad = "%s - Bölüm %d" % (ad, n)
+        icerik = ["---", "kaynak: %s" % os.path.basename(yol),
+                  "aktarim: %s" % date.today().isoformat(), "tags: [kılavuz]", "---", "",
+                  "# " + parca_ad, "", "[[%s - Dizin]]" % ad, "",
+                  govde or "*(belgede metin yok)*", ""]
+        gecici = os.path.join(hedef, parca_ad + ".md.tmp")
+        with open(gecici, "w", encoding="utf-8") as f:
+            f.write("\n".join(icerik))
+        os.replace(gecici, os.path.join(hedef, parca_ad + ".md"))
+        adlar.append(parca_ad)
+    dizin = ["---", "kaynak: %s" % os.path.basename(yol), "tags: [dizin]", "---", "",
+             "# %s — Dizin" % ad, ""] + ["- [[%s]]" % x for x in adlar]
+    with open(os.path.join(hedef, ad + " - Dizin.md"), "w", encoding="utf-8") as f:
+        f.write("\n".join(dizin) + "\n")
+    return len(adlar)
+
+
 def _metin_aktar(yol, kasa):
     ad = dosya_adi_temizle(os.path.basename(yol))
     shutil.copy2(yol, os.path.join(kasa, ad))
@@ -152,7 +209,7 @@ def _metin_aktar(yol, kasa):
 def _eski_aktarim_var(yol, kasa):
     """Eski 'Kılavuz Aktar' aracı bu dosyayı zaten aktardıysa True."""
     ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
-    if yol.lower().endswith(".pdf"):
+    if yol.lower().endswith((".pdf", ".docx")):
         return os.path.isfile(os.path.join(kasa, ad, ad + " - Dizin.md"))
     return os.path.isfile(os.path.join(kasa, dosya_adi_temizle(
         os.path.basename(yol))))
@@ -179,11 +236,18 @@ def aktar(kaynak=None, kasa=None):
             try:
                 if _eski_aktarim_var(yol, kasa) and yol not in kayit:
                     sonuc["atlanan"] += 1          # eski araç yapmış: yeniden yazma
-                elif yol.lower().endswith(".pdf"):
-                    _pdf_aktar(yol, kasa)
-                    sonuc["yeni"] += 1
                 else:
-                    _metin_aktar(yol, kasa)
+                    tur = _tur(yol)
+                    if tur == "pdf":
+                        _pdf_aktar(yol, kasa)
+                    elif tur == "docx":
+                        _docx_aktar(yol, kasa)
+                    elif tur == "metin":
+                        _metin_aktar(yol, kasa)
+                    else:
+                        raise ValueError("desteklenmeyen içerik (%s); uzantısı '%s' ama "
+                                         "gerçek PDF/Word değil" % (
+                                             tur, os.path.splitext(yol)[1]))
                     sonuc["yeni"] += 1
                 kayit[yol] = {"mtime": mtime, "boyut": boyut}
                 _kayit_yaz(kayit)
@@ -193,6 +257,9 @@ def aktar(kaynak=None, kasa=None):
             except Exception as hata:
                 sonuc["hata"].append("%s: %s" % (os.path.basename(yol),
                                                  str(hata)[:120]))
+                # Aynı bozuk dosya her turda yeniden denenmesin: dosya değişene dek atlanır.
+                kayit[yol] = {"mtime": mtime, "boyut": boyut, "hata": str(hata)[:120]}
+                _kayit_yaz(kayit)
             _DURUM["bitti"] += 1
         _DURUM.update(calisiyor=False, dosya="", son=time.time(),
                       hata=sonuc["hata"])

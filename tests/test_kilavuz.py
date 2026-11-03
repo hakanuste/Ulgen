@@ -126,3 +126,36 @@ class KilavuzTesti(TemizVeri):
         srv.yerel = False
         self.assertEqual(istek(p, "/kilavuz/durum")[0], 403)
         self.assertEqual(istek(p, "/kilavuz/aktar", "POST", json.dumps({}), JSON)[0], 403)
+
+
+class KilavuzIcerikTesti(TemizVeri):
+    """Uzantısı .pdf ama içeriği Word/zip olan dosyalar."""
+
+    def setUp(self):
+        super().setUp()
+        self.kaynak = tempfile.mkdtemp()
+        self.kasa = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.kasa, ".obsidian"))
+
+    def _docx(self, yol, metin):
+        import zipfile
+        with zipfile.ZipFile(yol, "w") as z:
+            z.writestr("word/document.xml",
+                       "<w:document><w:p><w:t>%s</w:t></w:p></w:document>" % metin)
+
+    def test_pdf_adli_docx_okunur(self):
+        self._docx(os.path.join(self.kaynak, "motor.pdf"), "Yağ değişimi &amp; filtre")
+        s = kilavuz.aktar(self.kaynak, self.kasa)
+        self.assertEqual((s["yeni"], s["hata"]), (1, []))
+        not_ = open(os.path.join(self.kasa, "motor", "motor - Bölüm 1.md"),
+                    encoding="utf-8").read()
+        self.assertIn("Yağ değişimi & filtre", not_)
+
+    def test_bozuk_dosya_bir_kez_bildirilir_tekrar_denenmez(self):
+        import zipfile
+        with zipfile.ZipFile(os.path.join(self.kaynak, "resimler.pdf"), "w") as z:
+            z.writestr("a.png", "x")
+        s = kilavuz.aktar(self.kaynak, self.kasa)
+        self.assertEqual(len(s["hata"]), 1)
+        self.assertIn("resimler.pdf", s["hata"][0])
+        self.assertEqual(kilavuz.bekleyenler(self.kaynak), [])

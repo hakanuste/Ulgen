@@ -55,3 +55,6 @@ else
   echo "Uyarı: uygulama oluşturulamadı; eskisi (varsa) yerinde."
 fi
 rm -f "$TMPAS"
+# Eski kopyalar Launchpad'de ikinci simge olarak kalmasın: kayıt defterinden temizle.
+GECERLI="/Applications/Ülgen.app"; [ -d "$GECERLI" ] || GECERLI="$HOME/Applications/Ülgen.app"
+bash "$HEDEF/ulgen/varlik/simge_temizle.sh" "$GECERLI" || true

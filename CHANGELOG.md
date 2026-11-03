@@ -140,3 +140,7 @@
 
 ## 2.7.40
 - Ayarlar > "Kendi ses dosyalarınız": çıplak dosya kutusu yerine **Dosya seç (mp3)** düğmesi; 4 MB üstü dosya yüklenmeden önce açık iletiyle bildirilir; yükleme hatası artık sessiz kalmaz, nedeni yazılır.
+
+## 2.7.41
+- Kılavuz aktarımı içeriğe bakar: adı .pdf olan Word/zip dosyaları artık tanınır (Word dosyaları Obsidian notuna çevrilir), okunamayan dosya bir kez bildirilip değişene dek atlanır; .docx uzantısı da desteklenir.
+- `simge_kur.sh` sonunda `simge_temizle.sh` çalıştırır: yeniden kurulumdan sonra Launchpad'de çift Ülgen simgesi kalmaz.
