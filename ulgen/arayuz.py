@@ -72,6 +72,7 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
 #sekmeler button { flex: 1; white-space: nowrap; background: transparent; color: var(--soluk); border: 0;
                    padding: 8px 6px; font-size: 14px; border-radius: 8px; }
 #sekmeler button.aktif { background: var(--kart); color: var(--vurgu); }
+#geriBtn { display: none; }
 .panel { display: none; flex: 1; overflow-y: auto; padding: 12px 14px; }
 .panel.acik { display: block; }
 .panel h3 { margin: 14px 0 6px; font-size: 14px; color: var(--soluk); font-weight: 600; }
@@ -212,6 +213,9 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   body[data-s="ana"] #baslikOrta { display: none; }
   #hamBtn, #sagUst .ik { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--altin2); background: rgba(13,36,59,.7); color: var(--altin); display: grid; place-items: center; }
   #hamBtn { position: absolute; left: 14px; top: calc(env(safe-area-inset-top) + 8px); z-index: 3; cursor: pointer; }
+  #geriBtn { display: none; position: absolute; left: 68px; top: calc(env(safe-area-inset-top) + 8px); z-index: 3; height: 44px; padding: 0 16px;
+             border-radius: 22px; border: 1px solid var(--altin2); background: rgba(13,36,59,.85); color: var(--altin); font-size: 16px; }
+  body:not([data-s="ana"]) #geriBtn { display: block; }
   #sagUst { position: absolute; right: 14px; top: calc(env(safe-area-inset-top) + 8px); z-index: 3; gap: 8px; display: flex; }
   #sagUst .ik:not(:first-child) { display: none; }
   #sagUst .ik { position: relative; } #sagUst .ik em { position: absolute; top: -3px; right: -3px; background: var(--kirmizi); color: #fff; font-style: normal; font-size: 10px; border-radius: 9px; min-width: 16px; text-align: center; padding: 1px 3px; }
@@ -357,6 +361,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
 <div id="afis">
   <div class="arka"></div>
   <button id="hamBtn" class="ik" onclick="menuAc()" aria-label="Menü"><svg class="i"><use href="#i-menu"/></svg></button>
+  <button id="geriBtn" onclick="sekme('ana')" aria-label="Ana Sayfa">&#8249; Ana Sayfa</button>
   <img id="mobilLogo" src="/varlik/logo.webp" alt="Ülgen"><div id="mobilAlt">Kişisel Yapay Zekâ Yardımcı</div>
   <div id="runlar">𐰜𐰇𐰞𐰏𐰤</div>
   <div id="baslikOrta">
@@ -980,8 +985,9 @@ const gecmisBildirim = [];
 let aktifSekme = "ana";
 
 const sohbetli = ad => ad === "ana" || ad === "sohbet";
-function sekme(ad) {
+function sekme(ad, geriden) {
   menuKapat();
+  if (!geriden && ad !== aktifSekme) { try { history.pushState({ s: ad }, ""); } catch (e) {} }
   aktifSekme = ad;
   document.body.dataset.s = ad;
   document.querySelectorAll("#sekmeler button").forEach(b => b.classList.toggle("aktif", b.dataset.s === ad));
@@ -989,6 +995,7 @@ function sekme(ad) {
   if (sohbetli(ad)) panoYenile(); else panelYenile(ad);
 }
 document.body.dataset.s = "ana";
+window.addEventListener("popstate", e => sekme((e.state && e.state.s) || "ana", true));
 
 // ---- pano (geniş ekran) ------------------------------------------------------
 const SAG = '<svg class="i"><use href="#i-sag"/></svg>';

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.51
+- iPhone: bölüm sayfalarında görünür "‹ Ana Sayfa" düğmesi; kenardan kaydırarak geri gitme (tarayıcı geçmişi) artık bölümler arasında çalışır. Gerçek cihaz testi bekliyor.
+
 ## [2.7] – 2026-11-02
 - Kendi sesiniz (bulut) sessizce kadın sesine düşmesin: tek ses öğesi ilk dokunuşta "kilidi açılır" (Safari/Chrome otomatik çalma engeli), çalınamazsa neden sohbette yazılır; Ayarlar > Ses seçimi > "Kendi sesimi dene" düğmesi (2.7.32).
 - API anahtarlarım: GitHub satırının açıklaması netleştirildi (isteğe bağlı; herkese açık depoda gerekmez) (2.7.31).
