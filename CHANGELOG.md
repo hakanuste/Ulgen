@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.67
+- Sağlık özeti birimli değerleri de okur ("72 count/min", "1.234 adım" → ilk sayı); Kestirme'den gelen birim eki artık "atlanan" sayılmaz.
+
 ## 2.7.66
 - Kestirmeler özel başlığı iletmediğinde: `/saglik/ozet` belirteci JSON gövdesindeki `belirtec` alanından da kabul eder (yalnız bu yolda). Günlük de gövdede belirteç olup olmadığını yazar.
 

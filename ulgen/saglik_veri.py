@@ -56,10 +56,18 @@ def sayi_oku(deger):
         raise ValueError("sayı değil")
     if isinstance(deger, (int, float)):
         return float(deger)
-    metin = str(deger).strip().replace(" ", "").replace("\u00a0", "")
-    if _BINLIK.match(metin):                 # 8.421 / 8,421 → binlik ayracı
-        return float(re.sub(r"[.,]", "", metin))
-    return float(metin.replace(",", "."))
+    ham = str(deger).strip()
+    metin = ham.replace(" ", "").replace("\u00a0", "")
+    try:
+        if _BINLIK.match(metin):             # 8.421 / 8,421 → binlik ayracı
+            return float(re.sub(r"[.,]", "", metin))
+        return float(metin.replace(",", "."))
+    except ValueError:
+        # "72 count/min", "1.234 adım" gibi birimli metin: ilk sayıyı al
+        m = re.search(r"\d[\d.,]*\d|\d", ham)
+        if not m or m.group(0) == ham:
+            raise
+        return sayi_oku(m.group(0))
 
 
 def _deger(tur, ham):

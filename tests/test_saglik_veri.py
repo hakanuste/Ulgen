@@ -140,3 +140,12 @@ class ListedenToplamTesti(TemizVeri):
         e, a = sv.ozet_ekle({"adim": "100\n200\n300"})
         self.assertEqual((e, a), (1, 0))
         self.assertEqual(sv.bugun()["adim"], 600)
+
+    def test_birimli_metin(self):
+        from ulgen import saglik_veri as sv
+        self.assertEqual(sv.sayi_oku("72 count/min"), 72)
+        self.assertEqual(sv.sayi_oku("1.234 adım"), 1234)
+        self.assertEqual(sv.sayi_oku("72,5 bpm"), 72.5)
+        self.assertEqual(sv._deger("adim", "10 count\n20 count"), 30)
+        with self.assertRaises(ValueError):
+            sv.sayi_oku("yok")
