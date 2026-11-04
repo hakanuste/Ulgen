@@ -1583,8 +1583,24 @@ async function macPaneli(k) {
   bil.onclick = async () => { await istek("/mac/ayar", { bildirim: !d.bildirim }); ayarCiz(); };
 }
 
+async function takvimPaneli(k) {
+  baslik(k, "iPhone alarmı: tekrar");
+  let d;
+  try { d = await istek("/takvim/ayar"); } catch (e) { return; }
+  const kap = ekle(k, "iPhone takvimi 'aldım' yanıtını bilemez; ilaç alarmı tekrar sayısı kadar çalar. Kaç kez, kaç dakikada bir çalsın? (Değişince İlaçlar sayfasında 'iPhone takvimine aktar'ı yeniden yapın.)",
+    "Şu an: " + d.tekrar + " kez, " + d.aralik + " dakikada bir.");
+  const sat = (yazi, degerler, anahtar, simdiki, birim) => {
+    const s = document.createElement("div"); s.style.marginTop = "8px"; s.append(yazi + " ");
+    degerler.forEach(v => { const b = document.createElement("button"); b.className = "dugme" + (v === simdiki ? " aktif" : ""); b.textContent = v + birim; b.style.cssText = "margin:4px 6px 0 0";
+      b.onclick = async () => { const o = {}; o[anahtar] = v; const c = await istek("/takvim/ayar", o); if (c.hata) balonEkle(c.hata, "asistan"); ayarCiz(); }; s.appendChild(b); });
+    kap.appendChild(s); };
+  sat("Tekrar sayısı:", [1, 2, 3, 6], "tekrar", d.tekrar, "");
+  sat("Aralık:", d.araliklar, "aralik", d.aralik, " dk");
+}
+
 async function ayarCiz() {
   const a = await istek("/ayar/ozet"); const k = document.getElementById("pAyarlar"); k.innerHTML = "";
+  if (yerel) await takvimPaneli(k);
   if (yerel) await macPaneli(k);
   if (yerel) await kilavuzPaneli(k);
   if (yerel) await guncellemePaneli(k);

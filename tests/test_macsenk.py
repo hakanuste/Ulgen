@@ -172,3 +172,17 @@ class SunucuTesti(TemizVeri):
             "PRAGMA table_info(gorev)", (), True)]
         self.assertIn("kaynak", sut)
         self.assertIn("dis_kimlik", sut)
+
+
+class TakvimAyarSunucuTesti(SunucuTesti):
+
+    def test_get_ve_post(self):
+        d, g = istek(self.port, "/takvim/ayar")
+        self.assertEqual((d, json.loads(g)["tekrar"]), (200, 6))
+        d, g = istek(self.port, "/takvim/ayar", "POST",
+                     json.dumps({"tekrar": 1, "aralik": 10}), JSON)
+        self.assertEqual((d, json.loads(g)["tekrar"], json.loads(g)["aralik"]),
+                         (200, 1, 10))
+        d, _ = istek(self.port, "/takvim/ayar", "POST",
+                     json.dumps({"tekrar": 99}), JSON)
+        self.assertEqual(d, 400)

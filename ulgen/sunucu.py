@@ -451,6 +451,11 @@ def istek_sinifi(ulgen, limit):
                 gizli_alan = ("anahtar", "token", "sifre")
                 return self._cevap(200, {k: v for k, v in a.items()
                                          if not any(g in k for g in gizli_alan)})
+            if yol == "/takvim/ayar":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                return self._cevap(200, takvim.tekrar_ayari())
             if yol == "/mac/durum":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
@@ -821,6 +826,15 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "id(int) ve onay gerekli"})
                 return self._cevap(200, {"yanit": ulgen.zamanlayici.gorev
                                          .sil(kimlik)})
+            if urlparse(self.path).path == "/takvim/ayar":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                try:
+                    return self._cevap(200, takvim.tekrar_ayarla(
+                        veri.get("tekrar"), veri.get("aralik")))
+                except ValueError as hata:
+                    return self._cevap(400, {"hata": str(hata)})
             if urlparse(self.path).path in ("/mac/esitle", "/mac/ayar"):
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "

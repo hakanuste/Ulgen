@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.61
+- iPhone alarm tekrarı ayarlanabilir: Ayarlar > "iPhone alarmı: tekrar" (tekrar sayısı 1/2/3/6, aralık 5/10/15/30/60 dk). iPhone takvimi "aldım" yanıtını bilemediği için eskiden her ilaç saatinde 6 alarm çalıyordu. Değişince dosyayı yeniden aktarmak gerekir. Gerçek iPhone testi bekliyor.
+
 ## 2.7.60
 - iPhone takvim aktarımına sohbetten kurulan hatırlatıcılar da eklendi (zamanı gelmemiş, onaysız olanlar; kalıcı olanlar ilaç gibi 6 tekrar alarmıyla). Başlık varsayılan olarak genel ("Ülgen: hatırlatma"). Yeni hatırlatıcı kurulunca ya da silinince dosyayı yeniden aktarmak gerekir. Gerçek iPhone testi bekliyor.
 

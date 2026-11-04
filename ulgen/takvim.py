@@ -132,13 +132,41 @@ def _olay(uid, baslik, bas, sure_dk=5, rrule="", alarmlar=(0,), simdi=None,
     return s
 
 
+ARALIKLAR = (5, 10, 15, 30, 60)
+
+
+def tekrar_ayari():
+    """Arayüz için: iPhone alarmının kaç kez, kaç dakikada bir tekrarlanacağı."""
+    a = ayar.yukle()
+    return {"tekrar": max(1, min(int(a.get("takvim_tekrar_sayisi", 6)), 12)),
+            "aralik": max(1, int(a.get("takvim_aralik_dk")
+                                 or a.get("ilac_tekrar_dk", 5))),
+            "araliklar": list(ARALIKLAR)}
+
+
+def tekrar_ayarla(tekrar=None, aralik=None):
+    """Tekrar sayısı 1-12, aralık 5/10/15/30/60 dk. iPhone dosyasını yeniden
+    aktarınca geçerli olur (takvim tarafı 'aldım'ı bilemez)."""
+    if tekrar is not None:
+        if isinstance(tekrar, bool) or not isinstance(tekrar, int) \
+                or not 1 <= tekrar <= 12:
+            raise ValueError("tekrar 1 ile 12 arasında bir sayı olmalı")
+        ayar.guncelle("takvim_tekrar_sayisi", tekrar)
+    if aralik is not None:
+        if isinstance(aralik, bool) or aralik not in ARALIKLAR:
+            raise ValueError("aralik şunlardan biri olmalı: %s"
+                             % ", ".join(str(x) for x in ARALIKLAR))
+        ayar.guncelle("takvim_aralik_dk", aralik)
+    return tekrar_ayari()
+
+
 def olustur(su_an=None):
     """Tüm aktif planlardan .ics metni üretir."""
     su_an = su_an or datetime.now()
     a = ayar.yukle()
     ayrintili = bool(a.get("takvim_ayrintili", False))
     tekrar_n = max(1, min(int(a.get("takvim_tekrar_sayisi", 6)), 12))
-    aralik = max(1, int(a.get("ilac_tekrar_dk", 5)))
+    aralik = max(1, int(a.get("takvim_aralik_dk") or a.get("ilac_tekrar_dk", 5)))
     satirlar = ["BEGIN:VCALENDAR", "VERSION:2.0",
                 "PRODID:-//Ulgen//Takvim 1.0//TR", "CALSCALE:GREGORIAN",
                 "X-WR-CALNAME:Ülgen"]

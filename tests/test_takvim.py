@@ -66,6 +66,18 @@ class TakvimTesti(TemizVeri):
         self.u.zamanlayici.hatirlatici_sil(1)
         self.assertNotIn("hat-1-", takvim.olustur(G1))
 
+    def test_tekrar_ayari_ve_dosyaya_yansir(self):
+        self.assertEqual(takvim.tekrar_ayarla(2, 15)["tekrar"], 2)
+        ev = [str(e["UID"]) for e in olaylar(takvim.olustur(G1))
+              if str(e["UID"]).startswith("ilac-1-")]
+        self.assertEqual(sorted(ev), ["ilac-1-0@ulgen", "ilac-1-1@ulgen"])
+        e = [x for x in olaylar(takvim.olustur(G1))
+             if str(x["UID"]) == "ilac-1-1@ulgen"][0]
+        self.assertEqual((e["DTSTART"].dt.hour, e["DTSTART"].dt.minute), (8, 15))
+        for kotu in ((0, None), (13, None), (None, 7), (True, None)):
+            with self.assertRaises(ValueError):
+                takvim.tekrar_ayarla(*kotu)
+
     def test_saat_dilimi_acik_yazilir(self):
         metin = takvim.olustur(G1)
         self.assertIn("DTSTART;TZID=Europe/Istanbul:", metin)
