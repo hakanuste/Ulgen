@@ -88,7 +88,7 @@ ALANLAR = (("adim", "adim", 1), ("nabiz", "nabiz", 1), ("uyku_dk", "uyku", 1),
            ("kalori", "kalori", 1))
 
 
-def ozet_ekle(veri, simdi=None):
+def ozet_ekle(veri, simdi=None, rapor=None):
     """Kestirme için kolay biçim: {"adim": 8421, "nabiz": 72, "uyku_saat": 7.2}.
 
     Alanlar isteğe bağlıdır; zaman Ülgen'de damgalanır. Adım, uyku, aktif
@@ -106,6 +106,14 @@ def ozet_ekle(veri, simdi=None):
             deger = _deger(tur, veri[alan]) * kat
         except (TypeError, ValueError):
             atlanan += 1
+            if rapor is not None:
+                rapor.append("%s: sayı okunamadı (%r)" % (alan, str(veri[alan])[:40]))
+            continue
+        alt, ust = TURLER[tur]
+        if not alt <= deger <= ust:
+            atlanan += 1
+            if rapor is not None:
+                rapor.append("%s: %g sınır dışı (%g-%g)" % (alan, deger, alt, ust))
             continue
         if tur == "nabiz":
             zaman = simdi.isoformat(timespec="seconds")

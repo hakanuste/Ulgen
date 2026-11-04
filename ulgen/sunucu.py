@@ -954,11 +954,15 @@ def istek_sinifi(ulgen, limit):
             if urlparse(self.path).path in ("/yz/anahtar", "/yz/dene"):
                 return self._yz_anahtar(urlparse(self.path).path, veri)
             if urlparse(self.path).path == "/saglik/ozet":
+                nedenler = []
                 try:
-                    e, a = saglik_veri.ozet_ekle(veri)
+                    e, a = saglik_veri.ozet_ekle(veri, rapor=nedenler)
                 except saglik_veri.SaglikHatasi as hata:
                     return self._cevap(400, {"hata": str(hata)})
-                return self._cevap(200, {"eklenen": e, "atlanan": a})
+                yanit = {"eklenen": e, "atlanan": a}
+                if nedenler:
+                    yanit["atlanan_nedenler"] = nedenler
+                return self._cevap(200, yanit)
             if urlparse(self.path).path == "/saglik/veri":
                 try:
                     e, a = saglik_veri.ekle(veri.get("olcumler"))

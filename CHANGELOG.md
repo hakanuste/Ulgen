@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.68
+- `/saglik/ozet` yanıtı atlanan alanın nedenini söyler (`atlanan_nedenler`: sayı okunamadı / sınır dışı).
+
 ## 2.7.67
 - Sağlık özeti birimli değerleri de okur ("72 count/min", "1.234 adım" → ilk sayı); Kestirme'den gelen birim eki artık "atlanan" sayılmaz.
 

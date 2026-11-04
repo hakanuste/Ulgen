@@ -149,3 +149,11 @@ class ListedenToplamTesti(TemizVeri):
         self.assertEqual(sv._deger("adim", "10 count\n20 count"), 30)
         with self.assertRaises(ValueError):
             sv.sayi_oku("yok")
+
+    def test_atlanan_nedeni(self):
+        from ulgen import saglik_veri as sv
+        r = []
+        e, a = sv.ozet_ekle({"adim": 100, "nabiz": 5, "kalori": "yok"}, rapor=r)
+        self.assertEqual((e, a), (1, 2))
+        self.assertTrue(any(x.startswith("nabiz: 5 sınır dışı") for x in r))
+        self.assertTrue(any(x.startswith("kalori: sayı okunamadı") for x in r))
