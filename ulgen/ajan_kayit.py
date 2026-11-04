@@ -9,14 +9,17 @@ import time
 _KILIT = threading.Lock()
 _DURUM = {}
 KATALOG = {
-    "arastirma": {"ad": "Araştırma Ajanı", "ne": "Web'de arar, sayfaları okur, özetler.",
-                  "girdi": "Aranacak konu"},
+    "arastirma": {"ad": "Araştırma Ajanı", "girdi": "Aranacak konu ya da uzun görev",
+                  "ne": "Web'de arar, sayfaları okur; uzun görevleri madde madde "
+                        "araştırıp Obsidian'a yazar."},
     "saglik": {"ad": "Sağlık Ajanı", "girdi": "",
                "ne": "Dışa aktarılmış sağlık verisini özetler (tıbbi öneri vermez)."},
     "dosya": {"ad": "Dosya Ajanı", "ne": "Klasörlerde dosya arar, en yenileri bulur, özetler.",
               "girdi": "Aranacak sözcük (boş bırakılabilir)"},
     "sabah": {"ad": "Sabah Özeti", "ne": "Haber ve sağlık içeren sabah raporunu hazırlar.",
               "girdi": ""},
+    "kitap": {"ad": "Kitap Okuyucu", "girdi": "Dosya adı (boşsa gelen klasörü)",
+              "ne": "Taranmış kitap sayfalarını (PDF/resim) yerelde okuyup Obsidian'a yazar."},
 }
 
 
@@ -60,6 +63,12 @@ def sar(kimlik, islev):
         return sonuc
     sarili.__wrapped__ = islev
     return sarili
+
+
+def ilerleme(kimlik, metin):
+    """Çalışan ajanın özet alanına anlık ilerleme yazar (arayüz gösterir)."""
+    with _KILIT:
+        _kayit(kimlik)["ozet"] = _kisalt(metin, 300)
 
 
 def liste():

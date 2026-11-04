@@ -24,6 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
+from . import obsidyen_yaz, ocr, uzun_arastirma
 from . import saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
@@ -348,7 +349,8 @@ def istek_sinifi(ulgen, limit):
 
         def _ajan_calistir(self, veri):
             kimlik = veri.get("id")
-            girdi = str(veri.get("girdi", ""))[:300].strip()
+            sinir = uzun_arastirma.AZAMI_GOREV if kimlik == "arastirma" else 300
+            girdi = str(veri.get("girdi", ""))[:sinir].strip()
             if kimlik not in ajan_kayit.KATALOG:
                 return self._cevap(400, {"hata": "bilinmeyen ajan"})
             if any(k["id"] == kimlik and k["durum"] == "calisiyor"
@@ -360,6 +362,7 @@ def istek_sinifi(ulgen, limit):
                 "arastirma": lambda: ulgen.arastirma.arastir(girdi),
                 "saglik": lambda: ulgen.saglik.rapor(),
                 "sabah": lambda: ulgen.sabah.hazirla(),
+                "kitap": lambda: ulgen.kitap.isle(girdi),
                 "dosya": lambda: (ulgen.araclar.dosya_ajani.ara(girdi) if girdi
                                   else ulgen.araclar.dosya_ajani.en_yeni("")),
             }[kimlik]
@@ -479,6 +482,11 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
                                                      "tarayıcısından"})
                 return self._cevap(200, takvim.tekrar_ayari())
+            if yol == "/ocr/durum":
+                d = ocr.durum()
+                d["gelen"] = "~/ÜlgenVeri/gelen"
+                d["yazma"] = obsidyen_yaz.acik_mi()
+                return self._cevap(200, d)
             if yol == "/mac/durum":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
@@ -703,6 +711,23 @@ def istek_sinifi(ulgen, limit):
                 return
             self._cevap(200, {"tamam": True})
 
+        def _kitap_yukle(self):
+            """Taranmış PDF/resmi 'gelen' klasörüne alır (POST ham dosya,
+            ?ad=dosya.pdf). Gövde diske parça parça yazılır (≤ 600 MB)."""
+            q = parse_qs(urlparse(self.path).query)
+            ad = (q.get("ad") or [""])[0]
+            try:
+                uzunluk = int(self.headers.get("Content-Length", 0) or 0)
+            except ValueError:
+                uzunluk = 0
+            if not self._yetkili():
+                return
+            try:
+                yol = ocr.yukle(ad, self.rfile, uzunluk)
+            except ocr.OcrHatasi as hata:
+                return self._cevap(400, {"hata": str(hata)})
+            self._cevap(200, {"ad": os.path.basename(yol)})
+
         def _ses_yaz(self, tur):
             """Ham ses → metin (yerel, internetsiz). Gövde ≤ 8 MB."""
             try:
@@ -734,6 +759,8 @@ def istek_sinifi(ulgen, limit):
                 return self._ses_yaz(tur)
             if urlparse(self.path).path.startswith("/ses/klip/"):
                 return self._klip_yukle(tur)
+            if urlparse(self.path).path == "/kitap/yukle":
+                return self._kitap_yukle()
             if not tur.startswith("application/json"):
                 return self._cevap(415, {"hata": "application/json gerekli"})
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)

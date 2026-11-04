@@ -1,9 +1,10 @@
-"""Obsidian kasası dizini (YALNIZ OKUMA).
+"""Obsidian kasası dizini (bu modül YALNIZ OKUR; yazma ``obsidyen_yaz``da).
 
 Kasadaki .md ve .pdf dosyaları kendi yerinde kalır; Ülgen yalnızca şifreli
 veritabanında bir arama dizini tutar (FTS5). Tarama artımlıdır: yalnız
 değişen dosyalar yeniden okunur. Kasaya hiçbir şey yazılmaz/silinmez.
 Dizin her zaman kasadan yeniden üretilebilir (silinse bir şey kaybolmaz).
+Araştırma/OCR notları yalnız ``Ülgen/`` alt klasörüne ``obsidyen_yaz`` ile yazılır.
 """
 
 import os

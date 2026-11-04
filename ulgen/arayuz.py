@@ -1226,8 +1226,12 @@ async function ajanlarCiz() {
     if (a.ozet) { const o = document.createElement("div"); o.style.cssText = "font-size:13px;margin-top:6px;white-space:pre-wrap"; o.textContent = a.ozet; kart.appendChild(o); }
     const satir = document.createElement("div"); satir.style.cssText = "display:flex;gap:8px;margin-top:8px;flex-wrap:wrap";
     let girdi = null;
-    if (a.girdi) { girdi = document.createElement("input"); girdi.placeholder = a.girdi; girdi.maxLength = 300;
-      girdi.style.cssText = "flex:1;min-width:160px;padding:8px;border-radius:10px;border:1px solid var(--kenar);background:var(--kart);color:var(--yazi)"; satir.appendChild(girdi); }
+    if (a.girdi) {
+      const uzun = a.id === "arastirma";
+      girdi = document.createElement(uzun ? "textarea" : "input"); girdi.placeholder = a.girdi;
+      if (uzun) { girdi.rows = 4; girdi.maxLength = 60000; } else { girdi.maxLength = 300; }
+      girdi.style.cssText = "flex:1;min-width:160px;padding:8px;border-radius:10px;border:1px solid var(--kenar);background:var(--kart);color:var(--yazi);font:inherit";
+      satir.appendChild(girdi); }
     const dg = document.createElement("button"); dg.className = "dugme aktif"; dg.textContent = "Şimdi çalıştır";
     dg.disabled = a.durum === "calisiyor";
     dg.onclick = async () => {
@@ -1238,7 +1242,30 @@ async function ajanlarCiz() {
       catch (e) { alert("Ajan başlatılamadı: " + (e.message || e)); }
       ajanlarCiz();
     };
-    satir.appendChild(dg); kart.appendChild(satir); k.appendChild(kart);
+    satir.appendChild(dg);
+    if (a.id === "kitap") {
+      const yb = document.createElement("button"); yb.className = "dugme"; yb.textContent = "PDF / resim yükle";
+      const dsy = document.createElement("input"); dsy.type = "file"; dsy.multiple = true;
+      dsy.accept = ".pdf,.png,.jpg,.jpeg,.tif,.tiff,.bmp"; dsy.style.display = "none";
+      yb.onclick = () => dsy.click();
+      dsy.onchange = async () => {
+        yb.disabled = true; let tamam = 0;
+        for (const f of dsy.files) {
+          yb.textContent = "Yükleniyor: " + f.name;
+          try {
+            const h = { "Content-Type": "application/octet-stream" };
+            if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+            const r = await fetch("/kitap/yukle?ad=" + encodeURIComponent(f.name), { method: "POST", headers: h, body: f });
+            const j = await r.json();
+            if (j.hata) { alert(f.name + ": " + j.hata); } else { tamam++; }
+          } catch (e) { alert(f.name + " yüklenemedi: " + (e.message || e)); }
+        }
+        yb.disabled = false; yb.textContent = "PDF / resim yükle";
+        if (tamam) { alert(tamam + " dosya yüklendi. Okumaya başlamak için 'Şimdi çalıştır'a basın (girdi boş)."); }
+      };
+      satir.appendChild(yb); satir.appendChild(dsy);
+    }
+    kart.appendChild(satir); k.appendChild(kart);
   });
   clearTimeout(ajanZamani);
   if (calisan && aktifSekme === "ajanlar") ajanZamani = setTimeout(() => { if (aktifSekme === "ajanlar") ajanlarCiz().catch(() => {}); }, 3000);

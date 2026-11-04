@@ -17,6 +17,7 @@ from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani,
 from . import ajan_kayit, macsenk
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
+from .ocr import KitapAjani
 from .baglam import BaglamYoneticisi, kasa_alintilari
 from .beyin import BeyinHatasi, BeyinYonlendirici, KotaHatasi
 from .guvenlik import OnayIstegi, OnayYoneticisi, duyarli_mi, kod_ayikla
@@ -71,6 +72,8 @@ class Ulgen:
         self.arastirma.arastir = ajan_kayit.sar("arastirma", self.arastirma.arastir)
         self.saglik.rapor = ajan_kayit.sar("saglik", self.saglik.rapor)
         self.sabah.hazirla = ajan_kayit.sar("sabah", self.sabah.hazirla)
+        self.kitap = KitapAjani()
+        self.kitap.isle = ajan_kayit.sar("kitap", self.kitap.isle)
         self.araclar = Araclar(self.zamanlayici, self.hafiza, self.onay,
                                self.arastirma, self.saglik, self.sabah,
                                self.baglam)

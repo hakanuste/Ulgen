@@ -119,7 +119,14 @@ class ArastirmaAjani:
         return "%s\n%s" % (baslik, ozet) if baslik else ozet
 
     def arastir(self, sorgu, sayfa_sayisi=3):
-        """Arar, ilk sayfaları okur; kaynaklı birleşik metin döndürür."""
+        """Arar, ilk sayfaları okur; kaynaklı birleşik metin döndürür.
+
+        Uzun ya da çok satırlı görevler (300 karakter üstü) madde madde
+        yürütülür ve notlar Obsidian'a yazılır (``uzun_arastirma``)."""
+        if len(sorgu) > 300 or "\n" in sorgu.strip():
+            from . import uzun_arastirma
+            return uzun_arastirma.calistir(
+                sorgu, self, ilerleme=uzun_arastirma.ilerleme_yaz)
         try:
             sonuclar = self.ara(sorgu, adet=6)
         except Exception as hata:  # ağ ya da kütüphane hataları

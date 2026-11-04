@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.7.70
+- **Uzun araştırma:** Araştırma Ajanı artık uzunluğu ne olursa olsun (60 000 karaktere dek) görev alır. Görev maddelere ayrılır (örn. "Ad (eser, eser)" listesi → her ad bir madde), her madde için ayrı aramalar yapılıp sayfalar okunur, bulgular kaynak bağlantılarıyla Obsidian'da `Ülgen/Araştırmalar/<görev>/` altında not olur, sonda `00 Dizin` yazılır. Her madde sonrası denetim noktası: iptal/kapanma sonrası aynı görev verilince kalan maddelerden sürer. Telifli kitapların tam metni indirilmez; PDF bağlantıları notta listelenir.
+- **Obsidian'a yazma (kullanıcı onaylı):** Yalnız kasadaki `Ülgen/` klasörüne, yeni not olarak; sizin notlarınızın üzerine yazılmaz, hiçbir şey silinmez, yol kaçışı engelli. Ayar: `obsidyen_yazma`, `obsidyen_yazma_klasoru`. Kasa yoksa notlar `~/ÜlgenVeri/notlar/` altına yazılır.
+- **Kitap Okuyucu (yerel OCR):** Ajanlar sekmesinden PDF/resim yükleyin (ya da `~/ÜlgenVeri/gelen`); sayfalar tesseract ile yerelde okunur, `Ülgen/Kitaplar/` altına not olur (uzun kitaplar 40 sayfalık bölümlere ve bir dizin notuna ayrılır). Gömülü metni olan PDF sayfaları OCR'sız alınır. Sayfa sayfa denetim noktası. Kurulum: `brew install tesseract tesseract-lang poppler`. Kodlandı ve Linux'ta gerçek tesseract ile test edildi; Mac'te gerçek cihaz testi bekliyor.
+
 ## 2.7.69
 - `/saglik/ozet` yanıtında atlanma nedeni kısa `neden` alanı olarak ilk satırda ve değerin türüyle birlikte gelir (Kestirme sonuç önizlemesi kesiyor).
 

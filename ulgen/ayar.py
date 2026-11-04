@@ -49,6 +49,12 @@ VARSAYILAN = {
     "mac_senk": True,
     "mac_senk_dk": 10,
     "mac_bildirim": True,
+    # Obsidian'a yazma: yalnız kasadaki bu alt klasöre, yeni not olarak; kullanıcının
+    # kendi notlarının üzerine yazılmaz, hiçbir şey silinmez.
+    "obsidyen_yazma": True,
+    "obsidyen_yazma_klasoru": "Ülgen",
+    "ocr_dil": "tur+eng",          # tesseract dilleri
+    "ocr_dpi": 250,                # taranmış sayfa çözünürlüğü (yüksek = yavaş, doğru)
     "kota_sinirlari": {},          # örn. {"groq": {"rpm": 20}} belgeden düzeltme
     "kuyruk_omru_saat": 24,
     # Ücretli servise geçiş KODDA kapalıdır; böyle bir ayar yoktur.

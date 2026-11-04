@@ -26,4 +26,4 @@ def test_sar_hata_kaydeder_ve_firlatir():
 
 def test_liste_tum_ajanlari_icerir():
     ajan_kayit.sifirla()
-    assert {x["id"] for x in ajan_kayit.liste()} == {"arastirma", "saglik", "dosya", "sabah"}
+    assert {x["id"] for x in ajan_kayit.liste()} == {"arastirma", "saglik", "dosya", "sabah", "kitap"}

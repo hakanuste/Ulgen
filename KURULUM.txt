@@ -60,7 +60,8 @@ NE YAPAR
     - Dosya ajanı: yalnızca ayar.json "izinli_klasorler" içinde. PDF, DOCX ve metin
       dosyalarını okur, adda ve içerikte arar, en yeniyi bulur, özetler.
       Örnek: "dosya ara: finans raporu", "en son finans raporunu özetle".
-      Taranmış (resim) PDF'ler okunamaz; OCR yoktur.
+      Taranmış (resim) PDF'ler için Kitap Okuyucu ajanını kullanın (yerel OCR):
+      Terminal'e  brew install tesseract tesseract-lang poppler  yazın.
     - Hafıza şifreli: memory.json diskte AES-256-GCM ile şifrelidir. Anahtar Mac
       Anahtar Zinciri'nde, olmazsa ~/ÜlgenVeri/bellek.anahtar dosyasındadır.
       Anahtarı kaybederseniz dosya çözülemez (eskisi .bozuk adıyla saklanır).
