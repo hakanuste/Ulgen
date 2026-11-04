@@ -3,7 +3,7 @@
 Neden: Mac uyurken/kapalıyken hiçbir Ülgen kodu çalışmaz, Safari de yerel
 bildirim planlayamaz. iPhone'un KENDİ takvimi ise ağsız ve Mac'siz alarm
 çalar. Bu modül, ilaç planlarını, randevuları, saatli görevleri ve rutinleri
-bir .ics dosyasına çevirir; iPhone'a bir kez aktarılır.
+bir .ics dosyasına çevirir (sohbetten kurulan hatırlatıcılar dahil); iPhone'a bir kez aktarılır.
 
 Sınırlar (dürüst):
   * Alarm yalnızca ÇALAR; "aldım" yanıtı Ülgen'e dönmez. Yanıt Ülgen'e
@@ -191,5 +191,19 @@ def olustur(su_an=None):
                               else "Ülgen: " + ad.lower(),
                               z, 30 if g["tur"] == "randevu" else 15, "",
                               alarm, dilim=dilim)
+    # ---- sohbetten kurulan hatırlatıcılar (zamanı gelmemiş, onaysız)
+    for h in veritabani.sorgu(
+            "SELECT id, zaman, mesaj, kalici FROM hatirlaticilar WHERE "
+            "onaylandi=0 AND bildirildi=0", (), True):
+        z = datetime.strptime(h["zaman"], "%Y-%m-%d %H:%M")
+        if z < su_an:
+            continue
+        baslik = ("Hatırlatma: %s" % h["mesaj"] if ayrintili
+                  else "Ülgen: hatırlatma")
+        for k in range(tekrar_n if h["kalici"] else 1):
+            satirlar += _olay("hat-%d-%d@ulgen" % (h["id"], k),
+                              baslik if k == 0 else baslik + " (tekrar)",
+                              z + timedelta(minutes=k * aralik), 5, "",
+                              (0,), dilim=dilim)
     satirlar.append("END:VCALENDAR")
     return "\r\n".join(_katla(s) for s in satirlar) + "\r\n"

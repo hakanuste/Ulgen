@@ -54,6 +54,18 @@ class TakvimTesti(TemizVeri):
         rnd = ev["randevu-1@ulgen"]
         self.assertEqual(len(rnd.walk("VALARM")), 2)     # 60 dk önce + zamanında
 
+    def test_sohbet_hatirlaticisi_takvime_girer(self):
+        self.u.zamanlayici.hatirlatici_kur("20:15 su iç diye hatırlat", su_an=G1)
+        self.u.zamanlayici.hatirlatici_kur("yarın 09:00 ilaç al diye hatırlat",
+                                           su_an=G1)       # kalıcı
+        metin = takvim.olustur(G1)
+        ev = [str(e["UID"]) for e in olaylar(metin) if str(e["UID"]).startswith("hat-")]
+        self.assertEqual(len(ev), 1 + 6)                   # 1 normal + 6 kalıcı tekrar
+        self.assertIn("DTSTART;TZID=Europe/Istanbul:20300115T201500", metin)
+        self.assertNotIn("su iç", metin)                   # varsayılan başlık genel
+        self.u.zamanlayici.hatirlatici_sil(1)
+        self.assertNotIn("hat-1-", takvim.olustur(G1))
+
     def test_saat_dilimi_acik_yazilir(self):
         metin = takvim.olustur(G1)
         self.assertIn("DTSTART;TZID=Europe/Istanbul:", metin)

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.60
+- iPhone takvim aktarımına sohbetten kurulan hatırlatıcılar da eklendi (zamanı gelmemiş, onaysız olanlar; kalıcı olanlar ilaç gibi 6 tekrar alarmıyla). Başlık varsayılan olarak genel ("Ülgen: hatırlatma"). Yeni hatırlatıcı kurulunca ya da silinince dosyayı yeniden aktarmak gerekir. Gerçek iPhone testi bekliyor.
+
 ## 2.7.59
 - iPhone takvim aktarımı: olay saatleri artık "Europe/Istanbul" diliminde AÇIKÇA (sabit +03:00, VTIMEZONE) yazılır; eskiden "yüzen" saat yazılıyor, iPhone'un saat dilimi/geçersiz kılma ayarına göre alarm 1 saat kayabiliyordu. Ayar: `takvim_saat_dilimi` (boş = eski davranış). Kök neden iPhone'da henüz doğrulanmadı: dosyayı yeniden aktarıp denemek gerekiyor.
 
