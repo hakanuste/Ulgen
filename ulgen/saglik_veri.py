@@ -62,6 +62,19 @@ def sayi_oku(deger):
     return float(metin.replace(",", "."))
 
 
+def _deger(tur, ham):
+    """Tek sayı ya da satır satır liste (Kestirme'nin örnek listesi).
+    Listede adım/uyku/aktif dakika/kalori toplanır; nabızda ilk (en yeni)."""
+    if isinstance(ham, (list, tuple)):
+        parca = [str(x) for x in ham]
+    else:
+        parca = [x for x in re.split(r"[\r\n;]+", str(ham)) if x.strip()]
+    if len(parca) <= 1:
+        return sayi_oku(ham if not parca else parca[0])
+    sayilar = [sayi_oku(x) for x in parca]
+    return sayilar[0] if tur == "nabiz" else sum(sayilar)
+
+
 ALANLAR = (("adim", "adim", 1), ("nabiz", "nabiz", 1), ("uyku_dk", "uyku", 1),
            ("uyku_saat", "uyku", 60), ("aktif_dakika", "aktif_dakika", 1),
            ("kalori", "kalori", 1))
@@ -82,7 +95,7 @@ def ozet_ekle(veri, simdi=None):
         if alan not in veri or veri[alan] in (None, ""):
             continue
         try:
-            deger = sayi_oku(veri[alan]) * kat
+            deger = _deger(tur, veri[alan]) * kat
         except (TypeError, ValueError):
             atlanan += 1
             continue

@@ -36,7 +36,8 @@ görünür.
 Yeni kestirme > adı **Ülgen Sağlık**. Eylemleri sırayla ekleyin:
 
 1. **Sağlık Örneklerini Bul** — Tür: *Adım Sayısı*, Başlangıç Tarihi: *bugün*.
-   Ardından **İstatistikleri Hesapla** — *Toplam*. (Sonuç: adım toplamı.)
+   **İstatistikleri Hesapla eylemi gerekmez**: örneklerin *Değer* listesini
+   doğrudan gönderin, toplamı Ülgen yapar.
 2. **Sağlık Örneklerini Bul** — Tür: *Kalp Atış Hızı*, Sırala: *Başlangıç Tarihi,
    en yeni önce*, Sınır: *1*. (Sonuç: son nabız değeri.)
 3. İsteğe bağlı, **uyku**: **Sağlık Örneklerini Bul** — Tür: *Uyku Analizi*,
@@ -48,7 +49,7 @@ Yeni kestirme > adı **Ülgen Sağlık**. Eylemleri sırayla ekleyin:
    - Yöntem: **POST**
    - Başlıklar: `Authorization` = `Bearer ` + belirteciniz
    - İstek Gövdesi: **JSON**. Alanlar (tür *Sayı*):
-     `adim` = adım toplamı, `nabiz` = nabız değeri, `uyku_dk` = uyku toplamı
+     `adim` = adım örneklerinin *Değer* listesi (toplamı Ülgen yapar), `nabiz` = nabız değeri, `uyku_dk` = uyku toplamı
      (dakika; saat olarak göndermek isterseniz `uyku_saat`). Hepsi isteğe bağlıdır.
 5. İsteğe bağlı: **Bildirim Göster** — "Sağlık verisi Ülgen'e gönderildi".
 
@@ -67,6 +68,7 @@ Dürüst sınırlar:
   *Enable On Demand (beta)* açık olsa bile ilk istekte bağlanma gecikebilir; olmazsa
   kestirme hata verir ve o gün gönderilmez (ertesi gün toplam yine gelir).
 - Mac uykudaysa ya da Ülgen kapalıysa istek ulaşmaz.
+- Başlık olarak `Authorization: Bearer …` yerine `X-Ulgen-Token` = belirteç de olur.
 - Eski gelişme: `/saglik/veri` (tam ölçüm listesi, en çok 500 öğe) hâlâ çalışır.
 - Gerçek iPhone'da denenmedi; alan adları ve eylem adları iOS sürümünüze göre
   küçük farklar gösterebilir.

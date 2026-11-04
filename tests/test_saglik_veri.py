@@ -127,3 +127,16 @@ class SaglikVeri(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ListedenToplamTesti(TemizVeri):
+
+    def test_liste_toplanir_nabizda_ilk(self):
+        from ulgen import saglik_veri as sv
+        self.assertEqual(sv._deger("adim", "120\n80,5\n300"), 500.5)
+        self.assertEqual(sv._deger("adim", ["1", 2, "3"]), 6)
+        self.assertEqual(sv._deger("nabiz", "71\n64\n80"), 71)
+        self.assertEqual(sv._deger("adim", "8.421"), 8421)
+        e, a = sv.ozet_ekle({"adim": "100\n200\n300"})
+        self.assertEqual((e, a), (1, 0))
+        self.assertEqual(sv.bugun()["adim"], 600)

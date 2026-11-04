@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.64
+- Kestirme'de "İstatistikleri Hesapla" eylemi artık gerekmez: `adim`, `uyku_dk`, `aktif_dakika`, `kalori` alanlarına örneklerin değer listesi (satır satır) gönderilebilir, toplamı Ülgen yapar; `nabiz` listesinde ilk (en yeni) değer alınır.
+
 ## 2.7.63
 - Cihaz belirteci okuma toleranslı: Kestirmeler/Notlar'dan yapıştırmada gelen bölünmez boşluk, satır sonu gibi görünmez karakterler artık "yetkisiz"e yol açmaz. Yeni, daha kolay başlık: `X-Ulgen-Token: <belirteç>` ("Bearer" ve boşluk gerekmez).
 - Yetkisiz uzak istekler Sistem Durumu günlüğüne (kaynak "yetki") yazılır: başlık geldi mi, kaç karakter, Bearer ile mi başlıyor (belirtecin kendisi yazılmaz).
