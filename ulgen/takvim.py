@@ -14,6 +14,10 @@ Sınırlar (dürüst):
     başına en çok iki uyarı gösterir); her biri tek uyarılıdır.
   * Plan değişince dosyayı yeniden aktarın; UID sabit olduğundan çift kayıt
     oluşmaz ama silinen planın eski olayı iPhone'da kalır (elle silinir).
+  * Saatler "Europe/Istanbul" diliminde AÇIKÇA yazılır (sabit +03:00,
+    VTIMEZONE ile). Eskiden "yüzen" saat yazılıyordu; iPhone'da Takvim >
+    Saat Dilimi Geçersiz Kılma ya da cihaz dilimi farklıysa alarm bir saat
+    kayabiliyordu. Ayar ``takvim_saat_dilimi`` (boş = eski yüzen davranış).
   * Varsayılan başlıklar GENELDİR ("Ülgen: ilaç zamanı"): takvim iCloud'a
     senkronlanırsa ilaç adı bulutta görünmesin diye. ``takvim_ayrintili``
     ile ad yazılabilir.
@@ -68,15 +72,52 @@ def _katla(satir):
 
 
 def _zaman(dt):
-    return dt.strftime("%Y%m%dT%H%M%S")      # yüzen (cihaz saat dilimi)
+    return dt.strftime("%Y%m%dT%H%M%S")
+
+
+VARSAYILAN_DILIM = "Europe/Istanbul"
+
+
+def _dilim_adi():
+    """Ayardaki saat dilimi; boşsa 'yüzen' (cihazın saat dilimi) kullanılır."""
+    return str(ayar.yukle().get("takvim_saat_dilimi", VARSAYILAN_DILIM) or "")
+
+
+def _sabit_ofset(ad, su_an):
+    """Yaz saati uygulamayan bir dilimin '+0300' gibi ofseti; yoksa None."""
+    try:
+        from zoneinfo import ZoneInfo
+        z = ZoneInfo(ad)
+        a = datetime(su_an.year, 1, 1, tzinfo=z).utcoffset()
+        b = datetime(su_an.year, 7, 1, tzinfo=z).utcoffset()
+    except Exception:
+        return None
+    if a is None or a != b:
+        return None
+    dk = int(a.total_seconds() // 60)
+    isaret = "+" if dk >= 0 else "-"
+    return "%s%02d%02d" % (isaret, abs(dk) // 60, abs(dk) % 60)
+
+
+def _vtimezone(ad, su_an):
+    """Sabit ofsetli dilim için VTIMEZONE (cihazın yaz saati kuralına
+    bağımlı kalmasın diye); yaz saatli dilimlerde boş döner."""
+    ofset = _sabit_ofset(ad, su_an)
+    if not ofset:
+        return []
+    return ["BEGIN:VTIMEZONE", "TZID:" + ad, "BEGIN:STANDARD",
+            "DTSTART:20160101T000000", "TZOFFSETFROM:" + ofset,
+            "TZOFFSETTO:" + ofset, "TZNAME:" + ofset[:3], "END:STANDARD",
+            "END:VTIMEZONE"]
 
 
 def _olay(uid, baslik, bas, sure_dk=5, rrule="", alarmlar=(0,), simdi=None,
-          aciklama=""):
+          aciklama="", dilim=""):
+    tz = ";TZID=" + dilim if dilim else ""
     s = ["BEGIN:VEVENT", "UID:" + uid,
          "DTSTAMP:" + (simdi or datetime.utcnow()).strftime("%Y%m%dT%H%M%SZ"),
-         "DTSTART:" + _zaman(bas),
-         "DTEND:" + _zaman(bas + timedelta(minutes=sure_dk)),
+         "DTSTART%s:%s" % (tz, _zaman(bas)),
+         "DTEND%s:%s" % (tz, _zaman(bas + timedelta(minutes=sure_dk))),
          "SUMMARY:" + _kac(baslik)]
     if rrule:
         s.append("RRULE:" + rrule)
@@ -100,7 +141,11 @@ def olustur(su_an=None):
     aralik = max(1, int(a.get("ilac_tekrar_dk", 5)))
     satirlar = ["BEGIN:VCALENDAR", "VERSION:2.0",
                 "PRODID:-//Ulgen//Takvim 1.0//TR", "CALSCALE:GREGORIAN",
-                "X-WR-CALNAME:Ülgen", "X-WR-TIMEZONE:Europe/Istanbul"]
+                "X-WR-CALNAME:Ülgen"]
+    dilim = _dilim_adi()
+    if dilim:
+        satirlar.append("X-WR-TIMEZONE:" + dilim)
+        satirlar += _vtimezone(dilim, su_an)
     gun0 = datetime.combine(su_an.date(), datetime.min.time())
     # ---- ilaç planları: saat başına tekrar_n ayrı olay (5 dk arayla)
     for p in veritabani.sorgu(
@@ -121,7 +166,7 @@ def olustur(su_an=None):
                               baslik if k == 0 else baslik + " (tekrar)",
                               bas, 5, rr, (0,), aciklama=(
                                   "Ülgen kapalıyken de çalar. Aldıysanız "
-                                  "Ülgen'de 'aldım' yazın."))
+                                  "Ülgen'de 'aldım' yazın."), dilim=dilim)
     # ---- randevular, saatli görevler, rutinler
     for g in veritabani.sorgu(
             "SELECT * FROM gorev WHERE durum='acik'", (), True):
@@ -132,7 +177,8 @@ def olustur(su_an=None):
                   "FREQ=WEEKLY;BYDAY=" + ",".join(GUN_KODU[x] for x in gunler))
             satirlar += _olay("rutin-%d@ulgen" % g["id"], g["baslik"] if
                               ayrintili else "Ülgen: rutin",
-                              gun0.replace(hour=sa, minute=dk), 15, rr, (0,))
+                              gun0.replace(hour=sa, minute=dk), 15, rr, (0,),
+                              dilim=dilim)
         elif g["zaman"]:
             z = datetime.strptime(g["zaman"], "%Y-%m-%d %H:%M")
             if z < su_an:
@@ -144,6 +190,6 @@ def olustur(su_an=None):
                               ("%s: %s" % (ad, g["baslik"])) if ayrintili
                               else "Ülgen: " + ad.lower(),
                               z, 30 if g["tur"] == "randevu" else 15, "",
-                              alarm)
+                              alarm, dilim=dilim)
     satirlar.append("END:VCALENDAR")
     return "\r\n".join(_katla(s) for s in satirlar) + "\r\n"

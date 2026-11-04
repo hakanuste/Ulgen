@@ -43,6 +43,9 @@ VARSAYILAN = {
     # Arayüzden kapatılan beyinler (örn. ["gemini"]); kapalı beyin hiç denenmez.
     "kapali_beyinler": [],
     # Mac Takvim/Hatırlatıcılar → Ülgen eşitlemesi ve Ülgen → Mac bildirimi
+    # iPhone takvim aktarımı: olay saatleri bu dilimde yazılır (cihazın yaz
+    # saati kuralına bağlı kalmaz). Boş = "yüzen" (cihazın saat dilimi).
+    "takvim_saat_dilimi": "Europe/Istanbul",
     "mac_senk": True,
     "mac_senk_dk": 10,
     "mac_bildirim": True,

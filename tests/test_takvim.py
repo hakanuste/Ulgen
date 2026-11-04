@@ -54,6 +54,36 @@ class TakvimTesti(TemizVeri):
         rnd = ev["randevu-1@ulgen"]
         self.assertEqual(len(rnd.walk("VALARM")), 2)     # 60 dk önce + zamanında
 
+    def test_saat_dilimi_acik_yazilir(self):
+        metin = takvim.olustur(G1)
+        self.assertIn("DTSTART;TZID=Europe/Istanbul:", metin)
+        self.assertIn("BEGIN:VTIMEZONE\r\nTZID:Europe/Istanbul", metin)
+        self.assertIn("TZOFFSETTO:+0300", metin)
+        self.assertNotIn("\r\nDTSTART:2", metin.replace("DTSTART:20160101", ""))
+        try:
+            import icalendar
+        except ImportError:
+            return
+        e = [x for x in olaylar(metin) if str(x["UID"]) == "ilac-1-0@ulgen"][0]
+        bas = e["DTSTART"].dt
+        self.assertEqual((bas.hour, bas.minute), (8, 0))
+        self.assertEqual(bas.utcoffset().total_seconds(), 3 * 3600)
+        self.assertTrue(icalendar)
+
+    def test_dilim_bos_ise_yuzen(self):
+        with open(ayar.AYAR_DOSYASI, "w", encoding="utf-8") as f:
+            json.dump({"takvim_saat_dilimi": ""}, f)
+        metin = takvim.olustur(G1)
+        self.assertNotIn("TZID", metin)
+        self.assertIn("\r\nDTSTART:2", metin)
+
+    def test_yaz_saatli_dilimde_vtimezone_yok_ama_tzid_var(self):
+        with open(ayar.AYAR_DOSYASI, "w", encoding="utf-8") as f:
+            json.dump({"takvim_saat_dilimi": "Europe/Berlin"}, f)
+        metin = takvim.olustur(G1)
+        self.assertIn("DTSTART;TZID=Europe/Berlin:", metin)
+        self.assertNotIn("VTIMEZONE", metin)
+
     def test_varsayilan_basliklar_genel_ilac_adi_yok(self):
         metin = takvim.olustur(G1)
         for yasak in ("Alfa", "Beta", "yemekten", "diş hekimi", "yürüyüş"):

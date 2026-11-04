@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.59
+- iPhone takvim aktarımı: olay saatleri artık "Europe/Istanbul" diliminde AÇIKÇA (sabit +03:00, VTIMEZONE) yazılır; eskiden "yüzen" saat yazılıyor, iPhone'un saat dilimi/geçersiz kılma ayarına göre alarm 1 saat kayabiliyordu. Ayar: `takvim_saat_dilimi` (boş = eski davranış). Kök neden iPhone'da henüz doğrulanmadı: dosyayı yeniden aktarıp denemek gerekiyor.
+
 ## 2.7.58
 - `Ülgen/eski` klasörü her güncellemeden sonra budanır: güncelleme yedeklerinden en yeni 3, eski uygulama simgesi ve eski kod kopyasından en yeni 1 kalır. Geri alma (Ayarlar > Güncelleme) en yeni yedekle çalışmaya devam eder.
 
