@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.63
+- Cihaz belirteci okuma toleranslı: Kestirmeler/Notlar'dan yapıştırmada gelen bölünmez boşluk, satır sonu gibi görünmez karakterler artık "yetkisiz"e yol açmaz. Yeni, daha kolay başlık: `X-Ulgen-Token: <belirteç>` ("Bearer" ve boşluk gerekmez).
+- Yetkisiz uzak istekler Sistem Durumu günlüğüne (kaynak "yetki") yazılır: başlık geldi mi, kaç karakter, Bearer ile mi başlıyor (belirtecin kendisi yazılmaz).
+
 ## 2.7.62
 - Sağlık ajanı artık iPhone Kestirmesi'nin gönderdiği ölçümleri de okur (`saglik_olcum`); eskiden yalnız dışa aktarılan dosyaya (export.xml/csv/json) bakıyordu ve Kestirme verisini "bulunamadı" diye görmüyordu. Dosya ve Kestirme verisi birleşir, aynı gün için Kestirme geçerli olur.
 

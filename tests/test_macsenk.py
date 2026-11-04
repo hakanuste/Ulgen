@@ -186,3 +186,22 @@ class TakvimAyarSunucuTesti(SunucuTesti):
         d, _ = istek(self.port, "/takvim/ayar", "POST",
                      json.dumps({"tekrar": 99}), JSON)
         self.assertEqual(d, 400)
+
+
+class BelirtecBicimleriTesti(SunucuTesti):
+
+    def _dene(self, basliklar):
+        return istek(self.port, "/saglik/ozet", "POST", '{"adim": 5}',
+                     dict(JSON, **basliklar), yetkisiz=True)[0]
+
+    def test_gorunmez_karakterli_ve_ozel_baslik(self):
+        from ulgen import cihazlar
+        t = cihazlar.olustur("kestirme", 1)[1]
+        self.assertEqual(self._dene({"Authorization": "Bearer " + t}), 200)
+        # yapıştırmadan gelen bölünmez boşluk (UTF-8: \xc2\xa0) ve fazladan boşluk
+        self.assertEqual(self._dene(
+            {"Authorization": "Bearer " + t + "  "}), 200)
+        self.assertEqual(self._dene({"Authorization": "bearer " + t}), 401)
+        self.assertEqual(self._dene({"X-Ulgen-Token": " " + t + " "}), 200)
+        self.assertEqual(self._dene({"X-Ulgen-Token": t[:-1] + "x"}), 401)
+        self.assertEqual(self._dene({}), 401)

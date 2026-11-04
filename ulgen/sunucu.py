@@ -296,9 +296,17 @@ def istek_sinifi(ulgen, limit):
             return True
 
         def _belirtec(self):
+            # Kestirmeler / Notlar'dan yapıştırılan metinde bölünmez boşluk,
+            # satır sonu gibi görünmez karakterler olabilir; belirteç yalnız
+            # güvenli karakterlerden oluşur, gerisi atılır.
             baslik = self.headers.get("Authorization", "")
-            if baslik.startswith("Bearer "):
-                return baslik[7:]
+            m = re.match(r"\s*Bearer[^A-Za-z0-9_\-]*([A-Za-z0-9_\-]+)", baslik)
+            if m:
+                return m.group(1)
+            ozel = re.fullmatch(r"[^A-Za-z0-9_\-]*([A-Za-z0-9_\-]+)[^A-Za-z0-9_\-]*",
+                                self.headers.get("X-Ulgen-Token", ""))
+            if ozel:
+                return ozel.group(1)
             for parca in (self.headers.get("Cookie") or "").split(";"):
                 ad, _, deger = parca.strip().partition("=")
                 if ad == "ulgen_oturum":
@@ -320,6 +328,19 @@ def istek_sinifi(ulgen, limit):
                 return True
             if not yerel:
                 limit.hata(ip)
+                # Teşhis için (belirtecin kendisi yazılmaz): başlık geldi mi,
+                # kaç karakter, biçim nasıl.
+                try:
+                    ab = self.headers.get("Authorization", "")
+                    veritabani.gunluge_yaz(
+                        "uyari", "yetki",
+                        "yetkisiz uzak istek %s: Authorization %s (%d karakter, "
+                        "Bearer ile başlıyor: %s), X-Ulgen-Token %s" % (
+                            self.path[:40], "var" if ab else "YOK", len(ab),
+                            ab.startswith("Bearer"),
+                            "var" if self.headers.get("X-Ulgen-Token") else "yok"))
+                except Exception:
+                    pass
             self._cevap(401, {"hata": "yetkisiz", "giris": self.server.yerel})
             return False
 
