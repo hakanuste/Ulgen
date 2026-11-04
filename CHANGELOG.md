@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.66
+- Kestirmeler özel başlığı iletmediğinde: `/saglik/ozet` belirteci JSON gövdesindeki `belirtec` alanından da kabul eder (yalnız bu yolda). Günlük de gövdede belirteç olup olmadığını yazar.
+
 ## 2.7.65
 - "Hiç değer yok" hatası artık Kestirme'nin gönderdiği alanları ve değerlerini gösterir (boş değişken teşhisi için).
 

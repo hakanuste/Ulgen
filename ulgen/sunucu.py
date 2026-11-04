@@ -311,7 +311,7 @@ def istek_sinifi(ulgen, limit):
                 ad, _, deger = parca.strip().partition("=")
                 if ad == "ulgen_oturum":
                     return deger
-            return ""
+            return getattr(self, "_govde_belirteci", "")
 
         def _yetkili(self):
             if self.server.yerel and not ayar.yukle().get("yerel_yetki", True):
@@ -335,10 +335,12 @@ def istek_sinifi(ulgen, limit):
                     veritabani.gunluge_yaz(
                         "uyari", "yetki",
                         "yetkisiz uzak istek %s: Authorization %s (%d karakter, "
-                        "Bearer ile başlıyor: %s), X-Ulgen-Token %s" % (
+                        "Bearer ile başlıyor: %s), X-Ulgen-Token %s, gövdede belirtec %s" % (
                             self.path[:40], "var" if ab else "YOK", len(ab),
                             ab.startswith("Bearer"),
-                            "var" if self.headers.get("X-Ulgen-Token") else "yok"))
+                            "var" if self.headers.get("X-Ulgen-Token") else "yok",
+                            "var" if getattr(self, "_govde_belirteci", "")
+                            else "yok"))
                 except Exception:
                     pass
             self._cevap(401, {"hata": "yetkisiz", "giris": self.server.yerel})
@@ -735,6 +737,13 @@ def istek_sinifi(ulgen, limit):
             if not tur.startswith("application/json"):
                 return self._cevap(415, {"hata": "application/json gerekli"})
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)
+            self._govde_belirteci = ""
+            if (urlparse(self.path).path == "/saglik/ozet"
+                    and isinstance(veri, dict)):
+                # Kestirmeler özel başlığı iletmeyebilir: yalnız bu yolda
+                # belirteç JSON gövdesinden de (alan: belirtec) okunur.
+                self._govde_belirteci = re.sub(
+                    r"[^A-Za-z0-9_\-]", "", str(veri.get("belirtec", "")))
             if not self._yetkili():
                 return
             if urlparse(self.path).path == "/ajanlar/calistir":

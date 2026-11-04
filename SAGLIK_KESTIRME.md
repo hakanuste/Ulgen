@@ -69,6 +69,7 @@ Dürüst sınırlar:
   kestirme hata verir ve o gün gönderilmez (ertesi gün toplam yine gelir).
 - Mac uykudaysa ya da Ülgen kapalıysa istek ulaşmaz.
 - Başlık olarak `Authorization: Bearer …` yerine `X-Ulgen-Token` = belirteç de olur.
+- Başlık hiç iletilmezse (günlükte "Authorization YOK"): JSON gövdesine metin alanı `belirtec` = belirteç ekleyin.
 - Eski gelişme: `/saglik/veri` (tam ölçüm listesi, en çok 500 öğe) hâlâ çalışır.
 - Gerçek iPhone'da denenmedi; alan adları ve eylem adları iOS sürümünüze göre
   küçük farklar gösterebilir.

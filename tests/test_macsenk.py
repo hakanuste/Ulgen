@@ -205,3 +205,19 @@ class BelirtecBicimleriTesti(SunucuTesti):
         self.assertEqual(self._dene({"X-Ulgen-Token": " " + t + " "}), 200)
         self.assertEqual(self._dene({"X-Ulgen-Token": t[:-1] + "x"}), 401)
         self.assertEqual(self._dene({}), 401)
+
+    def test_govdede_belirtec(self):
+        from ulgen import cihazlar
+        t = cihazlar.olustur("kestirme", 1)[1]
+        d, g = istek(self.port, "/saglik/ozet", "POST",
+                     json.dumps({"belirtec": t + " \u00a0", "adim": 5}), JSON,
+                     yetkisiz=True)
+        self.assertEqual(d, 200)
+        d, _ = istek(self.port, "/saglik/ozet", "POST",
+                     json.dumps({"belirtec": t[:-1] + "x", "adim": 5}), JSON,
+                     yetkisiz=True)
+        self.assertEqual(d, 401)
+        d, _ = istek(self.port, "/sohbet", "POST",
+                     json.dumps({"belirtec": t, "metin": "a"}), JSON,
+                     yetkisiz=True)
+        self.assertEqual(d, 401)      # yalnız /saglik/ozet'te geçerli
