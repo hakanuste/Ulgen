@@ -107,7 +107,8 @@ def ozet_ekle(veri, simdi=None, rapor=None):
         except (TypeError, ValueError):
             atlanan += 1
             if rapor is not None:
-                rapor.append("%s: sayı okunamadı (%r)" % (alan, str(veri[alan])[:40]))
+                rapor.append("%s: sayı okunamadı (%s %r)" % (
+                    alan, type(veri[alan]).__name__, str(veri[alan])[:30]))
             continue
         alt, ust = TURLER[tur]
         if not alt <= deger <= ust:

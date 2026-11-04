@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.69
+- `/saglik/ozet` yanıtında atlanma nedeni kısa `neden` alanı olarak ilk satırda ve değerin türüyle birlikte gelir (Kestirme sonuç önizlemesi kesiyor).
+
 ## 2.7.68
 - `/saglik/ozet` yanıtı atlanan alanın nedenini söyler (`atlanan_nedenler`: sayı okunamadı / sınır dışı).
 

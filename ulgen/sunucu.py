@@ -959,9 +959,10 @@ def istek_sinifi(ulgen, limit):
                     e, a = saglik_veri.ozet_ekle(veri, rapor=nedenler)
                 except saglik_veri.SaglikHatasi as hata:
                     return self._cevap(400, {"hata": str(hata)})
-                yanit = {"eklenen": e, "atlanan": a}
-                if nedenler:
-                    yanit["atlanan_nedenler"] = nedenler
+                yanit = {}
+                if nedenler:             # kısa ve ilk satırda: Kestirme önizlemesi keser
+                    yanit["neden"] = " | ".join(nedenler)[:90]
+                yanit.update({"eklenen": e, "atlanan": a})
                 return self._cevap(200, yanit)
             if urlparse(self.path).path == "/saglik/veri":
                 try:
