@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from urllib.parse import urljoin, urlparse
 
-from . import ayar
+from . import ayar, veritabani
 from . import iptal
 from .beyin import BeyinHatasi
 
@@ -286,17 +286,72 @@ class SaglikAjani:
             cikti["uyku_saat"] = uyku
         return cikti.reset_index()
 
+    def _kestirme_tablo(self):
+        """iPhone Kestirmesi'nin gönderdiği (veritabanındaki) ölçümleri günlük
+        tabloya çevirir; veri yoksa ya da okunamazsa boş tablo."""
+        import pandas as pd
+        sinir = (datetime.now() - timedelta(days=self.GUN_SINIRI)).strftime(
+            "%Y-%m-%d")
+        try:
+            satirlar = veritabani.sorgu(
+                "SELECT tur, deger, zaman FROM saglik_olcum WHERE zaman >= ? "
+                "ORDER BY zaman", (sinir,), True)
+        except Exception:
+            satirlar = []
+        gunluk = {}
+        for r in satirlar:
+            g = gunluk.setdefault(r["zaman"][:10], {
+                "adim": None, "nabizlar": [], "uyku_dk": None})
+            if r["tur"] == "adim":
+                g["adim"] = max(r["deger"], g["adim"] or 0)
+            elif r["tur"] == "nabiz":
+                g["nabizlar"].append(r["deger"])
+            elif r["tur"] == "uyku":
+                g["uyku_dk"] = (g["uyku_dk"] or 0) + r["deger"]
+        cikti = []
+        for gun, d in sorted(gunluk.items()):
+            n = pd.Series(d["nabizlar"], dtype="float64")
+            cikti.append({
+                "tarih": gun, "adim": d["adim"],
+                "nabiz_ort": n.mean() if len(n) else None,
+                "nabiz_dinlenme": n.quantile(0.1) if len(n) else None,
+                "nabiz_maks": n.max() if len(n) else None,
+                "uyku_saat": d["uyku_dk"] / 60.0 if d["uyku_dk"] else None})
+        return pd.DataFrame(cikti)
+
     def yukle(self, yol=None):
-        """Sağlık verisini yükleyip günlük bir DataFrame döndürür."""
-        yol = yol or self.dosya_bul()
-        if yol is None:
+        """Sağlık verisini yükleyip günlük bir DataFrame döndürür.
+
+        ``yol`` verilirse yalnız o dosya okunur. Verilmezse klasördeki en yeni
+        dışa aktarım dosyası ile iPhone Kestirmesi'nin gönderdiği ölçümler
+        birleştirilir (aynı gün için Kestirme verisi geçerli olur)."""
+        import pandas as pd
+        if yol:
+            if yol.lower().endswith(".xml"):
+                return self._apple_xml_oku(yol)
+            return self._tablo_oku(yol)
+        parcalar = []
+        dosya = self.dosya_bul()
+        if dosya:
+            ilk = (self._apple_xml_oku(dosya) if dosya.lower().endswith(".xml")
+                   else self._tablo_oku(dosya))
+            if len(ilk):
+                parcalar.append(ilk)
+        kestirme = self._kestirme_tablo()
+        if len(kestirme):
+            parcalar.append(kestirme)
+        if not parcalar:
             raise FileNotFoundError(
-                "Sağlık verisi bulunamadı. iPhone'da Sağlık uygulaması > "
-                "profil resminiz > Tüm Sağlık Verilerini Dışa Aktar. Çıkan "
-                "export.xml dosyasını şu klasöre koyun: %s" % self.klasor())
-        if yol.lower().endswith(".xml"):
-            return self._apple_xml_oku(yol)
-        return self._tablo_oku(yol)
+                "Sağlık verisi bulunamadı. İki yol var: (1) iPhone Kestirmesi "
+                "veriyi Ülgen'e gönderir (SAGLIK_KESTIRME.md); (2) Sağlık "
+                "uygulaması > profil resminiz > Tüm Sağlık Verilerini Dışa "
+                "Aktar, çıkan export.xml dosyasını şu klasöre koyun: %s"
+                % self.klasor())
+        if len(parcalar) == 1:
+            return parcalar[0]
+        tablo = pd.concat(parcalar, ignore_index=True)
+        return (tablo.drop_duplicates("tarih", keep="last")
+                .sort_values("tarih").reset_index(drop=True))
 
     # ----------------------------------------------------------- analiz
     @staticmethod

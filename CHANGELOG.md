@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.62
+- Sağlık ajanı artık iPhone Kestirmesi'nin gönderdiği ölçümleri de okur (`saglik_olcum`); eskiden yalnız dışa aktarılan dosyaya (export.xml/csv/json) bakıyordu ve Kestirme verisini "bulunamadı" diye görmüyordu. Dosya ve Kestirme verisi birleşir, aynı gün için Kestirme geçerli olur.
+
 ## 2.7.61
 - iPhone alarm tekrarı ayarlanabilir: Ayarlar > "iPhone alarmı: tekrar" (tekrar sayısı 1/2/3/6, aralık 5/10/15/30/60 dk). iPhone takvimi "aldım" yanıtını bilemediği için eskiden her ilaç saatinde 6 alarm çalıyordu. Değişince dosyayı yeniden aktarmak gerekir. Gerçek iPhone testi bekliyor.
 

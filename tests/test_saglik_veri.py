@@ -8,6 +8,40 @@ from ulgen import saglik_veri, sunucu, veritabani
 from ulgen.cekirdek import Ulgen
 
 
+class AjanKestirmeVerisiniGorur(TemizVeri):
+
+    def test_dosya_yokken_kestirme_verisi_kullanilir(self):
+        u = Ulgen()
+        self.assertIn("Sağlık verisi bulunamadı", u.saglik.rapor())
+        bugun = datetime.now()
+        d = bugun.strftime("%Y-%m-%d")
+        saglik_veri.ekle([
+            {"tur": "adim", "deger": 6000, "zaman": d + "T12:00:00"},
+            {"tur": "nabiz", "deger": 70, "zaman": d + "T10:00:00"},
+            {"tur": "nabiz", "deger": 90, "zaman": d + "T11:00:00"},
+            {"tur": "uyku", "deger": 420, "zaman": d + "T06:00:00"}])
+        yanit = u.saglik.rapor()
+        self.assertIn("Sağlık özeti", yanit)
+        self.assertIn("6000", yanit)
+        df = u.saglik.yukle()
+        self.assertEqual(float(df.iloc[-1]["uyku_saat"]), 7.0)
+        self.assertEqual(float(df.iloc[-1]["nabiz_ort"]), 80.0)
+
+    def test_dosya_ve_kestirme_birlesir_kestirme_oncelikli(self):
+        import os
+        u = Ulgen()
+        klasor = u.saglik.klasor()
+        os.makedirs(klasor, exist_ok=True)
+        bugun = datetime.now().strftime("%Y-%m-%d")
+        with open(os.path.join(klasor, "ozet.csv"), "w", encoding="utf-8") as f:
+            f.write("tarih,adim\n2020-01-01,1000\n%s,100\n" % bugun)
+        saglik_veri.ekle([{"tur": "adim", "deger": 5000,
+                           "zaman": bugun + "T12:00:00"}])
+        df = u.saglik.yukle()
+        self.assertEqual(float(df[df["tarih"] == bugun].iloc[0]["adim"]), 5000.0)
+        self.assertIn("2020-01-01", list(df["tarih"]))
+
+
 class KestirmeOzeti(TemizVeri):
 
     def test_sayi_oku_turkce_bicimler(self):
