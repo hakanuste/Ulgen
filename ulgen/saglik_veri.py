@@ -107,8 +107,10 @@ def ozet_ekle(veri, simdi=None):
             zaman = gun + "T12:00:00"
         olcumler.append({"tur": tur, "deger": deger, "zaman": zaman})
     if not olcumler and not atlanan:
-        raise SaglikHatasi("Hiç değer yok (adim, nabiz, uyku_saat, "
-                           "uyku_dk, aktif_dakika, kalori)")
+        gelen = ", ".join("%s=%r" % (str(k)[:20], str(v)[:20])
+                          for k, v in list(veri.items())[:8]) or "boş"
+        raise SaglikHatasi("Hiç değer yok (adim, nabiz, uyku_saat, uyku_dk, "
+                           "aktif_dakika, kalori). Gelen: " + gelen)
     e, a = ekle(olcumler)
     return e, a + atlanan
 

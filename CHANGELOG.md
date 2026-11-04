@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.65
+- "Hiç değer yok" hatası artık Kestirme'nin gönderdiği alanları ve değerlerini gösterir (boş değişken teşhisi için).
+
 ## 2.7.64
 - Kestirme'de "İstatistikleri Hesapla" eylemi artık gerekmez: `adim`, `uyku_dk`, `aktif_dakika`, `kalori` alanlarına örneklerin değer listesi (satır satır) gönderilebilir, toplamı Ülgen yapar; `nabiz` listesinde ilk (en yeni) değer alınır.
 
