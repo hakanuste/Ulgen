@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
-from . import ajan_kayit, macsenk
+from . import ajan_kayit, dogrulama, macsenk
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -191,9 +191,21 @@ class Ulgen:
             duyarli = self._duyarli_tur
         self._kaydet("kullanici", metin, duyarli)
         self._kaydet("asistan", yanit, duyarli)
+        if (beyin_adi and beyin_adi != "hızlı komut"
+                and dogrulama.uygun_mu(
+                    metin, yanit, self.araclar.kisisel_kullanildi)):
+            dogrulama.arka_planda(yanit, self.arastirma,
+                                  self.bildir)
         return {"yanit": yanit, "beyin": beyin_adi}
 
     def _isle(self, metin):
+        dogru = dogrulama.duzeltme_mi(metin)
+        if dogru:
+            self.hafiza.ekle("bilgi", "Kullanıcı düzeltmesi: " + dogru,
+                             kaynak="kullanici")
+            self._duyarli_tur = True
+            return ("Düzeltmenizi kaydettim: %s. Bunu doğru kabul "
+                    "edeceğim." % dogru[:200]), "hızlı komut"
         kod = kod_ayikla(metin)
         if kod:
             return self.onay.onayla(kod), None

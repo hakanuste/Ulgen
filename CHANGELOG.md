@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.74
+- **Yanıt doğrulayıcı:** Ülgen gerçek bilgi içeren (sayı/özel ad geçen) bir yanıt verdikten sonra, arka planda iddiaları web kaynaklarıyla karşılaştırır ve işi bitince KISA bir bildirim yollar: kaç iddia kaynaklarda destekleniyor, hangilerini net bulamadı, örnek kaynak. Doğruysa bir şey demenize gerek yok; yanlış gördüğünüzü `yanlış: <doğrusu>` diye yazarsanız düzeltme hafızaya kullanıcı bilgisi olarak kaydedilir. Kişisel/duyarlı/sağlıkla ilgili konuşmalar ve kısa yanıtlar hiç doğrulanmaz; web'e yalnızca iddia cümlesi gider. Ayar: `dogrulama` (varsayılan açık). Kurallı karşılaştırmadır (anahtar sayı ve özel adların kaynakta bulunması); sayfanın kendisi yanlışsa anlayamaz. Kodlandı, gerçek cihaz testi bekliyor.
+
 ## 2.7.73
 - **Araç çağrısı ayrıştırma:** Bazı modeller aracı JSON yerine `<arac>ad</arac><parametreler>{...}` etiketleriyle çağırıyordu; bu çağrı çalışmayıp sohbette ham metin olarak görünüyordu (örn. Obsidian araması hiç yapılmıyordu). Etiketli biçim artık tanınır ve araç çalışır.
 - **Obsidian araması ek alan sözcükleri bulur:** "aracım" gibi ekli bir sözcük, notlardaki "araç" kökünü de arar (kök eşleşmesi).

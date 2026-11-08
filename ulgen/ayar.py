@@ -51,6 +51,8 @@ VARSAYILAN = {
     "mac_bildirim": True,
     # Mac'te hap/ilaç ve hatırlatmaları sesli okur
     "hatirlatma_sesi": True,
+    # Gerçek bilgi içeren yanıtları web kaynaklarıyla arka planda doğrular
+    "dogrulama": True,
     # Obsidian'a yazma: yalnız kasadaki bu alt klasöre, yeni not olarak; kullanıcının
     # kendi notlarının üzerine yazılmaz, hiçbir şey silinmez.
     "obsidyen_yazma": True,
