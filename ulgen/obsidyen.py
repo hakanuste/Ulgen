@@ -199,7 +199,12 @@ def ara(metin, adet=3):
     if not kelimeler:
         return []
     tara()                                   # artımlı, 5 dakikada bir
-    ifade = " OR ".join('"%s"*' % k.replace('"', "") for k in kelimeler)
+    # Türkçe ekler: "aracim" kök "arac"ı da bulsun
+    aranacak = list(kelimeler)
+    for k in kelimeler:
+        if len(k) >= 5 and k[:max(4, len(k) - 3)] not in aranacak:
+            aranacak.append(k[:max(4, len(k) - 3)])
+    ifade = " OR ".join('"%s"*' % k.replace('"', "") for k in aranacak)
     try:
         satirlar = veritabani.sorgu(
             "SELECT yol FROM not_fts WHERE not_fts MATCH ? "

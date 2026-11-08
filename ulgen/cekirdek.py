@@ -36,8 +36,28 @@ tool results. Available tools:
 %s"""
 
 
+XML_ARAC = re.compile(r"<arac>\s*([\w.-]+)\s*</arac>", re.IGNORECASE)
+XML_PARAMETRE = re.compile(
+    r"<parametreler>\s*(\{.*?\})\s*</(?:parametreler|param\w*)>",
+    re.IGNORECASE | re.DOTALL)
+
+
 def arac_cagrisi_ayikla(metin):
-    """Model yanıtında araç çağrısı varsa (ad, parametreler) döndürür."""
+    """Model yanıtında araç çağrısı varsa (ad, parametreler) döndürür.
+
+    Biçim JSON'dur; bazı modeller ``<arac>ad</arac><parametreler>{..}`` gibi
+    etiketli biçim de üretir, o da kabul edilir."""
+    ad = XML_ARAC.search(metin)
+    if ad:
+        parametreler = {}
+        p = XML_PARAMETRE.search(metin)
+        if p:
+            try:
+                nesne = json.loads(p.group(1))
+                parametreler = nesne if isinstance(nesne, dict) else {}
+            except ValueError:
+                pass
+        return ad.group(1), parametreler
     for eslesme in re.finditer(r"\{", metin):
         try:
             nesne, _ = json.JSONDecoder().raw_decode(metin[eslesme.start():])

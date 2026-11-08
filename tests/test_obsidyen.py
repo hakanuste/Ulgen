@@ -43,6 +43,12 @@ class Obsidyen(TemizVeri):
         self.assertIn("Biyokömür", sonuc[0][2])
         self.assertEqual(obsidyen.ara("kantaron"), [])
 
+    def test_ek_almis_sozcuk_koku_bulur(self):
+        self.yaz("Arac.md", "# Araç\nDaewoo Musso 3.2, 1998 model.")
+        obsidyen.tara(zorla=True)
+        sonuc = obsidyen.ara("benim aracım nedir")
+        self.assertEqual(sonuc[0][0], "Arac")
+
     def test_artimli_degisen_ve_silinen(self):
         yol = self.yaz("a.md", "ilk içerik elma")
         obsidyen.tara(zorla=True)

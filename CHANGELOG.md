@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.73
+- **Araç çağrısı ayrıştırma:** Bazı modeller aracı JSON yerine `<arac>ad</arac><parametreler>{...}` etiketleriyle çağırıyordu; bu çağrı çalışmayıp sohbette ham metin olarak görünüyordu (örn. Obsidian araması hiç yapılmıyordu). Etiketli biçim artık tanınır ve araç çalışır.
+- **Obsidian araması ek alan sözcükleri bulur:** "aracım" gibi ekli bir sözcük, notlardaki "araç" kökünü de arar (kök eşleşmesi).
+
 ## 2.7.72
 - **Takvim/Anımsıtıcı artık sürekli öne gelmez:** Mac eşitlemesi uygulamaları gizli ve arka planda (`open -g -j`) açar, işi bitince yine kapatır (zaten açıksa dokunmaz). Eşitleme aralığı varsayılan 10 dakikadan 30 dakikaya çıkarıldı (`mac_senk_dk`; ayarlardan değiştirilebilir, elle "şimdi eşitle" aynen çalışır). Kodlandı, gerçek cihaz testi bekliyor.
 
