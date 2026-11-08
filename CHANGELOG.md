@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.75
+- **Alan uzmanları (yönlendirici + profil):** Soruda konuya özgü sözcükler geçince ilgili uzmanın kuralları sistem istemine eklenir: **OTACI** (bitkiler, geleneksel şifa bilgisi), **TULGA** (Musso/otomotiv), **YER-SU** (permakültür, arsa), **KÜN** (güneş enerjisi), **DEMİR** (elektronik), **BALBAL** (kerpiç/taş yapı). Hepsi için ortak kural: her bilginin kaynağı söylenir, bilinmeyen "bilinmiyor" denir, geleneksel bilgi ile doğrulanmış bilgi ayrı belirtilir.
+- **OTACI ve bitki kütüphanesi:** "Biberiye neye iyi gelir / hangi vitamini içerir / nasıl kullanılır" gibi sorulara geleneksel kullanım (İbn Sînâ, Dioskorides vb. kaynaklarıyla), içerik, hazırlama biçimi ve uyarılarla yanıt verir. Tanı koymaz, kişiye doz vermez, ağır belirtilerde ilk yardım ve 112'ye yönlendirir. Yeni araç `bitki_bilgisi(ad)`: kaynaklı araştırma yapar ve `Ülgen/Bitkiler/<ad>.md` notunu yazar. Kodlandı, gerçek cihaz testi bekliyor.
+
 ## 2.7.74
 - **Yanıt doğrulayıcı:** Ülgen gerçek bilgi içeren (sayı/özel ad geçen) bir yanıt verdikten sonra, arka planda iddiaları web kaynaklarıyla karşılaştırır ve işi bitince KISA bir bildirim yollar: kaç iddia kaynaklarda destekleniyor, hangilerini net bulamadı, örnek kaynak. Doğruysa bir şey demenize gerek yok; yanlış gördüğünüzü `yanlış: <doğrusu>` diye yazarsanız düzeltme hafızaya kullanıcı bilgisi olarak kaydedilir. Kişisel/duyarlı/sağlıkla ilgili konuşmalar ve kısa yanıtlar hiç doğrulanmaz; web'e yalnızca iddia cümlesi gider. Ayar: `dogrulama` (varsayılan açık). Kurallı karşılaştırmadır (anahtar sayı ve özel adların kaynakta bulunması); sayfanın kendisi yanlışsa anlayamaz. Kodlandı, gerçek cihaz testi bekliyor.
 

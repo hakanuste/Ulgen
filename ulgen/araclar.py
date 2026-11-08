@@ -20,7 +20,7 @@ import tempfile
 from datetime import datetime
 
 from . import ayar, kota, kuyruk, veritabani
-from . import ajan_kayit
+from . import ajan_kayit, uzmanlar
 from .ajanlar import DosyaAjani
 from . import ozelkasa
 from .baglam import kasa_alintilari
@@ -300,6 +300,10 @@ class Araclar:
             "internette_ara": (
                 "İnternette arar, sayfaları okur ve kaynaklı özet verir",
                 self.arastirma.arastir, ("sorgu",)),
+            "bitki_bilgisi": (
+                "Bir bitki için kaynaklı bilgi (kullanım, içerik, uyarı) "
+                "arar ve Obsidian'a not yazar", lambda ad: uzmanlar.bitki_notu(
+                    ad, self.arastirma), ("ad",)),
             "sayfa_oku": ("Bir web sayfasının metnini özetler",
                           self.arastirma.sayfa_metni, ("adres",)),
             "saglik_raporu": ("Akıllı saat/Sağlık verisini çözümler",

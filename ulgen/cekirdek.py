@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
-from . import ajan_kayit, dogrulama, macsenk
+from . import ajan_kayit, dogrulama, macsenk, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -154,6 +154,9 @@ class Ulgen:
             (0, ARAC_PROTOKOLU % self.araclar.katalog()),
             (0, "Şu an: " + self.araclar.saat_tarih()),
         ]
+        uzman = uzmanlar.istem(kullanici_metni)
+        if uzman:
+            parcalar.append((0, uzman))
         if kisisel:
             # Duyarlı depo (sağlık, kimlik, finans...) YALNIZCA yerel beyne
             hafiza = self.hafiza.metne_cevir(
