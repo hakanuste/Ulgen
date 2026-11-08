@@ -88,6 +88,10 @@ def sayfa_indir(adres, zaman_asimi=10, izin_yerel=False):
     raise ValueError("Çok fazla yönlendirme.")
 
 
+ENGEL_DESENI = re.compile(
+    r"Attention Required|Sorry, you have been blocked|Just a moment|"
+    r"Lütfen Bekleyiniz|Access denied|enable JavaScript", re.IGNORECASE)
+
 # ------------------------------------------------------------ araştırma ajanı
 
 class ArastirmaAjani:
@@ -140,7 +144,9 @@ class ArastirmaAjani:
             govde = sonuc["ozet"]
             if okunan < sayfa_sayisi:
                 try:
-                    govde = self.sayfa_metni(sonuc["adres"], 1200)
+                    okunan_metin = self.sayfa_metni(sonuc["adres"], 1200)
+                    if not ENGEL_DESENI.search(okunan_metin[:600]):
+                        govde = okunan_metin    # engel sayfası ise özet kalsın
                     okunan += 1
                 except (ValueError, OSError, ImportError):
                     pass

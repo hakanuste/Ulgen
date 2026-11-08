@@ -112,9 +112,11 @@ UZMANLAR = {
             "and sourced data only. Do NOT tell the user to buy or sell "
             "anything and never predict prices; say that you are not a "
             "financial advisor. For any current price, rate or "
-            "index you MUST call the tool internette_ara first and report "
-            "the value with its source and date; never quote a price from "
-            "memory. If the search fails, say you could not fetch it."),
+            "index you MUST call the tool piyasa_verisi first (exchange "
+            "rates, BIST 100, gold, crypto, oil) and report the value with "
+            "its source and time exactly as returned; use internette_ara "
+            "only for news. Never quote a price from memory or from "
+            "scraped pages. If the tool fails, say you could not fetch it."),
         "klasor": "Akçe",
     },
     "YARGU": {

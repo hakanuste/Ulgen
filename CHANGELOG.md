@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.7.78
+- **Piyasa verisi (AKÇA):** Borsa siteleri kazınınca Cloudflare engeli ve JavaScript yüzünden güncel değer alınamıyordu. Yeni araç `piyasa_verisi`: döviz için **TCMB günlük kurları** (resmî, anahtarsız), BIST 100 / ons altın / gümüş / Brent / Bitcoin / Ethereum için Yahoo Finance'in herkese açık ucu; yanıt değeri kaynak ve zamanla verir. Gram altın, ons x TCMB dolar / 31,1035 olarak HESAPLANIR ve öyle etiketlenir. Yalnızca bu iki alan adına bağlanılır; ücretli servis yok. AKÇA güncel değer için bu aracı önce çağırır.
+- **Araştırma:** Cloudflare/"Lütfen bekleyiniz" gibi engel sayfaları artık sonuca ham metin olarak girmez; arama özeti kalır.
+- Kodlandı, birim testleri sahte yanıtlarla geçti; gerçek ağda (Mac) test bekliyor.
+
 ## 2.7.77
 - **AKÇA düzeltmesi:** "altının", "euro", "bitcoin fiyatı", "kuru" gibi ekli/kısa sözcükler uzmanı tetiklemiyordu. Anahtar sözcükler genişletildi; uzmanın adı geçince ("Akça: ...") her zaman o uzman seçilir (tüm uzmanlar için). AKÇA artık güncel fiyat/kur sorulunca `internette_ara` aracını önce çağırır, değeri kaynak ve tarihle verir, bellekten fiyat söylemez.
 

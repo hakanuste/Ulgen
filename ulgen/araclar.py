@@ -20,7 +20,7 @@ import tempfile
 from datetime import datetime
 
 from . import ayar, kota, kuyruk, veritabani
-from . import ajan_kayit, uzmanlar
+from . import ajan_kayit, piyasa, uzmanlar
 from .ajanlar import DosyaAjani
 from . import ozelkasa
 from .baglam import kasa_alintilari
@@ -304,6 +304,9 @@ class Araclar:
                 "Bir bitki için kaynaklı bilgi (kullanım, içerik, uyarı) "
                 "arar ve Obsidian'a not yazar", lambda ad: uzmanlar.bitki_notu(
                     ad, self.arastirma), ("ad",)),
+            "piyasa_verisi": (
+                "Güncel kur, BIST 100, altın, kripto, petrol değerini "
+                "kaynak ve zamanıyla verir", piyasa.sorgula, ("sorgu",)),
             "sayfa_oku": ("Bir web sayfasının metnini özetler",
                           self.arastirma.sayfa_metni, ("adres",)),
             "saglik_raporu": ("Akıllı saat/Sağlık verisini çözümler",
