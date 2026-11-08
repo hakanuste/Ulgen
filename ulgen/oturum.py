@@ -140,8 +140,8 @@ def oku(adres, ekransiz=True):
     return "%s\n%s" % (baslik, metin[:AZAMI_KARAKTER])
 
 
-def oturumlu_oku(adres):
-    """Araç/komut girişi: izin, güvenlik ve bileşen denetimleriyle okur."""
+def hazirlik_hatasi(adres, giris_gerekli=True):
+    """Okumadan önce denetimler; sorun varsa kullanıcıya iletisi, yoksa None."""
     from .ajanlar import adres_guvenli_mi
     if not hazir_mi():
         return "Oturumlu okuyucu kurulu değil. " + YUKLE_IPUCU
@@ -150,8 +150,97 @@ def oturumlu_oku(adres):
     if not alan_izinli_mi(adres):
         return ("Bu site eklenmemiş. Önce: 'kaynak ekle: AKÇA %s' (ya da "
                 "başka bir uzman)." % (urlparse(_tam(adres)).hostname or adres))
-    if not profil_var_mi():
+    if giris_gerekli and not profil_var_mi():
         return "Henüz giriş yapılmadı. Önce: 'giris: %s'" % adres
+    return None
+
+
+SATIRLAR_BETIGI = """() => {
+  const sat = [...document.querySelectorAll('tr, [role="row"]')];
+  return sat.map(r => [...r.querySelectorAll(
+      'td, th, [role="cell"], [role="gridcell"], [role="columnheader"]')]
+    .map(c => { const v = c.querySelector('svg');
+      return {t: (c.innerText || '').trim(),
+              s: v ? v.outerHTML.replace(/\\s+/g, '').slice(0, 400) : ''}; }))
+    .filter(r => r.length);
+}"""
+BAGLANTILAR_BETIGI = """() => [...document.querySelectorAll('a[href]')]
+    .map(a => a.getAttribute('href'))"""
+
+
+class Okuyucu:
+    """Tek tarayıcı oturumunda birçok sayfa okur (salt okuma, ekransız)."""
+
+    def __init__(self, bekleme_sn=3.0):
+        self.bekleme = bekleme_sn
+
+    def __enter__(self):
+        from playwright.sync_api import sync_playwright
+        _profil_hazirla()
+        _KILIT.acquire()
+        try:
+            self._p = sync_playwright().start()
+            self.ctx = self._p.chromium.launch_persistent_context(
+                PROFIL, headless=True, accept_downloads=False)
+            _cerez_yukle(self.ctx)
+            self.sayfa = (self.ctx.pages[0] if self.ctx.pages
+                          else self.ctx.new_page())
+        except BaseException:
+            _KILIT.release()
+            raise
+        return self
+
+    def __exit__(self, *a):
+        try:
+            _cerez_kaydet(self.ctx)
+            self.ctx.close()
+            self._p.stop()
+        finally:
+            _KILIT.release()
+
+    def ac(self, adres):
+        self.sayfa.goto(_tam(adres), timeout=ZAMAN_ASIMI_MS,
+                        wait_until="domcontentloaded")
+        try:
+            self.sayfa.wait_for_load_state("networkidle", timeout=10000)
+        except Exception:
+            pass
+
+    def kaydir_ve_satirlar(self, adim=12):
+        """Sanal (kaydırdıkça yüklenen) tablolar için kaydırıp satır toplar."""
+        gorulen, sirali = set(), []
+        for _ in range(adim):
+            for r in self.sayfa.evaluate(SATIRLAR_BETIGI):
+                anahtar = tuple(c["t"] for c in r)
+                if anahtar not in gorulen:
+                    gorulen.add(anahtar)
+                    sirali.append(r)
+            onceki = len(gorulen)
+            self.sayfa.evaluate("""() => {
+              const k = [...document.querySelectorAll('*')].filter(e =>
+                e.scrollHeight > e.clientHeight + 40 &&
+                /(auto|scroll)/.test(getComputedStyle(e).overflowY));
+              k.forEach(e => e.scrollBy(0, e.clientHeight * 0.8));
+              window.scrollBy(0, window.innerHeight * 0.8); }""")
+            self.sayfa.wait_for_timeout(500)
+            yeni = {tuple(c["t"] for c in r)
+                    for r in self.sayfa.evaluate(SATIRLAR_BETIGI)}
+            if not (yeni - gorulen) and len(gorulen) == onceki:
+                break
+        return sirali
+
+    def metin(self):
+        return self.sayfa.inner_text("body")
+
+    def baglantilar(self):
+        return self.sayfa.evaluate(BAGLANTILAR_BETIGI)
+
+
+def oturumlu_oku(adres):
+    """Araç/komut girişi: izin, güvenlik ve bileşen denetimleriyle okur."""
+    sorun = hazirlik_hatasi(adres)
+    if sorun:
+        return sorun
     try:
         return oku(adres)
     except Exception as hata:
