@@ -304,6 +304,11 @@ class Araclar:
                 "Bir bitki için kaynaklı bilgi (kullanım, içerik, uyarı) "
                 "arar ve Obsidian'a not yazar", lambda ad: uzmanlar.bitki_notu(
                     ad, self.arastirma), ("ad",)),
+            "guvenilir_ara": (
+                "Uzmanın güvenilir sitelerinde (örn. OTACI, AKÇA, YARGU) "
+                "arar; kaynaklı metin verir", lambda sorgu, uzman:
+                uzmanlar.guvenilir_ara(sorgu, uzman, self.arastirma),
+                ("sorgu", "uzman")),
             "piyasa_verisi": (
                 "Güncel kur, BIST 100, altın, kripto, petrol değerini "
                 "kaynak ve zamanıyla verir", piyasa.sorgula, ("sorgu",)),

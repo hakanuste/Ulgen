@@ -39,6 +39,33 @@ class Uzmanlar(TemizVeri):
             self.assertIsNone(uzmanlar.sec(q), q)
         self.assertIn("internette_ara", uzmanlar.istem("dolar kaç"))
 
+    def test_guvenilir_ara_yalniz_listedeki_siteler(self):
+        class Ar:
+            def __init__(self):
+                self.sorgular = []
+
+            def ara(self, sorgu, adet=2):
+                self.sorgular.append(sorgu)
+                if "who.int" in sorgu:
+                    return [{"baslik": "WHO", "adres": "https://who.int/x",
+                             "ozet": "özet"},
+                            {"baslik": "Başka", "adres": "https://baska.com/y",
+                             "ozet": "özet"}]
+                return []
+
+            def sayfa_metni(self, adres, hedef=1500):
+                return "Biberiye monografı"
+
+        ar = Ar()
+        m = uzmanlar.guvenilir_ara("biberiye", "otacı", ar)
+        self.assertIn("who.int/x", m)
+        self.assertNotIn("baska.com", m)
+        self.assertTrue(all("site:" in q for q in ar.sorgular))
+        bos = uzmanlar.guvenilir_ara("x", "YARGU", Ar())
+        self.assertIn("Tahmin yürütmüyorum", bos)
+        self.assertIn("Bilinmeyen", uzmanlar.guvenilir_ara("x", "yok", Ar()))
+        self.assertIn("mevzuat.gov.tr", uzmanlar.guvenilir_kaynaklar("YARGU"))
+
     def test_istem_kurallari(self):
         m = uzmanlar.istem("biberiye hangi vitamini içerir")
         self.assertIn("OTACI", m)

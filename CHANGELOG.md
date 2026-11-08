@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.79
+- **Güvenilir kaynak listeleri:** Her alan uzmanının kendi güvenilir site listesi var (örn. OTACI: WHO, EMA, NCCIH, PubMed, TDV İslâm Ansiklopedisi; YARGU: mevzuat.gov.tr, Resmî Gazete; AKÇA: TCMB, Borsa İstanbul, TÜİK, SPK; KÜN: PVGIS/JRC, NREL; YER-SU: MGM, Tarım Bakanlığı, FAO; ALPAGU: NIST, CISA, ENISA, BTK). Yeni araç `guvenilir_ara(sorgu, uzman)` yalnız bu sitelerde arar ve kaynaklı metin verir; listede bir şey bulunamazsa "bulamadım, tahmin yürütmüyorum" der. Uzmanlar olgu için önce bu aracı çağırır. Listeler `ayar.json` içinde `"guvenilir_kaynaklar": {"OTACI": ["who.int", ...]}` ile değiştirilebilir. Alan adları ilk taslaktır; Mac'te denenip düzeltilecek.
+
 ## 2.7.78
 - **Piyasa verisi (AKÇA):** Borsa siteleri kazınınca Cloudflare engeli ve JavaScript yüzünden güncel değer alınamıyordu. Yeni araç `piyasa_verisi`: döviz için **TCMB günlük kurları** (resmî, anahtarsız), BIST 100 / ons altın / gümüş / Brent / Bitcoin / Ethereum için Yahoo Finance'in herkese açık ucu; yanıt değeri kaynak ve zamanla verir. Gram altın, ons x TCMB dolar / 31,1035 olarak HESAPLANIR ve öyle etiketlenir. Yalnızca bu iki alan adına bağlanılır; ücretli servis yok. AKÇA güncel değer için bu aracı önce çağırır.
 - **Araştırma:** Cloudflare/"Lütfen bekleyiniz" gibi engel sayfaları artık sonuca ham metin olarak girmez; arama özeti kalır.

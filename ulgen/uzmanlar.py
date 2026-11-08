@@ -8,9 +8,12 @@ Yönlendirici sorudaki sözcüklere göre en uygun uzmanı seçer.
 import os
 import re
 
-from . import obsidyen, obsidyen_yaz
+from . import ayar, obsidyen, obsidyen_yaz
 
 ORTAK = (
+    "For facts, FIRST call the tool guvenilir_ara(sorgu, uzman) with your "
+    "expert name: it searches only that expert's trusted sites. Base the "
+    "answer on what it returns; if it finds nothing, say so. "
     "Cite where each claim comes from (source name or site). When a fact is "
     "not in a source you have, say 'bilinmiyor' - never guess numbers, "
     "names or dates. Label what is traditional/anecdotal versus verified. "
@@ -18,6 +21,9 @@ ORTAK = (
 
 UZMANLAR = {
     "OTACI": {
+        "kaynaklar": [
+            "who.int", "ema.europa.eu", "nccih.nih.gov", "pubmed.ncbi.nlm.nih.gov",
+            "islamansiklopedisi.org.tr"],
         "alan": "bitkiler, geleneksel şifa bilgisi, ilk yardım kaynakları",
         "anahtar": r"\b(bitki\w*|biberiye|kantaron|nane|lavanta|kekik|"
                    r"papatya|adaçay\w*|ada çay\w*|ıhlamur|çay\w* (iyi|neye)|"
@@ -43,6 +49,8 @@ UZMANLAR = {
         "klasor": "Bitkiler",
     },
     "TULGA": {
+        "kaynaklar": [
+            "tr.wikipedia.org", "en.wikipedia.org", "mercedes-benz.com"],
         "alan": "otomotiv ve araç mühendisliği",
         "anahtar": r"\b(musso|m104|ara[cç]\w*|şanzıman\w*|motor\w*|4wd|"
                    r"biyodizel|enjeksiyon|lastik\w*|süspansiyon|fren\w*|"
@@ -56,6 +64,8 @@ UZMANLAR = {
         "klasor": "Araç",
     },
     "YER-SU": {
+        "kaynaklar": [
+            "mgm.gov.tr", "tarimorman.gov.tr", "fao.org"],
         "alan": "permakültür, tarım, toprak, su",
         "anahtar": r"\b(permak\w*|toprak\w*|kompost\w*|solucan\w*|zeytin\w*|"
                    r"tohum\w*|sarnıç\w*|sera\w*|gıda ormanı|biyokömür|"
@@ -67,6 +77,8 @@ UZMANLAR = {
         "klasor": "Arsa",
     },
     "KÜN": {
+        "kaynaklar": [
+            "re.jrc.ec.europa.eu", "nrel.gov", "energy.gov"],
         "alan": "güneş enerjisi ve solar dizgeler",
         "anahtar": r"\b(solar|güneş enerji\w*|panel\w*|inverter|invertör|"
                    r"lifepo4|batarya\w*|akü\w*|mppt|şarj kontrol\w*|"
@@ -79,6 +91,8 @@ UZMANLAR = {
         "klasor": "Enerji",
     },
     "DEMİR": {
+        "kaynaklar": [
+            "raspberrypi.com", "orangepi.org", "ti.com", "st.com"],
         "alan": "elektronik, kart, donanım",
         "anahtar": r"\b(elektronik|orange ?pi|raspberry|arduino|devre\w*|"
                    r"sensör\w*|radar\w*|kamera\w*|lora|telsiz\w*|3d "
@@ -91,6 +105,8 @@ UZMANLAR = {
         "klasor": "Donanım",
     },
     "BALBAL": {
+        "kaynaklar": [
+            "csb.gov.tr", "tse.org.tr", "tr.wikipedia.org"],
         "alan": "inşaat, taş ev, kerpiç, mimari",
         "anahtar": r"\b(kerpiç\w*|horasan\w*|taş ev|duvar\w*|sıva\w*|"
                    r"yapı\w*|inşaat\w*|temel\w*|mimari|saman\w*|ahşap)\b",
@@ -101,6 +117,8 @@ UZMANLAR = {
         "klasor": "Yapı",
     },
     "AKÇA": {
+        "kaynaklar": [
+            "tcmb.gov.tr", "borsaistanbul.com", "tuik.gov.tr", "spk.gov.tr"],
         "alan": "akçe, borsa, kripto, makroekonomi",
         "anahtar": r"\b(borsa\w*|bist\w*|kripto\w*|bitcoin\w*|btc|eth\w*|"
                    r"hisse\w*|enflasyon\w*|faiz\w*|dolar\w*|usd|euro\w*|"
@@ -120,6 +138,8 @@ UZMANLAR = {
         "klasor": "Akçe",
     },
     "YARGU": {
+        "kaynaklar": [
+            "mevzuat.gov.tr", "resmigazete.gov.tr", "anayasa.gov.tr", "yargitay.gov.tr"],
         "alan": "hukuk ve mevzuat",
         "anahtar": r"\b(kanun\w*|yasa\w*|mevzuat|dava\w*|sözleşme\w*|"
                    r"tapu\w*|imar|ruhsat\w*|fsek|telif|hukuk\w*|"
@@ -133,6 +153,8 @@ UZMANLAR = {
         "klasor": "Hukuk",
     },
     "ALPAGU": {
+        "kaynaklar": [
+            "nist.gov", "cisa.gov", "enisa.europa.eu", "btk.gov.tr", "ogm.gov.tr"],
         "alan": "kendi mülkünü ve verini koruma: güvenlik, yangın, siber",
         "anahtar": r"\b(güvenlik|alarm\w*|çit\w*|siber|güvenlik duvarı|"
                    r"air-?gap\w*|yangın\w*|hırsız\w*|koruma|savunma|"
@@ -146,6 +168,8 @@ UZMANLAR = {
         "klasor": "Güvenlik",
     },
     "KOPUZ": {
+        "kaynaklar": [
+            "kulturportali.gov.tr", "islamansiklopedisi.org.tr", "tr.wikipedia.org"],
         "alan": "müzik ve beste",
         "anahtar": r"\b(müzik\w*|beste\w*|bağlama|saz\w*|kopuz\w*|makam\w*|"
                    r"nota\w*|türkü\w*|akort\w*|ezgi\w*|söz yaz\w*)\b",
@@ -157,6 +181,8 @@ UZMANLAR = {
         "klasor": "Müzik",
     },
     "OYUN": {
+        "kaynaklar": [
+            "kulturportali.gov.tr", "islamansiklopedisi.org.tr", "tr.wikipedia.org"],
         "alan": "dans ve koreografi",
         "anahtar": r"\b(dans\w*|koreografi\w*|halay\w*|semah\w*|horon\w*|"
                    r"zeybek\w*|figür\w*|sahne\w*|ders planı)\b",
@@ -168,6 +194,8 @@ UZMANLAR = {
         "klasor": "Dans",
     },
     "YAZIT": {
+        "kaynaklar": [
+            "help.obsidian.md", "obsidian.md"],
         "alan": "bilgi arşivi ve belge yönetimi",
         "anahtar": r"\b(arşiv\w*|belge\w*|obsidyen\w*|obsidian|kaynakça|"
                    r"etiket\w*|ocr|kütüphane\w*|not düzeni|dizin\w*)\b",
@@ -196,6 +224,50 @@ def liste():
     return {"genel": [{"ad": a, "is": i, "yer": y} for a, i, y in GENEL],
             "uzmanlar": [{"ad": ad, "alan": u["alan"]}
                          for ad, u in UZMANLAR.items()]}
+
+
+def guvenilir_kaynaklar(ad):
+    """Uzmanın güvenilir alan adları; ayar.json'daki "guvenilir_kaynaklar"
+    anahtarı (örn. {"OTACI": ["who.int"]}) varsa onu kullanır."""
+    ozel = ayar.yukle().get("guvenilir_kaynaklar") or {}
+    liste = ozel.get(ad) if isinstance(ozel, dict) else None
+    if isinstance(liste, list) and liste:
+        return [str(d) for d in liste][:8]
+    return list(UZMANLAR.get(ad, {}).get("kaynaklar", []))
+
+
+def guvenilir_ara(sorgu, uzman, arastirma, alan_basina=2, sayfa=2):
+    """Yalnızca uzmanın güvenilir sitelerinde arar; kaynaklı metin döndürür.
+
+    Hiçbirinde bulunamazsa bunu açıkça söyler (tahmin etmez)."""
+    istenen = obsidyen.normal((uzman or "").strip())
+    uzman = next((a for a in UZMANLAR if obsidyen.normal(a) == istenen), "")
+    if not uzman:
+        return "Bilinmeyen uzman. Seçenekler: %s" % ", ".join(UZMANLAR)
+    parcalar, okunan = [], 0
+    for alan in guvenilir_kaynaklar(uzman)[:5]:
+        try:
+            sonuclar = arastirma.ara("%s site:%s" % (sorgu, alan),
+                                     adet=alan_basina)
+        except Exception:
+            continue
+        for sn in sonuclar:
+            if alan not in sn.get("adres", ""):
+                continue
+            govde = sn.get("ozet", "")
+            if okunan < sayfa:
+                try:
+                    govde = arastirma.sayfa_metni(sn["adres"], 1500)
+                    okunan += 1
+                except Exception:
+                    pass
+            parcalar.append("KAYNAK (%s): %s (%s)\n%s" % (
+                alan, sn.get("baslik", ""), sn["adres"], govde))
+    if not parcalar:
+        return ("Güvenilir kaynak listesinde (%s) bu konuda bir şey "
+                "bulamadım. Tahmin yürütmüyorum."
+                % ", ".join(guvenilir_kaynaklar(uzman)))
+    return "\n\n".join(parcalar)
 
 
 def sec(metin):
