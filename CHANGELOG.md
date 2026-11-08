@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.80
+- **Kendi kaynağınızı ekleyin:** `kaynak ekle: AKÇA https://www.isyatirim.com.tr/...` (herhangi bir uzman için) — o sayfa uzmanın güvenilir listesine girer ve `guvenilir_ara` onu doğrudan okur. `kaynak sil: AKÇA isyatirim.com.tr`, `kaynaklar: AKÇA` ile çıkarma/listeleme. Hazır listeler korunur; eklenenler `ayar.json`da `kullanici_kaynaklari` altında durur. Yerel/özel ağ adresleri eklenemez.
+- **Varlık analizi:** `analiz: THYAO` (BIST hisse kodu), `analiz: ons altın`, `gümüş`, `brent`, `bitcoin`, `bist 100`. Son 1 yılın günlük kapanışlarından kodda hesaplanır: getiri (1 ay/3 ay/1 yıl), 20/50/200 günlük ortalama, RSI(14), yıllık oynaklık, tepe/dip, en büyük düşüş; durum tespiti ve ±1σ ölçek aralığı. Kesin al/sat emri ya da fiyat tahmini vermez; her raporda "finansal danışmanlık değildir" yazar. Rapor `Ülgen/Akçe/` altına not olur. Mali tablo, çarpan, KAP ve haber bu sürümde YOK (rapor bunu açıkça belirtir); İş Yatırım/KAP sayfasını `kaynak ekle` ile ekleyip AKÇA'ya sorabilirsiniz. Kodlandı, gerçek ağda test bekliyor.
+
 ## 2.7.79
 - **Güvenilir kaynak listeleri:** Her alan uzmanının kendi güvenilir site listesi var (örn. OTACI: WHO, EMA, NCCIH, PubMed, TDV İslâm Ansiklopedisi; YARGU: mevzuat.gov.tr, Resmî Gazete; AKÇA: TCMB, Borsa İstanbul, TÜİK, SPK; KÜN: PVGIS/JRC, NREL; YER-SU: MGM, Tarım Bakanlığı, FAO; ALPAGU: NIST, CISA, ENISA, BTK). Yeni araç `guvenilir_ara(sorgu, uzman)` yalnız bu sitelerde arar ve kaynaklı metin verir; listede bir şey bulunamazsa "bulamadım, tahmin yürütmüyorum" der. Uzmanlar olgu için önce bu aracı çağırır. Listeler `ayar.json` içinde `"guvenilir_kaynaklar": {"OTACI": ["who.int", ...]}` ile değiştirilebilir. Alan adları ilk taslaktır; Mac'te denenip düzeltilecek.
 

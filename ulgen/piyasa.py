@@ -82,6 +82,25 @@ def yahoo(sembol, indir=None):
             "para": m.get("currency", "")}
 
 
+def gecmis(sembol, aralik="1y", indir=None):
+    """Günlük kapanışlar: [(tarih 'YYYY-MM-DD', kapanış)], eskiden yeniye."""
+    import json
+    adres = ("https://query1.finance.yahoo.com/v8/finance/chart/%s"
+             "?range=%s&interval=1d" % (sembol, aralik))
+    veri = json.loads((indir or _indir)(adres))
+    sonuc = (veri.get("chart", {}).get("result") or [None])[0]
+    if not sonuc:
+        raise ValueError("Veri bulunamadı: %s" % sembol)
+    zamanlar = sonuc.get("timestamp") or []
+    kapanis = ((sonuc.get("indicators", {}).get("quote") or [{}])[0]
+               .get("close") or [])
+    cift = [(datetime.fromtimestamp(t).strftime("%Y-%m-%d"), float(c))
+            for t, c in zip(zamanlar, kapanis) if c is not None]
+    if len(cift) < 30:
+        raise ValueError("Yeterli geçmiş yok: %s (%d gün)" % (sembol, len(cift)))
+    return cift
+
+
 def _satir(ad, d, birim=""):
     deg = ""
     if d.get("onceki"):

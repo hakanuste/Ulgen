@@ -226,14 +226,87 @@ def liste():
                          for ad, u in UZMANLAR.items()]}
 
 
+def _alan(adres):
+    from urllib.parse import urlparse
+    a = str(adres).strip()
+    if "://" in a:
+        return (urlparse(a).hostname or "").lower().removeprefix("www.")
+    return a.lower().removeprefix("www.")
+
+
+def kullanici_kaynaklari(ad):
+    """Kullanıcının 'kaynak ekle' ile eklediği alan adı/sayfa adresleri."""
+    liste = (ayar.yukle().get("kullanici_kaynaklari") or {}).get(ad)
+    return [str(x) for x in liste][:20] if isinstance(liste, list) else []
+
+
 def guvenilir_kaynaklar(ad):
-    """Uzmanın güvenilir alan adları; ayar.json'daki "guvenilir_kaynaklar"
-    anahtarı (örn. {"OTACI": ["who.int"]}) varsa onu kullanır."""
+    """Uzmanın güvenilir alan adları: hazır liste (ya da ayar.json'daki
+    "guvenilir_kaynaklar" geçersiz kılması) + kullanıcının eklediği siteler."""
     ozel = ayar.yukle().get("guvenilir_kaynaklar") or {}
     liste = ozel.get(ad) if isinstance(ozel, dict) else None
     if isinstance(liste, list) and liste:
-        return [str(d) for d in liste][:8]
-    return list(UZMANLAR.get(ad, {}).get("kaynaklar", []))
+        temel = [str(d) for d in liste][:8]
+    else:
+        temel = list(UZMANLAR.get(ad, {}).get("kaynaklar", []))
+    for k in kullanici_kaynaklari(ad):
+        a = _alan(k)
+        if a and a not in temel:
+            temel.append(a)
+    return temel
+
+
+def _uzman_adi(parca):
+    istenen = obsidyen.normal((parca or "").strip())
+    return next((a for a in UZMANLAR if obsidyen.normal(a) == istenen), "")
+
+
+KOMUT_DESENI = re.compile(
+    r"^\s*kaynak(?:lar)?\s+(ekle|sil|liste)\s*[:\-]\s*(\S+)\s*(\S*)\s*$",
+    re.IGNORECASE)
+KAYNAKLAR_DESENI = re.compile(r"^\s*kaynaklar\s*[:\-]\s*(\S+)\s*$",
+                              re.IGNORECASE)
+
+
+def komut(metin):
+    """'kaynak ekle: AKÇA https://...' | 'kaynak sil: AKÇA adres' |
+    'kaynaklar: AKÇA'. Eşleşme yoksa None."""
+    e = KAYNAKLAR_DESENI.match(metin or "")
+    if e:
+        ad = _uzman_adi(e.group(1))
+        if not ad:
+            return "Uzman adı tanınmadı. Seçenekler: %s" % ", ".join(UZMANLAR)
+        k = kullanici_kaynaklari(ad)
+        return ("%s güvenilir siteleri: %s\nSizin eklediğiniz: %s" % (
+            ad, ", ".join(guvenilir_kaynaklar(ad)), ", ".join(k) or "yok"))
+    e = KOMUT_DESENI.match(metin or "")
+    if not e or e.group(1).lower() == "liste":
+        return None
+    islem, ad, adres = e.group(1).lower(), _uzman_adi(e.group(2)), e.group(3)
+    if not ad or not adres:
+        return ("Biçim: 'kaynak ekle: AKÇA https://site.com/sayfa' ya da "
+                "'kaynak sil: AKÇA site.com'. Uzmanlar: %s"
+                % ", ".join(UZMANLAR))
+    liste = kullanici_kaynaklari(ad)
+    if islem == "ekle":
+        from .ajanlar import adres_guvenli_mi
+        tam = adres if "://" in adres else "https://" + adres
+        if not adres_guvenli_mi(tam):
+            return "Bu adres güvenlik nedeniyle eklenemez."
+        if adres in liste:
+            return "%s zaten %s kaynaklarında." % (adres, ad)
+        liste.append(adres)
+        yanit = "Eklendi: %s artık %s için kaynak." % (adres, ad)
+    else:
+        kalan = [x for x in liste if _alan(x) != _alan(adres)]
+        if len(kalan) == len(liste):
+            return "%s, %s kaynaklarında yok." % (adres, ad)
+        liste = kalan
+        yanit = "Çıkarıldı: %s (%s)." % (adres, ad)
+    tum = dict(ayar.yukle().get("kullanici_kaynaklari") or {})
+    tum[ad] = liste
+    ayar.guncelle("kullanici_kaynaklari", tum)
+    return yanit
 
 
 def guvenilir_ara(sorgu, uzman, arastirma, alan_basina=2, sayfa=2):
@@ -245,7 +318,14 @@ def guvenilir_ara(sorgu, uzman, arastirma, alan_basina=2, sayfa=2):
     if not uzman:
         return "Bilinmeyen uzman. Seçenekler: %s" % ", ".join(UZMANLAR)
     parcalar, okunan = [], 0
-    for alan in guvenilir_kaynaklar(uzman)[:5]:
+    for k in kullanici_kaynaklari(uzman):
+        if "://" in k:      # kullanıcının gösterdiği sayfa: doğrudan oku
+            try:
+                parcalar.append("KAYNAK (eklediğiniz sayfa): %s\n%s" % (
+                    k, arastirma.sayfa_metni(k, 2500)))
+            except Exception:
+                parcalar.append("KAYNAK (eklediğiniz sayfa) okunamadı: %s" % k)
+    for alan in guvenilir_kaynaklar(uzman)[:6]:
         try:
             sonuclar = arastirma.ara("%s site:%s" % (sorgu, alan),
                                      adet=alan_basina)

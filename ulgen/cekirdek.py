@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
-from . import ajan_kayit, dogrulama, macsenk, uzmanlar
+from . import ajan_kayit, analiz, dogrulama, macsenk, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -202,6 +202,12 @@ class Ulgen:
         return {"yanit": yanit, "beyin": beyin_adi}
 
     def _isle(self, metin):
+        kaynak_yaniti = uzmanlar.komut(metin)
+        if kaynak_yaniti is None:
+            kaynak_yaniti = analiz.komut(metin)
+        if kaynak_yaniti is not None:
+            self._duyarli_tur = True      # yerel komut sonuçları buluta gitmez
+            return kaynak_yaniti, "hızlı komut"
         dogru = dogrulama.duzeltme_mi(metin)
         if dogru:
             self.hafiza.ekle("bilgi", "Kullanıcı düzeltmesi: " + dogru,
