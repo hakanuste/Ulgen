@@ -128,8 +128,22 @@ def mac_mi():
     return platform.system() == "Darwin"
 
 
+def gizli_ac(betik):
+    """Betiğin kullanacağı uygulama kapalıysa onu gizli ve arka planda açar.
+
+    Böylece eşitleme sırasında Takvim/Anımsıtıcı penceresi öne gelmez."""
+    for uygulama in ("Calendar", "Reminders"):
+        if 'application "%s"' % uygulama in betik:
+            try:
+                subprocess.run(["open", "-g", "-j", "-a", uygulama],
+                               timeout=20, capture_output=True)
+            except Exception:
+                pass
+
+
 def osascript_calistir(betik):
     """Betiği osascript'e standart girişten verir; çıktıyı döndürür."""
+    gizli_ac(betik)
     try:
         s = subprocess.run(["osascript", "-"], input=betik,
                            capture_output=True, text=True,

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.72
+- **Takvim/Anımsıtıcı artık sürekli öne gelmez:** Mac eşitlemesi uygulamaları gizli ve arka planda (`open -g -j`) açar, işi bitince yine kapatır (zaten açıksa dokunmaz). Eşitleme aralığı varsayılan 10 dakikadan 30 dakikaya çıkarıldı (`mac_senk_dk`; ayarlardan değiştirilebilir, elle "şimdi eşitle" aynen çalışır). Kodlandı, gerçek cihaz testi bekliyor.
+
 ## 2.7.71
 - **Hap/ilaç ve hatırlatmalar bilgisayarda sesli:** Mac'te bir doz ya da hatırlatma zamanı gelince önce kısa bir uyarı sesi çalar, sonra metin sesli okunur (kimlik imleri ve yanıt yönergeleri okunmaz). Sayfa kapalı olsa da çalışır; aynı Mac'teki sayfa ikinci kez okumaz. Ayar: `hatirlatma_sesi` (varsayılan açık). Kodlandı, gerçek cihaz testi bekliyor.
 

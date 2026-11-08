@@ -47,7 +47,7 @@ VARSAYILAN = {
     # saati kuralına bağlı kalmaz). Boş = "yüzen" (cihazın saat dilimi).
     "takvim_saat_dilimi": "Europe/Istanbul",
     "mac_senk": True,
-    "mac_senk_dk": 10,
+    "mac_senk_dk": 30,
     "mac_bildirim": True,
     # Mac'te hap/ilaç ve hatırlatmaları sesli okur
     "hatirlatma_sesi": True,
