@@ -119,8 +119,8 @@ def istem(metin):
     if not ad:
         return ""
     u = UZMANLAR[ad]
-    return "# EXPERT MODE: %s (%s)\n%s\n%s" % (ad, u["alan"], u["talimat"],
-                                              ORTAK)
+    return "# EXPERT MODE: %s (%s)\n%s\n%s" % (
+        ad, u["alan"], u["talimat"], ORTAK)
 
 
 def bitki_notu(ad, arastirma):
