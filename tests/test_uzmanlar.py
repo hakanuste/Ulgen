@@ -31,6 +31,14 @@ class Uzmanlar(TemizVeri):
         self.assertEqual(len(l["genel"]), 6)
         self.assertEqual(len(l["uzmanlar"]), 12)
 
+    def test_akca_ek_almis_sozcuk_ve_yanlis_eslesme_yok(self):
+        for q in ("altın ne kadar", "bugün dolar kaç TL", "gram altının fiyatı",
+                  "Akça: euro kuru", "bitcoin fiyatı"):
+            self.assertEqual(uzmanlar.sec(q), "AKÇA", q)
+        for q in ("kurulum yap", "program yaz", "onsekiz kişi"):
+            self.assertIsNone(uzmanlar.sec(q), q)
+        self.assertIn("internette_ara", uzmanlar.istem("dolar kaç"))
+
     def test_istem_kurallari(self):
         m = uzmanlar.istem("biberiye hangi vitamini içerir")
         self.assertIn("OTACI", m)

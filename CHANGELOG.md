@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.77
+- **AKÇA düzeltmesi:** "altının", "euro", "bitcoin fiyatı", "kuru" gibi ekli/kısa sözcükler uzmanı tetiklemiyordu. Anahtar sözcükler genişletildi; uzmanın adı geçince ("Akça: ...") her zaman o uzman seçilir (tüm uzmanlar için). AKÇA artık güncel fiyat/kur sorulunca `internette_ara` aracını önce çağırır, değeri kaynak ve tarihle verir, bellekten fiyat söylemez.
+
 ## 2.7.76
 - **Tüm alan uzmanları:** AKÇA (akçe; alım-satım önerisi yok), YARGU (mevzuat; hukuk görüşü değil), ALPAGU (kendi mülk ve veri güvenliği; yalnız savunma), KOPUZ (müzik), OYUN (dans), YAZIT (arşiv) eklendi; toplam 12 uzman.
 - **Sayfa:** Ana sayfadaki "Sağlık Durumu" kartı kaldırıldı; yerine 6 genel görev türü ve 12 uzmanı gösteren "Ajanlar ve Uzmanlar" kartı kondu (`/uzmanlar`). Üstteki şeritteki küçük "Sağlık" kartı ve Sağlık sekmesi yerinde duruyor.

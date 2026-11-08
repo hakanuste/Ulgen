@@ -102,15 +102,19 @@ UZMANLAR = {
     },
     "AKÇA": {
         "alan": "akçe, borsa, kripto, makroekonomi",
-        "anahtar": r"\b(borsa\w*|kripto\w*|bitcoin|hisse\w*|enflasyon\w*|"
-                   r"faiz\w*|dolar\w*|euro|altın|döviz\w*|ekonomi\w*|"
-                   r"yatırım\w*)\b",
+        "anahtar": r"\b(borsa\w*|bist\w*|kripto\w*|bitcoin\w*|btc|eth\w*|"
+                   r"hisse\w*|enflasyon\w*|faiz\w*|dolar\w*|usd|euro\w*|"
+                   r"altın\w*|gümüş\w*|gram altın\w*|ons|döviz\w*|kuru|kurlar\w*|"
+                   r"ekonomi\w*|yatırım\w*|tahvil\w*|merkez bankası|"
+                   r"tl|lira\w*|piyasa\w*|endeks\w*|coin\w*)\b",
         "talimat": (
             "You are AKÇA, finance and economics. Give facts, definitions "
             "and sourced data only. Do NOT tell the user to buy or sell "
             "anything and never predict prices; say that you are not a "
-            "financial advisor. Prices and rates must come from a dated "
-            "source or be marked unknown."),
+            "financial advisor. For any current price, rate or "
+            "index you MUST call the tool internette_ara first and report "
+            "the value with its source and date; never quote a price from "
+            "memory. If the search fails, say you could not fetch it."),
         "klasor": "Akçe",
     },
     "YARGU": {
@@ -193,7 +197,13 @@ def liste():
 
 
 def sec(metin):
-    """Soruya en uygun uzmanın adını döndürür; yoksa None."""
+    """Soruya en uygun uzmanın adını döndürür; yoksa None.
+
+    Uzmanın adı geçiyorsa ("Akça: ..." gibi) o seçilir."""
+    kucuk = obsidyen.normal(metin or "")
+    for ad in UZMANLAR:
+        if re.search(r"\b%s\b" % re.escape(obsidyen.normal(ad)), kucuk):
+            return ad
     en_iyi, puan = None, 0
     for ad, u in UZMANLAR.items():
         p = len(re.findall(u["anahtar"], metin or "", re.IGNORECASE))
