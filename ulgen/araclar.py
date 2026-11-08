@@ -20,7 +20,7 @@ import tempfile
 from datetime import datetime
 
 from . import ayar, kota, kuyruk, veritabani
-from . import ajan_kayit, piyasa, uzmanlar
+from . import ajan_kayit, oturum, piyasa, uzmanlar
 from .ajanlar import DosyaAjani
 from . import ozelkasa
 from .baglam import kasa_alintilari
@@ -241,7 +241,7 @@ KISISEL_ARACLAR = frozenset({
     "hafiza_ara", "hafiza_goster", "karar_listele", "saglik_raporu",
     "sabah_ozeti", "kasa_ara", "dosya_listele", "dosya_oku", "dosya_yaz",
     "dosya_ozetle", "dosya_ara", "en_yeni_dosya", "hatirlaticilari_listele",
-    "ekrani_incele", "terminal",
+    "ekrani_incele", "terminal", "oturumlu_oku",
 })
 
 
@@ -309,6 +309,10 @@ class Araclar:
                 "arar; kaynaklı metin verir", lambda sorgu, uzman:
                 uzmanlar.guvenilir_ara(sorgu, uzman, self.arastirma),
                 ("sorgu", "uzman")),
+            "oturumlu_oku": (
+                "Kullanıcının giriş yaptığı, 'kaynak ekle' ile eklenmiş bir "
+                "sitenin sayfa metnini okur (salt okuma)", oturum.oturumlu_oku,
+                ("adres",)),
             "piyasa_verisi": (
                 "Güncel kur, BIST 100, altın, kripto, petrol değerini "
                 "kaynak ve zamanıyla verir", piyasa.sorgula, ("sorgu",)),

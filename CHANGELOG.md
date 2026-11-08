@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.81
+- **Oturumlu okuyucu (giriş gerektiren siteler):** `giris: fintables.com` -> ayrı bir tarayıcı penceresi açılır, siteye KENDİNİZ giriş yaparsınız (şifre Ülgen'e hiç girmez, saklanmaz), pencereyi kapatırsınız. Sonra `oturumlu oku: <adres>` (ya da `oturumlu_oku` aracı) aynı oturumla sayfanın metnini okur. Salt okuma: tıklama, form gönderme, indirme yok. Yalnızca `kaynak ekle` ile eklediğiniz alan adları okunur; yerel/özel adresler engelli. Oturum çerezleri yalnız Mac'te `~/ÜlgenVeri/tarayici` (0700) altında durur; sonuçlar kişisel veri sayılır ve bulut beyne gitmez. İsteğe bağlı bileşen: `pip install playwright && playwright install chromium` (yoksa komut bunu söyler). Gerçek tarayıcıyla çerez kalıcılığı sınandı (Linux); Mac ve gerçek siteler için test bekliyor.
+- Düzeltme: alan adı eşleştirmesi `ornek.com/yol` gibi şemasız adreslerde yolu da alan sanıyordu.
+
 ## 2.7.80
 - **Kendi kaynağınızı ekleyin:** `kaynak ekle: AKÇA https://www.isyatirim.com.tr/...` (herhangi bir uzman için) — o sayfa uzmanın güvenilir listesine girer ve `guvenilir_ara` onu doğrudan okur. `kaynak sil: AKÇA isyatirim.com.tr`, `kaynaklar: AKÇA` ile çıkarma/listeleme. Hazır listeler korunur; eklenenler `ayar.json`da `kullanici_kaynaklari` altında durur. Yerel/özel ağ adresleri eklenemez.
 - **Varlık analizi:** `analiz: THYAO` (BIST hisse kodu), `analiz: ons altın`, `gümüş`, `brent`, `bitcoin`, `bist 100`. Son 1 yılın günlük kapanışlarından kodda hesaplanır: getiri (1 ay/3 ay/1 yıl), 20/50/200 günlük ortalama, RSI(14), yıllık oynaklık, tepe/dip, en büyük düşüş; durum tespiti ve ±1σ ölçek aralığı. Kesin al/sat emri ya da fiyat tahmini vermez; her raporda "finansal danışmanlık değildir" yazar. Rapor `Ülgen/Akçe/` altına not olur. Mali tablo, çarpan, KAP ve haber bu sürümde YOK (rapor bunu açıkça belirtir); İş Yatırım/KAP sayfasını `kaynak ekle` ile ekleyip AKÇA'ya sorabilirsiniz. Kodlandı, gerçek ağda test bekliyor.

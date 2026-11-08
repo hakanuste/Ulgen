@@ -229,9 +229,9 @@ def liste():
 def _alan(adres):
     from urllib.parse import urlparse
     a = str(adres).strip()
-    if "://" in a:
-        return (urlparse(a).hostname or "").lower().removeprefix("www.")
-    return a.lower().removeprefix("www.")
+    if "://" not in a:
+        a = "https://" + a
+    return (urlparse(a).hostname or "").lower().removeprefix("www.")
 
 
 def kullanici_kaynaklari(ad):
