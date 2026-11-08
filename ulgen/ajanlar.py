@@ -92,6 +92,7 @@ ENGEL_DESENI = re.compile(
     r"Attention Required|Sorry, you have been blocked|Just a moment|"
     r"Lütfen Bekleyiniz|Access denied|enable JavaScript", re.IGNORECASE)
 
+
 # ------------------------------------------------------------ araştırma ajanı
 
 class ArastirmaAjani:
