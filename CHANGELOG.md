@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.71
+- **Hap/ilaç ve hatırlatmalar bilgisayarda sesli:** Mac'te bir doz ya da hatırlatma zamanı gelince önce kısa bir uyarı sesi çalar, sonra metin sesli okunur (kimlik imleri ve yanıt yönergeleri okunmaz). Sayfa kapalı olsa da çalışır; aynı Mac'teki sayfa ikinci kez okumaz. Ayar: `hatirlatma_sesi` (varsayılan açık). Kodlandı, gerçek cihaz testi bekliyor.
+
 ## 2.7.70
 - **Uzun araştırma:** Araştırma Ajanı artık uzunluğu ne olursa olsun (60 000 karaktere dek) görev alır. Görev maddelere ayrılır (örn. "Ad (eser, eser)" listesi → her ad bir madde), her madde için ayrı aramalar yapılıp sayfalar okunur, bulgular kaynak bağlantılarıyla Obsidian'da `Ülgen/Araştırmalar/<görev>/` altında not olur, sonda `00 Dizin` yazılır. Her madde sonrası denetim noktası: iptal/kapanma sonrası aynı görev verilince kalan maddelerden sürer. Telifli kitapların tam metni indirilmez; PDF bağlantıları notta listelenir.
 - **Obsidian'a yazma (kullanıcı onaylı):** Yalnız kasadaki `Ülgen/` klasörüne, yeni not olarak; sizin notlarınızın üzerine yazılmaz, hiçbir şey silinmez, yol kaçışı engelli. Ayar: `obsidyen_yazma`, `obsidyen_yazma_klasoru`. Kasa yoksa notlar `~/ÜlgenVeri/notlar/` altına yazılır.

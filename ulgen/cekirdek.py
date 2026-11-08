@@ -100,6 +100,11 @@ class Ulgen:
 
         ``eylem``: arayüzün düğme çizebilmesi için (örn. {"tur": "doz",
         "doz": 12, "secenekler": [...]})."""
+        if ((eylem or {}).get("tur") == "doz"
+                or macsenk.SESLI_BASLAR.match(str(metin))):
+            if macsenk.sesli_hatirlat(metin):
+                # Mac sesi sunucuda çıktı; aynı makinedeki sayfa tekrar okumasın
+                eylem = dict(eylem or {}, sunucu_sesi=True)
         with self._bildirim_kilit:
             self._sayac += 1
             self._bildirimler.append((self._sayac, metin, eylem))

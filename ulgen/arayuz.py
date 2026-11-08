@@ -851,7 +851,8 @@ async function bildirimleriAl() {
       gecmisBildirim.push({ metin: b.metin, saat: new Date().toLocaleTimeString("tr-TR") });
       if (aktifSekme === "bildirim") bildirimCiz();
       if (b.eylem && b.eylem.tur === "doz") dozDugmeleri(b.eylem.doz);
-      konus(b.metin);
+      const yerel = ["127.0.0.1", "localhost"].includes(location.hostname);
+      if (!(yerel && b.eylem && b.eylem.sunucu_sesi)) konus(b.metin);
     }
     if (liste.length && navigator.vibrate) navigator.vibrate([200, 100, 200]);
   } catch (e) { /* sessizce geç */ }

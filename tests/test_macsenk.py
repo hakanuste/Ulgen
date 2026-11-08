@@ -131,6 +131,22 @@ class BildirimTesti(TemizVeri):
         finally:
             macsenk.mac_mi = orijinal
 
+    def test_sesli_komutlar_ve_metin(self):
+        k = macsenk.sesli_komutlar(
+            "İlaç zamanı: Hap, 08:00 [D12]. Yanıt: 'aldım D12'.", "Yelda")
+        self.assertEqual(k[0][0], "afplay")
+        self.assertEqual(k[1][:3], ["say", "-v", "Yelda"])
+        self.assertEqual(k[1][3], "İlaç zamanı: Hap, 08:00 .")
+        self.assertTrue(macsenk.SESLI_BASLAR.match("Hatırlatma zamanı: su"))
+
+    def test_sesli_hatirlat_mac_degilse_yapmaz(self):
+        orijinal = macsenk.mac_mi
+        try:
+            macsenk.mac_mi = lambda: False
+            self.assertFalse(macsenk.sesli_hatirlat("x"))
+        finally:
+            macsenk.mac_mi = orijinal
+
     def test_bildir_mac_bildirimini_cagirir(self):
         gelen = []
         orijinal = macsenk.bildirim_goster

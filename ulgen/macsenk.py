@@ -13,6 +13,7 @@ Sınırlar (dürüst):
 """
 
 import platform
+import re
 import subprocess
 import threading
 import time
@@ -317,5 +318,41 @@ def bildirim_goster(metin, baslik="Ülgen"):
                            capture_output=True)
         except Exception:
             pass
+    threading.Thread(target=kos, daemon=True).start()
+    return True
+
+
+_SES_KILIDI = threading.Lock()
+SESLI_BASLAR = re.compile(
+    r"^(İlaç zamanı|Tekrar hatırlatıyorum|Hatırlatma zamanı)", re.IGNORECASE)
+
+
+def sesli_metin_yap(metin):
+    """Okunacak cümle: kimlik imleri ve yanıt yönergeleri atılır."""
+    metin = str(metin).split("Yanıt:")[0].split("deyin.")[0]
+    metin = re.sub(r"\[[#D]?\d+\]", " ", metin)
+    metin = re.sub(r"https?://\S+", " ", metin)
+    return " ".join(metin.split())[:300]
+
+
+def sesli_komutlar(metin, ses="Yelda"):
+    """Önce kısa uyarı sesi, sonra cümlenin okunması."""
+    return [["afplay", "/System/Library/Sounds/Glass.aiff"],
+            ["say", "-v", ses, sesli_metin_yap(metin)]]
+
+
+def sesli_hatirlat(metin):
+    """Mac'te hatırlatmayı sesli okur (yalnız macOS, ayar açıksa)."""
+    if not mac_mi() or not ayar.yukle().get("hatirlatma_sesi", True):
+        return False
+
+    def kos():
+        with _SES_KILIDI:
+            for komut in sesli_komutlar(
+                    metin, ayar.yukle().get("ses", "Yelda")):
+                try:
+                    subprocess.run(komut, timeout=60, capture_output=True)
+                except Exception:
+                    pass
     threading.Thread(target=kos, daemon=True).start()
     return True

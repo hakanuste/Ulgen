@@ -49,6 +49,8 @@ VARSAYILAN = {
     "mac_senk": True,
     "mac_senk_dk": 10,
     "mac_bildirim": True,
+    # Mac'te hap/ilaç ve hatırlatmaları sesli okur
+    "hatirlatma_sesi": True,
     # Obsidian'a yazma: yalnız kasadaki bu alt klasöre, yeni not olarak; kullanıcının
     # kendi notlarının üzerine yazılmaz, hiçbir şey silinmez.
     "obsidyen_yazma": True,
