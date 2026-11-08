@@ -1089,15 +1089,12 @@ async function panoYenile() {
     const k2 = kartK(p1, "Görevler", [], "gorev", "", "gorevler");
     if (!g.gorev.length) satirS(k2, "Açık görev yok", "");
     g.gorev.slice(0, 6).forEach(x => satirS(k2, x.baslik, x.zaman ? x.zaman.slice(5, 16) : "Zamansız"));
-    const k5 = kartK(p1, "Sağlık Durumu", [], "kalp");
-    const h = document.createElement("div"); h.className = "halka"; h.style.setProperty("--p", Math.min(100, (sg.adim || 0) / 100) + "%");
-    h.innerHTML = "<span><b></b>adım</span>"; h.querySelector("b").textContent = sg.adim === null ? "—" : sg.adim.toLocaleString("tr-TR");
-    const uc = document.createElement("div"); uc.className = "sag3";
-    const oge = (ikon, renk, deger, ad) => { const d = document.createElement("div"); d.className = "oge";
-      d.innerHTML = '<svg class="i" style="color:' + renk + '"><use href="#i-' + ikon + '"/></svg><b></b>' + ad; d.querySelector("b").textContent = deger; return d; };
-    uc.appendChild(h); uc.appendChild(oge("kalp", "var(--ulgen-danger)", sg.nabiz === null ? "—" : sg.nabiz, "nabız")); uc.appendChild(oge("ay", "var(--ulgen-ice)", uykuYazi(sg.uyku_dk), "uyku"));
-    k5.appendChild(uc);
-    if (!sg.veri_var) { const n = document.createElement("div"); n.style.cssText = "text-align:center;font-size:12px;color:var(--soluk);margin-top:6px"; n.textContent = "iPhone Kestirmesi kurulunca dolar (SAGLIK_KESTIRME.md)"; k5.appendChild(n); }
+    const k5 = kartK(p1, "Ajanlar ve Uzmanlar", [], "cip", "", "ajanlar");
+    try {
+      const uz = await panoIstek("/uzmanlar");
+      uz.genel.forEach(x => satirS(k5, x.ad + " – " + x.is, x.yer));
+      uz.uzmanlar.forEach(x => satirS(k5, x.ad, x.alan));
+    } catch (e) { satirS(k5, "Liste alınamadı", ""); }
     const k3 = kartK(p2, "Yapay Zekâ Modelleri", [], "katman");
     const aktif = ((sis.beyin && sis.beyin.beyin) || "").toLowerCase();
     sis.kota.forEach(t => {

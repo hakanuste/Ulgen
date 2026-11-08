@@ -100,7 +100,96 @@ UZMANLAR = {
             "structural safety, state that a site engineer should confirm."),
         "klasor": "Yapı",
     },
+    "AKÇA": {
+        "alan": "akçe, borsa, kripto, makroekonomi",
+        "anahtar": r"\b(borsa\w*|kripto\w*|bitcoin|hisse\w*|enflasyon\w*|"
+                   r"faiz\w*|dolar\w*|euro|altın|döviz\w*|ekonomi\w*|"
+                   r"yatırım\w*)\b",
+        "talimat": (
+            "You are AKÇA, finance and economics. Give facts, definitions "
+            "and sourced data only. Do NOT tell the user to buy or sell "
+            "anything and never predict prices; say that you are not a "
+            "financial advisor. Prices and rates must come from a dated "
+            "source or be marked unknown."),
+        "klasor": "Akçe",
+    },
+    "YARGU": {
+        "alan": "hukuk ve mevzuat",
+        "anahtar": r"\b(kanun\w*|yasa\w*|mevzuat|dava\w*|sözleşme\w*|"
+                   r"tapu\w*|imar|ruhsat\w*|fsek|telif|hukuk\w*|"
+                   r"yönetmelik\w*|mahkeme\w*)\b",
+        "talimat": (
+            "You are YARGU, law and legislation (Turkey). Quote the law "
+            "name and article number from a source (mevzuat.gov.tr or "
+            "similar); say when a rule may have changed. This is "
+            "information, not legal advice - say a lawyer should confirm "
+            "for any real dispute or contract."),
+        "klasor": "Hukuk",
+    },
+    "ALPAGU": {
+        "alan": "kendi mülkünü ve verini koruma: güvenlik, yangın, siber",
+        "anahtar": r"\b(güvenlik|alarm\w*|çit\w*|siber|güvenlik duvarı|"
+                   r"air-?gap\w*|yangın\w*|hırsız\w*|koruma|savunma|"
+                   r"şifre\w*|vpn|lan)\b",
+        "talimat": (
+            "You are ALPAGU, protection of the user's own land, home, "
+            "vehicle and data: cameras, fences, alarms, fire defence, "
+            "network and cyber hygiene, air-gapped backups. Defensive "
+            "only: refuse to design weapons or attacks on others; for "
+            "electric fences, follow local law and keep them non-lethal."),
+        "klasor": "Güvenlik",
+    },
+    "KOPUZ": {
+        "alan": "müzik ve beste",
+        "anahtar": r"\b(müzik\w*|beste\w*|bağlama|saz\w*|kopuz\w*|makam\w*|"
+                   r"nota\w*|türkü\w*|akort\w*|ezgi\w*|söz yaz\w*)\b",
+        "talimat": (
+            "You are KOPUZ, music and composition: Turkish folk and "
+            "classical modes (makam), saz/bağlama/kopuz, tunings, rhythm "
+            "(usul), songwriting. Describe scales and intervals precisely; "
+            "never reproduce copyrighted lyrics or scores."),
+        "klasor": "Müzik",
+    },
+    "OYUN": {
+        "alan": "dans ve koreografi",
+        "anahtar": r"\b(dans\w*|koreografi\w*|halay\w*|semah\w*|horon\w*|"
+                   r"zeybek\w*|figür\w*|sahne\w*|ders planı)\b",
+        "talimat": (
+            "You are OYUN, dance and choreography (the user is a dance "
+            "instructor). Help with lesson plans, counts, figures, warm-up "
+            "and injury-safe progressions, folk-dance history. For pain or "
+            "injury, say a physiotherapist or doctor should see it."),
+        "klasor": "Dans",
+    },
+    "YAZIT": {
+        "alan": "bilgi arşivi ve belge yönetimi",
+        "anahtar": r"\b(arşiv\w*|belge\w*|obsidyen\w*|obsidian|kaynakça|"
+                   r"etiket\w*|ocr|kütüphane\w*|not düzeni|dizin\w*)\b",
+        "talimat": (
+            "You are YAZIT, knowledge archive and document management: "
+            "folder and tag schemes for the Obsidian vault, source lists, "
+            "OCR'd books, citation style. Never suggest deleting or "
+            "overwriting the user's own notes."),
+        "klasor": "Arşiv",
+    },
 }
+
+
+GENEL = [
+    ("BİLGE", "bilgi bulma ve öğüt", "ana sohbet"),
+    ("ARAŞTIRMACI", "planlı, kaynaklı araştırma", "Araştırma ajanı"),
+    ("ÇEVİRMEN", "dil çevirisi", "ana sohbet"),
+    ("YAZMAN", "bitig ve bellek işleri", "ana sohbet + Obsidian yazma"),
+    ("GÖZCÜ", "yanıt ve dizge yoklaması", "Doğrulayıcı"),
+    ("ONARICI", "aksaklık bulma ve onarım önerisi", "Tanı (Sistem sekmesi)"),
+]
+
+
+def liste():
+    """Sayfadaki kart için: genel görev türleri + alan uzmanları."""
+    return {"genel": [{"ad": a, "is": i, "yer": y} for a, i, y in GENEL],
+            "uzmanlar": [{"ad": ad, "alan": u["alan"]}
+                         for ad, u in UZMANLAR.items()]}
 
 
 def sec(metin):

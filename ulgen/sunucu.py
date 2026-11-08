@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
-from . import obsidyen_yaz, ocr, uzun_arastirma
+from . import obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
 from . import saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
@@ -454,6 +454,8 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, _gorevler_json())
             if yol == "/ajanlar":
                 return self._cevap(200, ajan_kayit.liste())
+            if yol == "/uzmanlar":
+                return self._cevap(200, uzmanlar.liste())
             if yol == "/bilgi/ara":
                 q = parse_qs(adres.query).get("q", [""])[0][:200]
                 ogeler = ulgen.hafiza.liste()

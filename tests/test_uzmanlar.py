@@ -20,6 +20,17 @@ class Uzmanlar(TemizVeri):
         self.assertEqual(uzmanlar.sec("lifepo4 akü şarj"), "KÜN")
         self.assertIsNone(uzmanlar.sec("bugün hava nasıl"))
 
+    def test_tum_uzmanlar_ve_liste(self):
+        self.assertEqual(len(uzmanlar.UZMANLAR), 12)
+        self.assertEqual(uzmanlar.sec("bitcoin ve borsa"), "AKÇA")
+        self.assertEqual(uzmanlar.sec("tapu ve imar kanunu"), "YARGU")
+        self.assertEqual(uzmanlar.sec("bağlama akort makam"), "KOPUZ")
+        self.assertEqual(uzmanlar.sec("halay koreografi figür"), "OYUN")
+        self.assertEqual(uzmanlar.sec("yangın alarm çit"), "ALPAGU")
+        l = uzmanlar.liste()
+        self.assertEqual(len(l["genel"]), 6)
+        self.assertEqual(len(l["uzmanlar"]), 12)
+
     def test_istem_kurallari(self):
         m = uzmanlar.istem("biberiye hangi vitamini içerir")
         self.assertIn("OTACI", m)

@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.76
+- **Tüm alan uzmanları:** AKÇA (akçe; alım-satım önerisi yok), YARGU (mevzuat; hukuk görüşü değil), ALPAGU (kendi mülk ve veri güvenliği; yalnız savunma), KOPUZ (müzik), OYUN (dans), YAZIT (arşiv) eklendi; toplam 12 uzman.
+- **Sayfa:** Ana sayfadaki "Sağlık Durumu" kartı kaldırıldı; yerine 6 genel görev türü ve 12 uzmanı gösteren "Ajanlar ve Uzmanlar" kartı kondu (`/uzmanlar`). Üstteki şeritteki küçük "Sağlık" kartı ve Sağlık sekmesi yerinde duruyor.
+
 ## 2.7.75
 - **Alan uzmanları (yönlendirici + profil):** Soruda konuya özgü sözcükler geçince ilgili uzmanın kuralları sistem istemine eklenir: **OTACI** (bitkiler, geleneksel şifa bilgisi), **TULGA** (Musso/otomotiv), **YER-SU** (permakültür, arsa), **KÜN** (güneş enerjisi), **DEMİR** (elektronik), **BALBAL** (kerpiç/taş yapı). Hepsi için ortak kural: her bilginin kaynağı söylenir, bilinmeyen "bilinmiyor" denir, geleneksel bilgi ile doğrulanmış bilgi ayrı belirtilir.
 - **OTACI ve bitki kütüphanesi:** "Biberiye neye iyi gelir / hangi vitamini içerir / nasıl kullanılır" gibi sorulara geleneksel kullanım (İbn Sînâ, Dioskorides vb. kaynaklarıyla), içerik, hazırlama biçimi ve uyarılarla yanıt verir. Tanı koymaz, kişiye doz vermez, ağır belirtilerde ilk yardım ve 112'ye yönlendirir. Yeni araç `bitki_bilgisi(ad)`: kaynaklı araştırma yapar ve `Ülgen/Bitkiler/<ad>.md` notunu yazar. Kodlandı, gerçek cihaz testi bekliyor.
