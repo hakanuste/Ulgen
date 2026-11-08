@@ -83,11 +83,11 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
 .d-ertelendi { background: var(--ulgen-blue); } .d-atlandi { background: var(--ulgen-muted); }
 #baglanti { display: none; background: color-mix(in srgb, var(--ulgen-danger) 25%, var(--ulgen-bg)); color: #ffd7d7; font-size: 13px; padding: 6px 16px; text-align: center; }
 #baglanti.acik { display: block; }
-#kodPanel { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column;
+#kodPanel, #ajanPanel { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column;
             padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px); z-index: 5; }
-#kodPanel.acik { display: flex; }
-#kodPanel .satir { display: flex; gap: 6px; margin: 4px 0; flex-wrap: wrap; align-items: center; }
-#kodPanel select, #kodPanel input { background: var(--kart); color: var(--yazi); border: 1px solid var(--ulgen-ocean);
+#kodPanel.acik, #ajanPanel.acik { display: flex; }
+#kodPanel .satir, #ajanPanel .satir { display: flex; gap: 6px; margin: 4px 0; flex-wrap: wrap; align-items: center; }
+#kodPanel select, #kodPanel input, #ajanPanel select, #ajanPanel textarea { background: var(--kart); color: var(--yazi); border: 1px solid var(--ulgen-ocean);
             border-radius: 8px; padding: 7px; font-size: 14px; }
 #kodYazi { flex: 1; min-height: 160px; resize: none; background: var(--ulgen-bg); color: var(--ulgen-text); border: 1px solid var(--ulgen-ocean);
            border-radius: 10px; padding: 10px; font: 14px/1.45 ui-monospace, Menlo, monospace; tab-size: 4; }
@@ -404,6 +404,23 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   </div>
   <pre id="kodCikti">Çıktı burada görünür. Kod sizin yetkinizle çalışır (kum havuzu değildir).</pre>
 </div>
+<div id="ajanPanel">
+  <div class="satir">
+    <b style="flex:1">Ajan görevi</b>
+    <button class="dugme" onclick="ajanKapat()">Kapat ✕</button>
+  </div>
+  <div class="satir">
+    <select id="ajanSec"></select>
+    <span style="font-size:12px;color:var(--soluk)" id="ajanAlan"></span>
+  </div>
+  <textarea id="ajanGorev" rows="10" maxlength="60000" spellcheck="false"
+    placeholder="Görevi yazın. Ajan araştırıp bitirince sonucu sohbet sayfasında yayınlar."
+    style="flex:1;padding:10px;border-radius:10px;font:inherit"></textarea>
+  <div class="satir">
+    <button class="dugme aktif" onclick="ajanGonder()">Görevi gönder</button>
+    <span id="ajanDurum" style="font-size:12px;color:var(--soluk)"></span>
+  </div>
+</div>
 <div id="baglanti">Bağlantı koptu; yeniden deneniyor…</div>
 <div id="serit"></div>
 <div id="icerik">
@@ -444,6 +461,7 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   <button onclick="cipSec('Hatırlat: ')">Hatırlat</button>
   <button onclick="cipSec('Not al: ')">Not Al</button>
   <button onclick="kodAcPencere()">Kod</button>
+  <button onclick="ajanAc()">Ajan Görevi</button>
 </div>
 <div id="alt">
   <div id="mikSatir">
@@ -847,6 +865,10 @@ async function bildirimleriAl() {
     const liste = await istek("/bildirimler?son=" + sonBildirim);
     for (const b of liste) {
       sonBildirim = Math.max(sonBildirim, b.id);
+      if (b.eylem && b.eylem.tur === "ajan_sonuc") {
+        balonEkle(b.metin, "asistan");
+        continue;
+      }
       balonEkle("⏰ " + b.metin, "bildirim");
       gecmisBildirim.push({ metin: b.metin, saat: new Date().toLocaleTimeString("tr-TR") });
       if (aktifSekme === "bildirim") bildirimCiz();
@@ -1925,6 +1947,35 @@ async function kodListele(sec) {
     l.forEach(a => { const o = document.createElement("option"); o.value = a; o.textContent = a; k.appendChild(o); });
     if (sec) k.value = sec;
   } catch (e) { /* sessizce geç */ }
+}
+
+let ajanListe = null;
+async function ajanAc() {
+  const sec = document.getElementById("ajanSec");
+  if (!ajanListe) {
+    try { ajanListe = await istek("/uzmanlar"); } catch (e) { ajanListe = { uzmanlar: [] }; }
+    sec.replaceChildren();
+    const a = document.createElement("option"); a.value = "arastirma"; a.textContent = "Araştırma ajanı (genel)"; sec.appendChild(a);
+    ajanListe.uzmanlar.forEach(u => { const o = document.createElement("option"); o.value = u.ad; o.textContent = u.ad + " – " + u.alan; sec.appendChild(o); });
+  }
+  document.getElementById("ajanDurum").textContent = "";
+  document.getElementById("ajanPanel").classList.add("acik");
+  document.getElementById("ajanGorev").focus();
+}
+function ajanKapat() { document.getElementById("ajanPanel").classList.remove("acik"); }
+async function ajanGonder() {
+  const ajan = document.getElementById("ajanSec").value;
+  const gorev = document.getElementById("ajanGorev").value.trim();
+  const d = document.getElementById("ajanDurum");
+  if (!gorev) { d.textContent = "Görev boş."; return; }
+  d.textContent = "Gönderiliyor…";
+  try {
+    const y = await istek("/ajanlar/gorev", { ajan: ajan, gorev: gorev });
+    if (y && y.hata) { d.textContent = y.hata; return; }
+    document.getElementById("ajanGorev").value = "";
+    ajanKapat();
+    balonEkle("Görev " + (y.ad || ajan) + " ajanına verildi. Bitince sonucu burada yayınlayacak.", "asistan");
+  } catch (e) { d.textContent = "Gönderilemedi: " + (e.message || e); }
 }
 
 function kodAcPencere() { document.getElementById("kodPanel").classList.add("acik"); kodListele(); }

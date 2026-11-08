@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
-from . import obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
+from . import ajan_gorevi, obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
 from . import saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
@@ -374,6 +374,14 @@ def istek_sinifi(ulgen, limit):
                     veritabani.gunluge_yaz("uyari", "ajan", "%s: %r" % (kimlik, hata))
             threading.Thread(target=kos, daemon=True).start()
             return self._cevap(202, {"baslatildi": kimlik})
+
+        def _ajan_gorev(self, veri):
+            """Pencereden verilen görev: arka planda çalışır, sonuç sohbette."""
+            ad, gorev = ajan_gorevi.dogrula(veri.get("ajan"), veri.get("gorev"))
+            if not gorev:
+                return self._cevap(400, {"hata": ad})
+            ajan_gorevi.arka_planda(ulgen, ad, gorev)
+            return self._cevap(202, {"baslatildi": ad, "ad": ad})
 
         def _govde(self):
             try:
@@ -777,6 +785,8 @@ def istek_sinifi(ulgen, limit):
                 return
             if urlparse(self.path).path == "/ajanlar/calistir":
                 return self._ajan_calistir(veri)
+            if urlparse(self.path).path == "/ajanlar/gorev":
+                return self._ajan_gorev(veri)
             if urlparse(self.path).path == "/sohbet/iptal":
                 iptal.ayarla()
                 return self._cevap(200, {"tamam": True})

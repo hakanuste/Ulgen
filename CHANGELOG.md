@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.82
+- **Ajan görev penceresi:** Sohbet sayfasındaki "Ajan Görevi" düğmesi tam ekran bir pencere açar: ajanı seçin (Araştırma ajanı ya da 12 alan uzmanından biri), görevi yazın (araştırmada 60 000 karaktere dek), gönderin. Görev arka planda yürür (sayfayı kapatabilirsiniz); bitince sonuç sohbet sayfasında bir ajan yanıtı olarak yayınlanır ve sohbet geçmişine yazılır (sesli okunmaz). Uzmana verilen görev, uzmanın kurallarıyla ve güvenilir kaynaklarıyla yürür; Araştırma ajanı uzun görevlerde Obsidian'a not da yazar. Görevler sırayla çalışır. Kodlandı ve sunucu ucu test edildi; sayfa görünümü Mac'te denenecek.
+
 ## 2.7.81
 - **Oturumlu okuyucu (giriş gerektiren siteler):** `giris: fintables.com` -> ayrı bir tarayıcı penceresi açılır, siteye KENDİNİZ giriş yaparsınız (şifre Ülgen'e hiç girmez, saklanmaz), pencereyi kapatırsınız. Sonra `oturumlu oku: <adres>` (ya da `oturumlu_oku` aracı) aynı oturumla sayfanın metnini okur. Salt okuma: tıklama, form gönderme, indirme yok. Yalnızca `kaynak ekle` ile eklediğiniz alan adları okunur; yerel/özel adresler engelli. Oturum çerezleri yalnız Mac'te `~/ÜlgenVeri/tarayici` (0700) altında durur; sonuçlar kişisel veri sayılır ve bulut beyne gitmez. İsteğe bağlı bileşen: `pip install playwright && playwright install chromium` (yoksa komut bunu söyler). Gerçek tarayıcıyla çerez kalıcılığı sınandı (Linux); Mac ve gerçek siteler için test bekliyor.
 - Düzeltme: alan adı eşleştirmesi `ornek.com/yol` gibi şemasız adreslerde yolu da alan sanıyordu.
