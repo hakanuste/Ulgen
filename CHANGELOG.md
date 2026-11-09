@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.7.86
+- **TULGA arıza yanıtı biçimi:** Arıza sorularında yanıt şu düzende gelir: birimin nasıl çalıştığı (tek satır) → olası nedenler, en basit ve ucuzdan başlayarak (vites bağlantısı ve burçları, yağ seviyesi/rengi, vakum hatları ve modülatör, hidrolik beyin ve bant pistonları, pompa/tork konvertörü), her birinde ne bozulur ve çözüm → alınacak parçalar → "İlk olarak ne yapmalısınız" sıralı denetim listesi → teşhisi daraltacak 2–3 soru → kaynaklar.
+- OEM parça numarası yalnızca kılavuz ya da gösterilen kaynakta yazıyorsa verilir; yoksa "şasi numarasıyla Mercedes/SsangYong parçacısında doğrulayın" denir, numara uydurulmaz.
+- Araç bilgisi düzeltildi: benzinli M104 (dizel değil; vakum emme manifoldundan gelir, dizel vakum pompası yoktur). Şanzıman Mercedes 4 ileri hidrolik ailesinden (722.3/722.4/722.5); değişkene özgü bilgi vermeden önce etiket ya da kılavuzdan doğrulanır.
+- TULGA'nın güvenilir kaynaklarına Mercedes teknik forumları eklendi (peachparts.com, benzworld.org, mbworld.org); şanzıman sorularında arama İngilizce karşılıklarla ve "Mercedes 722" ile yapılır.
+
 ## 2.7.85
 - **Hangi uzmana sorulduğunu anlama:** Soru doğrudan ilgili uzmana gider ve uzman kendi işini yapar; yanıtın üstünde hangi uzmanın yanıtladığı yazar (örn. "🤖 AKÇA – finans ve yatırım").
 - **AKÇA şirket adını tanır:** "Anadolu Efes hissesi ne oldu, analiz et" → AEFES; analiz kodda hesaplanır (getiri, ortalamalar, RSI, oynaklık, düşüş), not `Akçe/` altına yazılır. "aefes kaç TL" → anlık fiyat; "dolar kaç TL" → TCMB. Yaklaşık 75 BIST şirketi adıyla tanınır; listede olmayan şirket Yahoo Finance aramasıyla bulunur. Kesin al/sat önerisi verilmez.

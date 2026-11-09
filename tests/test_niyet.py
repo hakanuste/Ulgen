@@ -94,3 +94,20 @@ class Kilavuz(unittest.TestCase):
         ar.assert_not_called()
         self.assertIn("WORKSHOP MANUAL EXCERPTS", istem)
         self.assertIn("modulator", istem)
+
+
+class TulgaBicim(unittest.TestCase):
+
+    def test_talimat_bicim_ve_uydurmama(self):
+        t = uzmanlar.UZMANLAR["TULGA"]["talimat"]
+        self.assertIn("FAULT ANSWER FORMAT", t)
+        self.assertIn("never invent", t)
+        self.assertIn("not a diesel", t)
+
+    def test_devral_sanziman_sorgusu_ingilizce(self):
+        alinan = []
+        with mock.patch.object(uzmanlar, "guvenilir_ara",
+                               side_effect=lambda s, a, r: alinan.append(s) or "KAYNAK"):
+            uzmanlar.devral("TULGA", "musso şanzıman vitese geçmiyor", None,
+                            lambda s: "")
+        self.assertTrue(alinan[0].startswith("Mercedes 722 transmission"))
