@@ -78,7 +78,7 @@ class Kilavuz(unittest.TestCase):
         m = uzmanlar.kilavuz_alintilari(
             "TULGA", "şanzıman geçmiyor", ara,
             kilavuz_mu=lambda y: os.path.basename(os.path.dirname(y)) != "notlar")
-        self.assertTrue(m.startswith("## Musso - Sayfa 300-320"))
+        self.assertTrue(m.startswith("## KILAVUZ: Musso - Sayfa 300-320"))
         self.assertNotIn("## Not\n", m)
 
     def test_kilavuz_varsa_istemde_ve_arastirma_yok(self):
@@ -92,7 +92,7 @@ class Kilavuz(unittest.TestCase):
             istem = u.sistem_istemi(mock.Mock(yerel=False, sistem_butce=20000),
                                     "musso şanzıman geçme sorunu hangi parça?")
         ar.assert_not_called()
-        self.assertIn("WORKSHOP MANUAL EXCERPTS", istem)
+        self.assertIn("LIBRARY EXCERPTS", istem)
         self.assertIn("modulator", istem)
 
 
@@ -111,3 +111,33 @@ class TulgaBicim(unittest.TestCase):
             uzmanlar.devral("TULGA", "musso şanzıman vitese geçmiyor", None,
                             lambda s: "")
         self.assertTrue(alinan[0].startswith("Mercedes 722 transmission"))
+
+
+class EskiSohbet(unittest.TestCase):
+
+    def test_sohbetteki_burc_bilgisi_gelir(self):
+        yol = "/k/Yapay Zekâ Konuşmaları/Gemini/2026-10-01 Musso vites.md"
+
+        def ara(m, adet):
+            return [(os.path.basename(yol)[:-3], yol,
+                     "Musso 722.3 vites kolu mekanizmasında iki burç var: "
+                     "A1159920310"),
+                    ("Banka", "/k/Yapay Zekâ Konuşmaları/x/banka.md",
+                     "kredi kartı numaram 4111 1111 1111 1111 şifre 1234")]
+        m = uzmanlar.kilavuz_alintilari(
+            "TULGA", "mussonun şanzımanında geçme sorunu var hangi parça lazım",
+            ara, kilavuz_mu=lambda y: False)
+        self.assertIn("## ESKİ SOHBET: 2026-10-01 Musso vites", m)
+        self.assertIn("A1159920310", m)
+        self.assertNotIn("kredi kartı", m)
+
+    def test_her_uzman_kendi_alanindaki_sohbeti_alir(self):
+        def ara(m, adet):
+            return [("Biberiye", "/k/Yapay Zekâ Konuşmaları/a/biberiye.md",
+                     "biberiye bitkisi çayı A vitamini içerir"),
+                    ("Musso", "/k/Yapay Zekâ Konuşmaları/a/musso.md",
+                     "musso şanzıman burcu")]
+        m = uzmanlar.kilavuz_alintilari("OTACI", "biberiye neye iyi gelir", ara,
+                                        kilavuz_mu=lambda y: False)
+        self.assertIn("biberiye", m)
+        self.assertNotIn("şanzıman", m)

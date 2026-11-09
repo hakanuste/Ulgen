@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.87
+- **Uzmanlar eski sohbetleri okur:** Her uzman, sorunuzla ilgili olarak Obsidian'daki `Yapay Zekâ Konuşmaları` klasöründen (ChatGPT, Gemini vb. aktarılmış sohbetler) yalnızca KENDİ alanına giren soru-cevapları alır (örn. TULGA Musso şanzıman sohbetlerini, OTACI bitki sohbetlerini). Kılavuz notlarıyla birlikte yanıtın dayanağı olur; bunlar bulunduğunda web araştırması yapılmaz, yanıt daha hızlı gelir.
+- Eski sohbetlerdeki parça numaraları "eski sohbetinizde geçen numara" diye belirtilir ve parçacıda doğrulanması önerilir. Duyarlı bilgi (kart, şifre, sağlık gibi) içeren sohbet alıntısı alınmaz.
+
 ## 2.7.86
 - **TULGA arıza yanıtı biçimi:** Arıza sorularında yanıt şu düzende gelir: birimin nasıl çalıştığı (tek satır) → olası nedenler, en basit ve ucuzdan başlayarak (vites bağlantısı ve burçları, yağ seviyesi/rengi, vakum hatları ve modülatör, hidrolik beyin ve bant pistonları, pompa/tork konvertörü), her birinde ne bozulur ve çözüm → alınacak parçalar → "İlk olarak ne yapmalısınız" sıralı denetim listesi → teşhisi daraltacak 2–3 soru → kaynaklar.
 - OEM parça numarası yalnızca kılavuz ya da gösterilen kaynakta yazıyorsa verilir; yoksa "şasi numarasıyla Mercedes/SsangYong parçacısında doğrulayın" denir, numara uydurulmaz.
