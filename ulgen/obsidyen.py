@@ -350,7 +350,9 @@ def parcali_alinti(icerik, kelimeler, sinir=2500):
     olcu_mu = bool(OLCU_SORU.search(soru))
     asil = kokler(kelimeler, esanlam=False)
     kok = kokler(kelimeler)
-    parcalar = not_parcalari(gorunum_temizle(icerik))
+    # pay küçükse parçalar da küçülür (tek parçaya sığmayan seçimi yapabilsin)
+    parcalar = not_parcalari(gorunum_temizle(icerik),
+                             min(PARCA_BOYU, max(200, sinir // 2)))
     if not parcalar:
         return ""
     tarihler = _parca_tarihleri(parcalar)

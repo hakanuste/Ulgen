@@ -7,3 +7,4 @@ pypdf>=4.0
 pillow>=10.0
 cryptography>=42
 certifi>=2024.2.2
+youtube-transcript-api>=0.6

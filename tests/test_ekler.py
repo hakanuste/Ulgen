@@ -95,3 +95,11 @@ class Temizleme(unittest.TestCase):
     def test_yabanci_harfler_atilir(self):
         m = metin_temizle.yabanci_harfleri_at("Biberiye 你好 A vitamini içerir�. Тест")
         self.assertEqual(m, "Biberiye A vitamini içerir. Тест")
+
+
+class Latex(unittest.TestCase):
+
+    def test_latex_duz_metne(self):
+        m = metin_temizle.yabanci_harfleri_at(
+            r"$6,5 \times 6,5\text{ m}$ taban, $40\text{ cm}$ duvar, \(84,5\text{ m}^2\)")
+        self.assertEqual(m, "6,5 × 6,5 m taban, 40 cm duvar, 84,5 m²")

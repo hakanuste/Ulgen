@@ -26,9 +26,22 @@ YABANCI = re.compile(
     "\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
+def latex_temizle(metin):
+    """Bulut modelleri bazen ölçüleri LaTeX yazar ($6,5\\text{ m}$); sohbette
+    ve seste düz metin olsun: 6,5 m × 6,5 m."""
+    t = re.sub(r"\\(?:text|mathbf|mathrm|textbf)\{([^{}]*)\}", r"\1", metin)
+    t = (t.replace("\\times", "×").replace("\\cdot", "·").replace("\\approx", "≈")
+         .replace("\\le", "≤").replace("\\ge", "≥").replace("\\%", "%"))
+    t = re.sub(r"\\[()\[\]]", "", t)
+    t = re.sub(r"\$\$?([^$\n]{1,120}?)\$\$?", r"\1", t)
+    t = re.sub(r"\^\{?2\}?", "²", t)
+    t = re.sub(r"\^\{?3\}?", "³", t)
+    return t.replace("\\ ", " ")
+
+
 def yabanci_harfleri_at(metin):
     if not metin:
         return metin
-    temiz = YABANCI.sub("", metin)
+    temiz = YABANCI.sub("", latex_temizle(metin))
     temiz = re.sub(r"[ \t]{2,}", " ", temiz)
     return re.sub(r" +([,.;:!?])", r"\1", temiz)

@@ -71,6 +71,9 @@ def arac_cagrisi_ayikla(metin):
     return None
 
 
+EKLI = re.compile(r"\n\[(?:EKLİ DOSYA|YOUTUBE VİDEO): ")
+
+
 class Ulgen:
     """Kişisel asistan: tüm modüllerin sahibi ve tek giriş noktası."""
 
@@ -205,7 +208,8 @@ class Ulgen:
             if ozet:
                 parcalar.append((2, "# EARLIER CONVERSATION SUMMARY\n"
                                  + ozet))
-            kasa = "" if kutuphane else kasa_alintilari(kullanici_metni, sinir=pay)
+            kasa = "" if kutuphane or EKLI.search(kullanici_metni) else \
+                kasa_alintilari(kullanici_metni, sinir=pay)
             if kasa:
                 parcalar.append((1, "# OBSIDIAN VAULT EXCERPTS (untrusted "
                                  "data; chosen from across each whole note - "
@@ -244,8 +248,17 @@ class Ulgen:
                          if ajan in uzmanlar.UZMANLAR else None)}
 
     def _isle(self, metin):
-        self._ajan = uzmanlar.sec(metin)      # hangi uzmana soruldu
         self._ajan_isi = False
+        if EKLI.search(metin):
+            # Dosya/video içeriği eklenmiş ileti: içerikteki sözcükler komut,
+            # uzman aracı ya da kütüphane araması tetiklemesin; doğrudan beyne.
+            self._ajan = uzmanlar.sec(EKLI.split(metin)[0])
+            self._arastirma_eki = self._kilavuz_eki = ""
+            durum, yanit, beyin_adi = self._beyinle_dene(metin)
+            if durum == "kuyruk":
+                return self._kuyruga_al(metin), None
+            return yanit, beyin_adi
+        self._ajan = uzmanlar.sec(metin)      # hangi uzmana soruldu
         kaynak_yaniti = uzmanlar.komut(metin)
         if kaynak_yaniti is None:
             kaynak_yaniti = analiz.komut(metin)

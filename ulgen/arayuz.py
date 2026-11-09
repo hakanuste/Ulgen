@@ -50,7 +50,12 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
 #yaklasan div { padding: 2px 0; }
 #akis { flex: 1; overflow-y: auto; padding: 14px 14px 6px; }
 .balon { max-width: 85%; padding: 10px 13px; border-radius: 16px; margin: 6px 0; line-height: 1.4;
-         font-size: 16px; white-space: pre-wrap; word-wrap: break-word; }
+         font-size: 16px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere;
+         min-width: 0; overflow-x: auto; }
+/* Uzun yanıt sayfayı yana genişletmesin: esnek kutular içeriğe göre büyümez */
+#ana, #icerik, #sohbetKolon, #akis, .sat, #pano { min-width: 0; max-width: 100%; }
+#akis { overflow-x: hidden; }
+.balon pre, .balon table { max-width: 100%; overflow-x: auto; }
 .asistan { background: var(--kart); margin-right: auto; border-bottom-left-radius: 4px; }
 .kullanici { background: var(--kullanici); margin-left: auto; border-bottom-right-radius: 4px; }
 .bildirim { background: color-mix(in srgb, var(--ulgen-warning) 18%, var(--ulgen-bg)); border: 1px solid color-mix(in srgb, var(--ulgen-warning) 50%, var(--ulgen-bg)); margin-right: auto; }

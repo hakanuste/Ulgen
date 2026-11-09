@@ -25,7 +25,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import ajan_kayit, ekler, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
 from . import ajan_gorevi, obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
-from . import saglik_veri, ses, ses_klip
+from . import saglik_veri, ses, ses_klip, youtube
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -823,6 +823,8 @@ def istek_sinifi(ulgen, limit):
                 eklist = veri.get("ekler") or []
                 if isinstance(eklist, list) and eklist:
                     metin = ekler.iletiye_ekle(metin, [str(k) for k in eklist])
+                if youtube.kimlik_bul(metin):        # video bağlantısı: altyazıyı ekle
+                    metin = youtube.iletiye_ekle(metin)
                 return self._cevap(200, ulgen.sohbet_isle(metin))
             if urlparse(self.path).path == "/takvim/baglanti":
                 return self._cevap(200, {

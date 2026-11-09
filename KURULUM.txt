@@ -2,7 +2,7 @@
 ================================
 
 GEREKEN KÜTÜPHANELER (requirements.txt - hepsi ücretsiz, kurulum betiği kendisi yükler)
-    requests, beautifulsoup4, pandas, ddgs, pypdf, cryptography
+    requests, beautifulsoup4, pandas, ddgs, pypdf, cryptography, youtube-transcript-api
 İsteğe bağlı giriş gerektiren siteleri okuma (Fintables vb.):
     ~/Ülgen/ortam/bin/pip install playwright && ~/Ülgen/ortam/bin/playwright install chromium
 İsteğe bağlı ses (requirements-ses.txt):

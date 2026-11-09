@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.7.92
+- **YouTube yorumlama:** Sohbete YouTube bağlantısı (youtube.com/watch, youtu.be, shorts, m.youtube) yapıştırılınca videonun altyazısı çekilir (Türkçe önce, yoksa İngilizce ya da otomatik altyazı), 30 saniyede bir zaman imiyle iletiye eklenir ve Ülgen yorumlar. Bağlantının yanına soru yazarsanız (örn. "bildirim nasıl gönderiliyor?") dökümün o soruyla ilgili bölümleri verilir; yalnızca bağlantı ya da "yorumla" derseniz başı, ortası ve sonu. Tam döküm Obsidian'da `Ülgen/YouTube` notuna yazılır, sonraki sorularda kütüphaneden bulunur. Görüntü anlaşılmaz, yalnızca konuşulanlar; altyazı alınamazsa Ülgen bunu açıkça söyler, içerik uydurmaz. API anahtarı gerekmez (youtube-transcript-api ve izleme sayfası; ücretsiz).
+- Dosya ya da video içeriği eklenmiş ileti doğrudan beyne gider: içindeki sözcükler (örn. "THYAO analiz") komut, uzman aracı ya da kütüphane araması tetiklemez.
+- **Sohbet balonu sabit:** Uzun yanıt sohbet alanını ve sayfayı sağa doğru genişletmiyordu artık; uzun satırlar ve sözcükler balon içinde kırılır.
+- **LaTeX temizliği:** Bulut modellerin yazdığı `$6,5\times 6,5\text{ m}$` gibi biçimler sohbette ve seste "6,5 × 6,5 m" olur (m², ≈, ≤ dahil).
+
 ## 2.7.91
 - **Eş anlamlı arama:** "ölçü" sorusu "boyut, ebat, kot, taban, genişlik, derinlik, yükseklik, kalınlık, alan" sözcüklerini de arar (fiyat↔maliyet, plan↔proje↔çizim, arıza↔sorun da). Türkçe ekler atılır ("evin" → "ev"); kısa kökler yalnızca sözcük başında tutar ("ev" "evet"i tutmaz).
 - **"Son/güncel" soruları:** İlgili parçalardan notun sonuna yakın olan öne alınır (sonra yazılan geçerli). Ölçü sorularında ölçü değeri yoğun (6,5 m, 40 cm, 84,5 m²) parçalar öne çıkar.
