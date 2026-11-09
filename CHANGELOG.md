@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.7.88
+- **Eski sohbetlerdeki düzeltmeleriniz geçerli:** Uzmanlar bir sohbetten artık sözcüğün ilk geçtiği yeri değil, ilgili turları sohbetin sonundan başa doğru alır. Turlar "KULLANICI (Hakan)" ve "YAPAY ZEKÂ" diye işaretlenir; sizin "yanlış", "doğrusu", "hayır", "öyle değil", "aslında" gibi sözlerle düzelttiğiniz turlar "DÜZELTME" etiketi alır ve hemen ardından gelen düzeltilmiş yanıt da alınır.
+- Uzmana kural: sizin sözünüz yapay zekânın sözünden üstündür; düzeltilmiş yanlış asla tekrarlanmaz; aynı sohbette sonraki tur öncekini geçersiz kılar. Rolsüz aktarılmış sohbetlerde (Gemini vb. HTML) sözcüğün son geçtiği yer ve yakınındaki düzeltmeler alınır.
+- 3 harfli sözcükler de aranır ("taş").
+
 ## 2.7.87
 - **Uzmanlar eski sohbetleri okur:** Her uzman, sorunuzla ilgili olarak Obsidian'daki `Yapay Zekâ Konuşmaları` klasöründen (ChatGPT, Gemini vb. aktarılmış sohbetler) yalnızca KENDİ alanına giren soru-cevapları alır (örn. TULGA Musso şanzıman sohbetlerini, OTACI bitki sohbetlerini). Kılavuz notlarıyla birlikte yanıtın dayanağı olur; bunlar bulunduğunda web araştırması yapılmaz, yanıt daha hızlı gelir.
 - Alıntılar tarihli ve en yeniden eskiye sıralıdır (tarih dosya adından, yoksa dosyanın değişme gününden). Bilgi zamanla değiştiyse (örn. taş evin ölçüleri) en yenisi güncel kararınız sayılır ve tarihiyle söylenir; isterseniz önceki değerler tarih sırasıyla verilir. BALBAL "taş evin", "sığınak", "kiler", "çatı", "ev ölçüleri" sorularını da tanır.

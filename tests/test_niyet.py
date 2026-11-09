@@ -156,3 +156,44 @@ class EskiSohbet(unittest.TestCase):
         sira = [m.index(x) for x in ("9x12", "9x11", "8x10")]
         self.assertEqual(sira, sorted(sira))
         self.assertIn("newest one is the user's current decision", uzmanlar.KILAVUZ_ISTEMI)
+
+
+class Duzeltme(unittest.TestCase):
+
+    SOHBET = """---
+tags: [konuşma]
+---
+
+# Musso vites
+
+## Ben
+
+Musso şanzımanı hangi tip?
+
+## Yapay zekâ
+
+Musso'da BTR şanzıman vardır.
+
+## Ben
+
+Yanlış, BTR değil; benimki Mercedes 722 ailesi.
+
+## Yapay zekâ
+
+Haklısınız, Mercedes 722 ailesi. Vites burçları aşınmış olabilir.
+"""
+
+    def test_duzeltme_alinir_ve_isaretlenir(self):
+        m = uzmanlar.sohbet_alintisi("x.md", "musso şanzıman tipi",
+                                     oku=lambda y: self.SOHBET)
+        self.assertIn("KULLANICI (Hakan) - DÜZELTME] Yanlış, BTR değil", m)
+        self.assertIn("Mercedes 722 ailesi. Vites burçları", m)
+        self.assertLess(m.index("BTR şanzıman vardır"), m.index("Yanlış, BTR"))
+
+    def test_rolsuz_metinde_son_gecis(self):
+        metin = "taş ev ölçüsü 8x10 olacak. " + "x " * 600 + "Hayır yanlış, taş ev 9x12 olacak."
+        m = uzmanlar.sohbet_alintisi("y.md", "taş ev ölçüleri", oku=lambda y: metin)
+        self.assertIn("9x12", m)
+
+    def test_istem_duzeltmeyi_ustun_tutar(self):
+        self.assertIn("never repeat the corrected mistake", uzmanlar.KILAVUZ_ISTEMI)

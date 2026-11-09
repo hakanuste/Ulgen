@@ -501,7 +501,11 @@ KILAVUZ_ISTEMI = (
     "researched this, so build on what his earlier chats found. Earlier "
     "chats can contain mistakes: state part numbers from them as 'eski "
     "sohbetinizde geçen numara' and advise confirming with the dealer. "
-    "Entries are dated and listed newest first: when they disagree (e.g. "
+    "In ESKİ SOHBET, turns marked KULLANICI (Hakan) are the user's own "
+    "words and outrank the assistant; a turn marked DÜZELTME means he "
+    "corrected the assistant - use his corrected version and never repeat "
+    "the corrected mistake; within a chat a later turn overrides an earlier "
+    "one. Entries are dated and listed newest first: when they disagree (e.g. "
     "dimensions or a plan changed over time), the newest one is the user's "
     "current decision - say so, give its date, and when asked for the "
     "history list the earlier values in date order. "
@@ -540,6 +544,78 @@ def _sohbet_mu(yol):
     return "yapay zeka konusmalari" in obsidyen.normal(yol or "")
 
 
+DUZELTME = re.compile(
+    r"\b(yanlış\w*|yanlis\w*|hatalı\w*|hatali\w*|doğrusu\w*|dogrusu\w*|"
+    r"düzelt\w*|duzelt\w*|öyle değil|oyle degil|o değil|hayır|hayir|"
+    r"aslında|aslinda)\b", re.IGNORECASE)
+TUR = re.compile(r"^## (Ben|Yapay zekâ)\s*$", re.MULTILINE)
+
+
+def _turlar(icerik):
+    """ChatGPT aktarımındaki '## Ben' / '## Yapay zekâ' turları: [(rol, metin)]."""
+    bol = TUR.split(icerik)
+    return [(bol[i], bol[i + 1].strip()) for i in range(1, len(bol) - 1, 2)]
+
+
+def sohbet_alintisi(yol, metin, oku=None, sinir=1800):
+    """Eski sohbetten soruyla ilgili bölüm: ilk geçtiği yer DEĞİL, sohbetin
+    sonlarına doğru olanlar ve kullanıcının düzeltmeleri (düzeltme, önceki
+    yapay zekâ sözünü geçersiz kılar)."""
+    try:
+        icerik = (oku or obsidyen._oku)(yol)
+    except Exception:
+        return ""
+    sozcukler = [k[:max(3, len(k) - 3)] if len(k) >= 6 else k
+                 for k in obsidyen.KELIME.findall(obsidyen.normal(metin))
+                 if len(k) >= 3 and k not in ("var", "hangi", "nedir")][:10]
+
+    def ilgili(x):
+        n = obsidyen.normal(x)
+        return any(k in n for k in sozcukler)
+    turlar = _turlar(icerik)
+    if turlar:
+        secilen = set()
+        for i, (rol, govde) in enumerate(turlar):
+            duzeltme = (rol == "Ben" and DUZELTME.search(govde)
+                        and (i - 1) in secilen)
+            if ilgili(govde) or duzeltme or i in secilen:
+                secilen.add(i)
+                # yapay zekâ sözünden sonra kullanıcının yanıtı; düzeltmeden
+                # sonra da yapay zekânın düzeltilmiş yanıtı gelsin
+                if i + 1 < len(turlar) and (rol == "Yapay zekâ" or duzeltme):
+                    secilen.add(i + 1)
+        parcalar, toplam = [], 0
+        for i in sorted(secilen, reverse=True):     # sondan başa: en yeni önce
+            rol, govde = turlar[i]
+            etiket = "KULLANICI (Hakan)" if rol == "Ben" else "YAPAY ZEKÂ"
+            if rol == "Ben" and DUZELTME.search(govde):
+                etiket += " - DÜZELTME"
+            parca = "[%d. tur, %s] %s" % (i + 1, etiket, govde[:700])
+            if toplam + len(parca) > sinir and parcalar:
+                break
+            parcalar.append(parca)
+            toplam += len(parca)
+        return "\n".join(reversed(parcalar))
+    # Rolsüz metin: sözcüğün SON geçtiği yer + yakınında düzeltme olan yerler
+    n = obsidyen.normal(icerik)
+    konumlar = [m.start() for k in sozcukler for m in re.finditer(re.escape(k), n)]
+    if not konumlar:
+        return ""
+    pencereler = [max(konumlar)]
+    for m in DUZELTME.finditer(icerik):
+        if any(abs(m.start() - k) < 400 for k in konumlar):
+            pencereler.append(m.start())
+    pencereler = sorted(set(pencereler), reverse=True)
+    parcalar, toplam = [], 0
+    for p in pencereler:
+        parca = icerik[max(0, p - 350): p + 350].strip()
+        if toplam + len(parca) > sinir and parcalar:
+            break
+        parcalar.append(parca)
+        toplam += len(parca)
+    return "\n…\n".join(reversed(parcalar))
+
+
 def _sec_ve_sirala(ad, bulgular, uygun):
     secilen, gorulen = [], set()
     for b in bulgular:
@@ -567,7 +643,8 @@ def tarih_bul(yol):
         return "0000-00-00"
 
 
-def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=5000):
+def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=5000,
+                       oku=None):
     """Uzmanın alanındaki soruya kasadan alıntılar: kılavuz notları ve
     eski sohbetler (Yapay Zekâ Konuşmaları). TULGA'da Musso geçenler önce.
     Duyarlı bilgi içeren sohbet alıntısı alınmaz (buluta da gidebilir)."""
@@ -583,9 +660,12 @@ def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=5000):
     from . import guvenlik
     kilavuz = _sec_ve_sirala(ad, k_bulgu + s_bulgu, kilavuz_mu)
     alan = re.compile(UZMANLAR[ad]["anahtar"], re.IGNORECASE)
-    sohbet = [b for b in _sec_ve_sirala(ad, s_bulgu + k_bulgu, _sohbet_mu)
-              if alan.search("%s %s" % (b[0], b[2]))      # uzmanın alanında
-              and not guvenlik.duyarli_mi(b[2])]
+    sohbet = []
+    for b in _sec_ve_sirala(ad, s_bulgu + k_bulgu, _sohbet_mu):
+        alinti = sohbet_alintisi(b[1], metin, oku) or b[2]
+        if (alan.search("%s %s" % (b[0], alinti))           # uzmanın alanında
+                and not guvenlik.duyarli_mi(alinti)):
+            sohbet.append((b[0], b[1], alinti))
     parcalar, toplam = [], 0
     for etiket, liste in (("KILAVUZ", kilavuz), ("ESKİ SOHBET", sohbet)):
         for baslik, yol, alinti in liste[:4]:
