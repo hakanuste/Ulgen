@@ -2,7 +2,7 @@
 
 import threading
 
-from . import uzmanlar, uzun_arastirma
+from . import ajan_kayit, uzmanlar, uzun_arastirma
 
 AZAMI_UZMAN = 4000
 AZAMI_SONUC = 12000
@@ -36,7 +36,9 @@ def calistir(ulgen, ad, gorev):
                           % (etiket, gorev[:300]))
             ulgen._kaydet("asistan", sonuc[:AZAMI_SONUC])
         else:
-            sonuc = ulgen.sohbet_isle("%s: %s" % (ad, gorev))["yanit"]
+            is_ = ajan_kayit.sar(uzmanlar.kimlik(ad), lambda g: ulgen.sohbet_isle(
+                "%s: %s" % (ad, g))["yanit"])
+            sonuc = is_(gorev)
     except BaseException as hata:       # iptal dahil; kullanıcı bilsin
         sonuc = "Görev tamamlanamadı: %s" % str(hata)[:200]
     ulgen.bildir("🤖 %s – görev sonucu\n\n%s" % (etiket, str(sonuc)[:AZAMI_SONUC]),

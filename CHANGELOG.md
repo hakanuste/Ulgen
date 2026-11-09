@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.7.84
+- **Uzmanlar ayrı ajan:** 12 alan uzmanı Ajanlar sekmesinde, "Alan uzmanları" başlığı altında kendi kartlarıyla görünür (durum, son çalışma, özet, görev kutusu, "Şimdi çalıştır"). Sonuç sohbette yayınlanır.
+- **Araştırma ajanı görevi devreder:** Kısa bir araştırma görevi bir uzmanın alanına giriyorsa (örn. kur → AKÇA, bitki → OTACI, kerpiç → BALBAL, Musso → TULGA) Araştırma ajanı işi o uzmana verir. Uzman önce resmî veriye (AKÇA için TCMB/piyasa), sonra kendi güvenilir sitelerine bakar; orada bulgu yoksa genel arama yapılır ve "doğrulanmamış" diye etiketlenir. Yanıtın başında hangi uzmana devredildiği yazar. Uzun, çok maddeli görevler planlı araştırmada kalır.
+- **Önce kütüphane, yoksa araştırma:** Sohbete yazılan bir bilgi sorusu önce Obsidian kütüphanesinde aranır; soruyu karşılayan not yoksa Araştırma ajanı hemen çalışır ve yanıt bulunan kaynaklara dayanır (kaynaklar yanıtın sonunda). Kişisel, duyarlı ve sağlık durumu içeren sorular dışarıda aranmaz. Ayar: `otomatik_arastirma` (açık).
+- Kodlandı ve test edildi (404 test); Mac'te gerçek sorularla denenecek.
+
 ## 2.7.83
 - **Kurum görüşü derlemesi (`portfoy: 20`):** Fintables'taki aracı kurumların "Analist tavsiyeleri" tablolarını (hisse, öneri, tarih, hedef fiyat, son fiyat, potansiyel getiri, model portföy simgesi) sizin girişinizle, salt okuma ve kurum başına birkaç saniye bekleyerek gezer (ilk N kurum, pazar payı sırasıyla; varsayılan 20). Hisse başına hesaplar: kaç kurum kapsıyor (%), olumlu/nötr/olumsuz sayısı, model portföyde kaç kurum, hedef fiyat (en düşük–ortanca–en yüksek), ortanca potansiyel getiri. 180 günden eski tavsiyeler sayılmaz. Sonuç sohbette yayınlanır ve `Ülgen/Akçe/` altına not olur. Kurumların görüşünün derlemesidir; kendi tavsiyemiz değildir, raporda sürü etkisi ve az kurum uyarısı vardır. Model portföy bilgisi tablodaki ✓/✕ simgesinden ÇIKARILIR (en sık simge = portföyde değil); rapor bunu belirtir.
 - Oturumlu okuyucu tek oturumda çok sayfa gezebilir (`Okuyucu`), kaydırdıkça yüklenen tabloları da toplar. Gerçek tarayıcıyla sahte Fintables sayfalarına karşı uçtan uca sınandı; gerçek Fintables ve Mac'te test bekliyor.

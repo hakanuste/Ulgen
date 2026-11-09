@@ -71,7 +71,20 @@ def ilerleme(kimlik, metin):
         _kayit(kimlik)["ozet"] = _kisalt(metin, 300)
 
 
+def _uzmanlari_ekle():
+    """Alan uzmanları da ayrı ajan olarak görünsün (Araştırma ajanının altında değil)."""
+    from . import uzmanlar
+    for ad, u in uzmanlar.UZMANLAR.items():
+        KATALOG.setdefault(uzmanlar.kimlik(ad), {
+            "ad": ad, "tur": "uzman", "alan": u["alan"],
+            "girdi": "Görev ya da soru",
+            "ne": "%s uzmanı. Görevini güvenilir kaynaklarından araştırır; sonuç "
+                  "sohbette yayınlanır. Araştırma ajanı bu alandaki işleri "
+                  "buraya devreder." % u["alan"]})
+
+
 def liste():
+    _uzmanlari_ekle()
     with _KILIT:
         return [dict(KATALOG[k], **_kayit(k)) for k in KATALOG]
 

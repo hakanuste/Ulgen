@@ -16,5 +16,5 @@ class TemizVeri(unittest.TestCase):
         os.makedirs(ayar.KLASOR, mode=0o700)
         gizli._SIR_ONBELLEK.clear()
         with open(ayar.AYAR_DOSYASI, "w", encoding="utf-8") as f:
-            f.write('{"rapor_acik": false, "dogrulama": false}')
+            f.write('{"rapor_acik": false, "dogrulama": false, "otomatik_arastirma": false}')
         veritabani.kur()

@@ -1225,12 +1225,18 @@ async function ajanlarCiz() {
   k.replaceChildren();
   baslik(k, "Ajanlar");
   const not = document.createElement("div"); not.style.cssText = "font-size:12px;color:var(--soluk);margin-bottom:8px";
-  not.textContent = "Ajanlar sohbetten de çalışır; her çalıştırma burada görünür. Sağlık ajanı tıbbi öneri vermez.";
+  not.textContent = "Ajanlar sohbetten de çalışır; her çalıştırma burada görünür. Araştırma ajanı, bir uzmanın alanına giren görevi o uzmana devreder. Sağlık ajanı tıbbi öneri vermez.";
   k.appendChild(not);
+  let uzmanBaslik = false;
   const durumYazi = { bosta: "Boşta", calisiyor: "Çalışıyor…", hata: "Hata" };
   let calisan = false;
   liste.forEach(a => {
     if (a.durum === "calisiyor") calisan = true;
+    if (a.tur === "uzman" && !uzmanBaslik) {
+      uzmanBaslik = true;
+      const h = document.createElement("h3"); h.textContent = "Alan uzmanları"; h.style.cssText = "margin:16px 0 8px";
+      k.appendChild(h);
+    }
     const kart = document.createElement("div"); kart.className = "kartK"; kart.style.marginBottom = "10px";
     const ust = document.createElement("div"); ust.className = "ust";
     ust.innerHTML = '<svg class="i"><use href="#i-cip"/></svg>';
@@ -1255,10 +1261,11 @@ async function ajanlarCiz() {
     const dg = document.createElement("button"); dg.className = "dugme aktif"; dg.textContent = "Şimdi çalıştır";
     dg.disabled = a.durum === "calisiyor";
     dg.onclick = async () => {
-      if (a.id === "arastirma" && !(girdi && girdi.value.trim())) { girdi.focus(); return; }
+      if ((a.id === "arastirma" || a.tur === "uzman") && !(girdi && girdi.value.trim())) { girdi.focus(); return; }
       dg.disabled = true;
       try { const y = await istek("/ajanlar/calistir", { id: a.id, girdi: girdi ? girdi.value : "" });
-        if (y && y.hata) alert("Ajan başlatılamadı: " + y.hata); }
+        if (y && y.hata) alert("Ajan başlatılamadı: " + y.hata);
+        else if (a.tur === "uzman") balonEkle("Görev " + a.ad + " uzmanına verildi. Bitince sonucu sohbette yayınlayacak.", "asistan"); }
       catch (e) { alert("Ajan başlatılamadı: " + (e.message || e)); }
       ajanlarCiz();
     };
@@ -1955,7 +1962,7 @@ async function ajanAc() {
   if (!ajanListe) {
     try { ajanListe = await istek("/uzmanlar"); } catch (e) { ajanListe = { uzmanlar: [] }; }
     sec.replaceChildren();
-    const a = document.createElement("option"); a.value = "arastirma"; a.textContent = "Araştırma ajanı (genel)"; sec.appendChild(a);
+    const a = document.createElement("option"); a.value = "arastirma"; a.textContent = "Araştırma ajanı (alanı olanı uzmana devreder)"; sec.appendChild(a);
     ajanListe.uzmanlar.forEach(u => { const o = document.createElement("option"); o.value = u.ad; o.textContent = u.ad + " – " + u.alan; sec.appendChild(o); });
   }
   document.getElementById("ajanDurum").textContent = "";

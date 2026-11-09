@@ -14,7 +14,8 @@ import threading
 from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
-from . import ajan_kayit, analiz, dogrulama, macsenk, oturum, portfoy, uzmanlar
+from . import ajan_kayit, analiz, dogrulama, kutuphane_once, macsenk, oturum
+from . import portfoy, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -89,7 +90,9 @@ class Ulgen:
         self.saglik = SaglikAjani(self.hafiza)
         self.sabah = SabahOzeti(sec, self.saglik)
         # Çalıştırmalar (sohbet, araç, Ajanlar sekmesi) tek kayda düşsün diye sarılır.
-        self.arastirma.arastir = ajan_kayit.sar("arastirma", self.arastirma.arastir)
+        # Araştırma ajanı, bir uzmanın alanına giren görevi o uzmana devreder.
+        self.arastirma.arastir = ajan_kayit.sar(
+            "arastirma", self._devredici(self.arastirma.arastir))
         self.saglik.rapor = ajan_kayit.sar("saglik", self.saglik.rapor)
         self.sabah.hazirla = ajan_kayit.sar("sabah", self.sabah.hazirla)
         self.kitap = KitapAjani()
@@ -102,6 +105,7 @@ class Ulgen:
         self._sayac = 0
         self._sohbet_kilit = threading.Lock()
         self._duyarli_tur = False
+        self._arastirma_eki = ""
         self._durdur = threading.Event()
         if veritabani.GOC_NOTU:
             veritabani.gunluge_yaz("bilgi", "veritabani", veritabani.GOC_NOTU)
@@ -115,6 +119,20 @@ class Ulgen:
             self.bildir(self._kurtarma_mesaji)
 
     # --------------------------------------------------------- bildirimler
+    def _devredici(self, ham):
+        """Araştırma görevini uygun uzmana devreden sargı."""
+        def arastir(sorgu, *args, **kw):
+            ad = uzmanlar.devir_uzmani(sorgu)
+            if not ad:
+                return ham(sorgu, *args, **kw)
+            ajan_kayit.ilerleme("arastirma", "Görev %s uzmanına devredildi." % ad)
+            is_ = ajan_kayit.sar(uzmanlar.kimlik(ad), uzmanlar.devral)
+            sonuc = is_(ad, sorgu, self.arastirma, ham)
+            return ("Araştırma ajanı bu görevi %s uzmanına (%s) devretti.\n\n%s"
+                    % (ad, uzmanlar.UZMANLAR[ad]["alan"], sonuc))
+        arastir.__wrapped__ = ham
+        return arastir
+
     def bildir(self, metin, eylem=None):
         """Zamanlayıcı gibi arka plan işlerinin kullanıcıya mesajı.
 
@@ -157,6 +175,8 @@ class Ulgen:
         uzman = uzmanlar.istem(kullanici_metni)
         if uzman:
             parcalar.append((0, uzman))
+        if self._arastirma_eki:
+            parcalar.append((1, kutuphane_once.istem_parcasi(self._arastirma_eki)))
         if kisisel:
             # Duyarlı depo (sağlık, kimlik, finans...) YALNIZCA yerel beyne
             hafiza = self.hafiza.metne_cevir(
@@ -195,6 +215,7 @@ class Ulgen:
         self._kaydet("kullanici", metin, duyarli)
         self._kaydet("asistan", yanit, duyarli)
         if (beyin_adi and beyin_adi != "hızlı komut"
+                and not self._arastirma_eki      # yanıt zaten kaynaklı
                 and dogrulama.uygun_mu(
                     metin, yanit, self.araclar.kisisel_kullanildi)):
             dogrulama.arka_planda(yanit, self.arastirma,
@@ -231,10 +252,24 @@ class Ulgen:
         if hizli is not None:
             self._duyarli_tur = True    # yerel komut sonuçları buluta gitmez
             return hizli, "hızlı komut"
+        self._kutuphane_yoksa_arastir(metin)
         durum, yanit, beyin_adi = self._beyinle_dene(metin)
         if durum == "kuyruk":
             return self._kuyruga_al(metin), None
         return yanit, beyin_adi
+
+    def _kutuphane_yoksa_arastir(self, metin):
+        """Bilgi sorusu kütüphanede (Obsidian) yoksa Araştırma ajanı hemen
+        çalışır; bulgular yanıtın dayanağı olur (uzmana devredilebilir)."""
+        self._arastirma_eki = ""
+        if self._duyarli_tur or not kutuphane_once.gerekli_mi(metin):
+            return
+        try:
+            self._arastirma_eki = self.arastirma.arastir(metin) or ""
+        except iptal.Iptal:
+            raise
+        except Exception:               # araştırma olmadan da yanıt verilsin
+            self._arastirma_eki = ""
 
     def _beyinle_dene(self, metin):
         """Kullanılabilir beyinleri sırayla dener.

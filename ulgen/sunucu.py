@@ -351,6 +351,16 @@ def istek_sinifi(ulgen, limit):
             kimlik = veri.get("id")
             sinir = uzun_arastirma.AZAMI_GOREV if kimlik == "arastirma" else 300
             girdi = str(veri.get("girdi", ""))[:sinir].strip()
+            durumlar = ajan_kayit.liste()       # uzmanları da kataloğa ekler
+            if str(kimlik).startswith("uzman:"):
+                if any(k["id"] == kimlik and k["durum"] == "calisiyor"
+                       for k in durumlar):
+                    return self._cevap(409, {"hata": "ajan zaten çalışıyor"})
+                ad, gorev = ajan_gorevi.dogrula(kimlik[6:], girdi)
+                if not gorev:
+                    return self._cevap(400, {"hata": ad})
+                ajan_gorevi.arka_planda(ulgen, ad, gorev)
+                return self._cevap(202, {"baslatildi": kimlik})
             if kimlik not in ajan_kayit.KATALOG:
                 return self._cevap(400, {"hata": "bilinmeyen ajan"})
             if any(k["id"] == kimlik and k["durum"] == "calisiyor"

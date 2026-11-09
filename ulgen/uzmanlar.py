@@ -211,7 +211,8 @@ UZMANLAR = {
 
 GENEL = [
     ("BİLGE", "bilgi bulma ve öğüt", "ana sohbet"),
-    ("ARAŞTIRMACI", "planlı, kaynaklı araştırma", "Araştırma ajanı"),
+    ("ARAŞTIRMACI", "planlı, kaynaklı araştırma; alanı olan işi uzmana devreder",
+     "Araştırma ajanı"),
     ("ÇEVİRMEN", "dil çevirisi", "ana sohbet"),
     ("YAZMAN", "bitig ve bellek işleri", "ana sohbet + Obsidian yazma"),
     ("GÖZCÜ", "yanıt ve dizge yoklaması", "Doğrulayıcı"),
@@ -407,3 +408,43 @@ def kasa_klasoru(ad):
     kasa = obsidyen.kasa_yolu()
     yol = os.path.join(kasa, "Ülgen", u["klasor"])
     return yol if os.path.isdir(yol) else None
+
+
+# ------------------------------------------------------------- görev devri
+def kimlik(ad):
+    """Ajan kaydındaki kimlik: 'uzman:AKÇA'."""
+    return "uzman:" + ad
+
+
+def devir_uzmani(sorgu):
+    """Araştırma görevi bir uzmanın alanına giriyorsa o uzmanın adı; yoksa None.
+
+    Uzun/çok satırlı görevler planlı araştırmada kalır (madde başına ayrıca
+    devredilebilir)."""
+    s = (sorgu or "").strip()
+    if not s or len(s) > 300 or "\n" in s:
+        return None
+    return sec(s)
+
+
+def devral(ad, sorgu, arastirma, genel_arastir):
+    """Uzmanın devraldığı araştırma: önce resmî veri (AKÇA için piyasa),
+    sonra uzmanın güvenilir siteleri; orada bulgu yoksa genel arama,
+    'doğrulanmamış' etiketiyle."""
+    parcalar = []
+    if ad == "AKÇA":
+        from . import piyasa
+        try:
+            veri = piyasa.sorgula(sorgu)
+            if not veri.startswith("Hangi değeri"):
+                parcalar.append("RESMÎ/PİYASA VERİSİ:\n" + veri)
+        except Exception:
+            pass
+    guvenli = guvenilir_ara(sorgu, ad, arastirma)
+    if guvenli.startswith("Güvenilir kaynak listesinde"):
+        parcalar.append(guvenli)
+        parcalar.append("GENEL ARAMA (güvenilir listede değil; doğrulanmamış):"
+                        "\n" + genel_arastir(sorgu))
+    else:
+        parcalar.append(guvenli)
+    return "\n\n".join(parcalar)
