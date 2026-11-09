@@ -652,7 +652,7 @@ async function gonderMetin(m) {
   }
   try {
     const c = await istek("/sohbet", { metin: m });
-    balonEkle(c.yanit, "asistan");
+    balonEkle((c.ajan ? "🤖 " + c.ajan + "\n\n" : "") + c.yanit, "asistan");
     beyinEtiketi(c.beyin);
     if (!/^İptal ettim/.test(c.yanit)) konus(c.yanit);
     ozetYukle();

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.7.85
+- **Hangi uzmana sorulduğunu anlama:** Soru doğrudan ilgili uzmana gider ve uzman kendi işini yapar; yanıtın üstünde hangi uzmanın yanıtladığı yazar (örn. "🤖 AKÇA – finans ve yatırım").
+- **AKÇA şirket adını tanır:** "Anadolu Efes hissesi ne oldu, analiz et" → AEFES; analiz kodda hesaplanır (getiri, ortalamalar, RSI, oynaklık, düşüş), not `Akçe/` altına yazılır. "aefes kaç TL" → anlık fiyat; "dolar kaç TL" → TCMB. Yaklaşık 75 BIST şirketi adıyla tanınır; listede olmayan şirket Yahoo Finance aramasıyla bulunur. Kesin al/sat önerisi verilmez.
+- **TULGA önce kılavuza bakar:** Araç sorularında (örn. "Musso'nun şanzımanında geçme sorunu var, hangi parça lazım?") kasadaki kılavuz notları, Türkçe terimlerin İngilizce karşılıklarıyla da aranır (şanzıman → transmission, geçme → shift, valf → valve…); adında Musso geçen kılavuz önce gelir. Uzman, kılavuzun işaret ettiği parçaları sayfa bilgisiyle söyler; kaynakta olmayan parça uydurmaz. Kılavuzda bulgu varsa web araştırması yapılmaz. Kılavuz metni kişisel olmadığı için bulut beyne de gönderilebilir.
+- Kodlandı ve test edildi (413 test); Mac'teki gerçek kasa ve kılavuzlarla denenecek.
+
 ## 2.7.84
 - **Uzmanlar ayrı ajan:** 12 alan uzmanı Ajanlar sekmesinde, "Alan uzmanları" başlığı altında kendi kartlarıyla görünür (durum, son çalışma, özet, görev kutusu, "Şimdi çalıştır"). Sonuç sohbette yayınlanır.
 - **Araştırma ajanı görevi devreder:** Kısa bir araştırma görevi bir uzmanın alanına giriyorsa (örn. kur → AKÇA, bitki → OTACI, kerpiç → BALBAL, Musso → TULGA) Araştırma ajanı işi o uzmana verir. Uzman önce resmî veriye (AKÇA için TCMB/piyasa), sonra kendi güvenilir sitelerine bakar; orada bulgu yoksa genel arama yapılır ve "doğrulanmamış" diye etiketlenir. Yanıtın başında hangi uzmana devredildiği yazar. Uzun, çok maddeli görevler planlı araştırmada kalır.

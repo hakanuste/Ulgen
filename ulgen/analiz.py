@@ -132,6 +132,10 @@ def senaryolar(g, gun=63):
 
 def rapor(metin, indir=None):
     sembol, ad = sembol_bul(metin)
+    return rapor_sembol(sembol, ad, indir)
+
+
+def rapor_sembol(sembol, ad, indir=None):
     cift = piyasa.gecmis(sembol, "1y", indir)
     g = gostergeler(cift)
     satir = ["# Analiz: %s" % ad, "",

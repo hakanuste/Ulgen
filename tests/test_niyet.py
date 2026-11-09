@@ -1,0 +1,96 @@
+import json
+import os
+import unittest
+from unittest import mock
+
+from ulgen import niyet, uzmanlar
+from tests.temel import TemizVeri
+
+
+def gecmis_sahte(adres):
+    if "/search" in adres:
+        return json.dumps({"quotes": [{"symbol": "XYZAB.IS", "longname": "Xyz A.Ş."}]})
+    gun = 86400
+    kap = [100 + i * 0.5 for i in range(260)]
+    return json.dumps({"chart": {"result": [{
+        "meta": {"regularMarketPrice": kap[-1], "chartPreviousClose": kap[-2],
+                 "regularMarketTime": 1762446000, "currency": "TRY"},
+        "timestamp": [1730000000 + i * gun for i in range(260)],
+        "indicators": {"quote": [{"close": kap}]}}]}})
+
+
+class Varlik(unittest.TestCase):
+
+    def test_sirket_adindan_kod(self):
+        self.assertEqual(niyet.varlik_bul("anadolu efes hissesi ne oldu")[0], "AEFES.IS")
+        self.assertEqual(niyet.varlik_bul("thy hissesi nasıl gidiyor")[0], "THYAO.IS")
+        self.assertEqual(niyet.varlik_bul("İş Bankası analiz")[0], "ISCTR.IS")
+        self.assertEqual(niyet.varlik_bul("vestel beyaz analiz")[0], "VESBE.IS")
+        self.assertEqual(niyet.varlik_bul("AEFES kaç TL")[0], "AEFES.IS")
+
+    def test_listede_yoksa_yahoo_aramasi(self):
+        self.assertEqual(niyet.varlik_bul("xyz hissesi analiz et", gecmis_sahte)[0],
+                         "XYZAB.IS")
+
+
+class Yonlendirme(TemizVeri):
+
+    def test_efes_analizi_akcaya_gider_ve_rapor_cikar(self):
+        ad, yanit = niyet.yonlendir("anadolu efes hissesi ne oldu analiz et",
+                                    gecmis_sahte)
+        self.assertEqual(ad, "AKÇA")
+        self.assertIn("# Analiz: Anadolu Efes (AEFES)", yanit)
+        self.assertIn("RSI", yanit)
+
+    def test_fiyat_sorusu(self):
+        ad, yanit = niyet.yonlendir("aefes kaç TL", gecmis_sahte)
+        self.assertEqual(ad, "AKÇA")
+        self.assertIn("Anadolu Efes", yanit)
+
+    def test_niyetsiz_soru_beyne_kalir(self):
+        self.assertIsNone(niyet.yonlendir("efes pilsen nasıl yapılır diye merak ettim"))
+        self.assertIsNone(niyet.yonlendir("bugün hava nasıl"))
+
+    def test_sohbette_ajan_etiketi(self):
+        from ulgen.cekirdek import Ulgen
+        u = Ulgen()
+        with mock.patch.object(niyet, "yonlendir", return_value=("AKÇA", "RAPOR")):
+            c = u.sohbet_isle("anadolu efes hissesi ne oldu analiz et")
+        self.assertEqual(c["yanit"], "RAPOR")
+        self.assertTrue(c["ajan"].startswith("AKÇA – "))
+
+
+class Kilavuz(unittest.TestCase):
+
+    def test_turkce_soru_ingilizce_terimle_aranir(self):
+        q = "mussonun şanzımanında geçme sorunu var hangi parça lazım"
+        self.assertEqual(uzmanlar.sec(q), "TULGA")
+        g = uzmanlar.terim_genislet(q)
+        self.assertTrue(g.startswith("transmission"))
+        self.assertIn("shift", g)
+
+    def test_musso_kilavuzu_once(self):
+        def ara(m, adet):
+            return [("Genel - Sayfa 1-20", "/k/Genel/Genel - Sayfa 1-20.md", "transmission"),
+                    ("Not", "/k/notlar/a.md", "shift"),
+                    ("Musso - Sayfa 300-320", "/k/Musso/Musso - Sayfa 300-320.md",
+                     "shift valve and modulator")]
+        m = uzmanlar.kilavuz_alintilari(
+            "TULGA", "şanzıman geçmiyor", ara,
+            kilavuz_mu=lambda y: os.path.basename(os.path.dirname(y)) != "notlar")
+        self.assertTrue(m.startswith("## Musso - Sayfa 300-320"))
+        self.assertNotIn("## Not\n", m)
+
+    def test_kilavuz_varsa_istemde_ve_arastirma_yok(self):
+        from ulgen.cekirdek import Ulgen
+        u = Ulgen()
+        u._ajan = "TULGA"
+        with mock.patch.object(uzmanlar, "kilavuz_alintilari",
+                               return_value="## Musso\nmodulator"), \
+                mock.patch.object(u.arastirma, "arastir") as ar:
+            u._kutuphane_yoksa_arastir("musso şanzıman geçme sorunu hangi parça?")
+            istem = u.sistem_istemi(mock.Mock(yerel=False, sistem_butce=20000),
+                                    "musso şanzıman geçme sorunu hangi parça?")
+        ar.assert_not_called()
+        self.assertIn("WORKSHOP MANUAL EXCERPTS", istem)
+        self.assertIn("modulator", istem)

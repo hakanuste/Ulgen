@@ -15,7 +15,7 @@ from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
 from . import ajan_kayit, analiz, dogrulama, kutuphane_once, macsenk, oturum
-from . import portfoy, uzmanlar
+from . import niyet, portfoy, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -106,6 +106,9 @@ class Ulgen:
         self._sohbet_kilit = threading.Lock()
         self._duyarli_tur = False
         self._arastirma_eki = ""
+        self._kilavuz_eki = ""
+        self._ajan = None
+        self._ajan_isi = False
         self._durdur = threading.Event()
         if veritabani.GOC_NOTU:
             veritabani.gunluge_yaz("bilgi", "veritabani", veritabani.GOC_NOTU)
@@ -175,6 +178,8 @@ class Ulgen:
         uzman = uzmanlar.istem(kullanici_metni)
         if uzman:
             parcalar.append((0, uzman))
+        if self._kilavuz_eki:          # kılavuz metni kişisel değil; buluta da gider
+            parcalar.append((0, uzmanlar.KILAVUZ_ISTEMI + self._kilavuz_eki))
         if self._arastirma_eki:
             parcalar.append((1, kutuphane_once.istem_parcasi(self._arastirma_eki)))
         if kisisel:
@@ -220,9 +225,15 @@ class Ulgen:
                     metin, yanit, self.araclar.kisisel_kullanildi)):
             dogrulama.arka_planda(yanit, self.arastirma,
                                   self.bildir)
-        return {"yanit": yanit, "beyin": beyin_adi}
+        ajan = self._ajan if beyin_adi and (
+            beyin_adi != "hızlı komut" or self._ajan_isi) else None
+        return {"yanit": yanit, "beyin": beyin_adi,
+                "ajan": ("%s – %s" % (ajan, uzmanlar.UZMANLAR[ajan]["alan"])
+                         if ajan in uzmanlar.UZMANLAR else None)}
 
     def _isle(self, metin):
+        self._ajan = uzmanlar.sec(metin)      # hangi uzmana soruldu
+        self._ajan_isi = False
         kaynak_yaniti = uzmanlar.komut(metin)
         if kaynak_yaniti is None:
             kaynak_yaniti = analiz.komut(metin)
@@ -230,6 +241,14 @@ class Ulgen:
             kaynak_yaniti = oturum.komut(metin)
         if kaynak_yaniti is None:
             kaynak_yaniti = portfoy.komut(metin, self)
+        if kaynak_yaniti is not None and (analiz.KOMUT_DESENI.match(metin)
+                                          or portfoy.KOMUT_DESENI.match(metin)):
+            self._ajan, self._ajan_isi = "AKÇA", True
+        if kaynak_yaniti is None:
+            yon = niyet.yonlendir(metin)      # uzman kendi işini doğrudan yapar
+            if yon:
+                self._ajan, kaynak_yaniti = yon
+                self._ajan_isi = True
         if kaynak_yaniti is not None:
             self._duyarli_tur = True      # yerel komut sonuçları buluta gitmez
             return kaynak_yaniti, "hızlı komut"
@@ -262,7 +281,11 @@ class Ulgen:
         """Bilgi sorusu kütüphanede (Obsidian) yoksa Araştırma ajanı hemen
         çalışır; bulgular yanıtın dayanağı olur (uzmana devredilebilir)."""
         self._arastirma_eki = ""
-        if self._duyarli_tur or not kutuphane_once.gerekli_mi(metin):
+        self._kilavuz_eki = ""
+        if self._ajan:
+            self._kilavuz_eki = uzmanlar.kilavuz_alintilari(self._ajan, metin)
+        if (self._kilavuz_eki or self._duyarli_tur
+                or not kutuphane_once.gerekli_mi(metin)):
             return
         try:
             self._arastirma_eki = self.arastirma.arastir(metin) or ""
