@@ -619,7 +619,8 @@ def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
         ad, s_bulgu + k_bulgu, _sohbet_mu)[:4]]
     if not adaylar:
         return ""
-    pay = max(1200, sinir // len(adaylar))
+    # ilk (en ilgili) adaylara daha çok yer: zayıf adaylar payı bölmesin
+    pay = max(2000, sinir // max(1, min(len(adaylar), 3)))
     parcalar, toplam = [], 0
     for etiket, (baslik, yol, eski) in adaylar:
         alinti = sohbet_alintisi(yol, metin, oku, pay) or (eski or "")[:pay]

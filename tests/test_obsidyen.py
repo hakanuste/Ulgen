@@ -130,3 +130,32 @@ class TamOkuma(unittest.TestCase):
     def test_eslesme_yoksa_bas(self):
         from ulgen import obsidyen
         self.assertTrue(obsidyen.parcali_alinti("kısa not", ["zzz"]).startswith("kısa"))
+
+
+class EsAnlamVeSon(unittest.TestCase):
+    """Örnek: Eylül'de konuşulan taş ev tablosu 'ölçü' yerine 'boyut/kot'
+    sözcükleriyle yazılmış ve sohbetin sonunda; LaTeX ve kutu çizgileri var."""
+
+    ICERIK = ("Taş ev planı: $6,5\\text{ m} \\times 6,5\\text{ m}$ ilk taslak.\n\n"
+              "25 Eylül 2026\n\n" + "\n\n".join(
+                  "Sera bitkileri, kekik ve biberiye yerleşimi %d. %s" % (i, "y" * 400)
+                  for i in range(40)) +
+              "\n\n26 Eylül 2026\n\n╔════╗\n║ MİMARİ YAPI BOYUT VE KOT ÇERÇEVESİ ║\n"
+              "║ 1. ANA TAŞ EV ║\n║ • Taban Oturumu : 7,0 m × 7,0 m ║\n"
+              "║ • Dış Duvar Kalınlığı : 40 cm ║\n║ • Toplam Mahya Kotu : 6,5 m ║\n╚════╝")
+
+    def test_son_olculer_sondaki_tablodan(self):
+        from ulgen import obsidyen as o
+        m = o.parcali_alinti(self.ICERIK, o.KELIME.findall(o.normal(
+            "taş evin son ölçüleri nedir")), 1500)
+        self.assertIn("7,0 m × 7,0 m", m)
+        self.assertIn("26 eylul 2026", m)
+        self.assertNotIn("═", m)
+
+    def test_latex_temizlenir_ve_kisa_kok(self):
+        from ulgen import obsidyen as o
+        self.assertIn("6,5 m × 6,5 m", o.gorunum_temizle("$6,5\\text{ m} \\times 6,5\\text{ m}$"))
+        self.assertEqual(o.kok_bul("evin"), "ev")
+        self.assertTrue(o.eslesir("ev", "tas evin olculeri"))
+        self.assertFalse(o.eslesir("ev", "evet dedi"))
+        self.assertIn("boyut", o.kokler(["olculeri"]))

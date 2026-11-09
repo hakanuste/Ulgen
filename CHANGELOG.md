@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## 2.7.91
+- **Eş anlamlı arama:** "ölçü" sorusu "boyut, ebat, kot, taban, genişlik, derinlik, yükseklik, kalınlık, alan" sözcüklerini de arar (fiyat↔maliyet, plan↔proje↔çizim, arıza↔sorun da). Türkçe ekler atılır ("evin" → "ev"); kısa kökler yalnızca sözcük başında tutar ("ev" "evet"i tutmaz).
+- **"Son/güncel" soruları:** İlgili parçalardan notun sonuna yakın olan öne alınır (sonra yazılan geçerli). Ölçü sorularında ölçü değeri yoğun (6,5 m, 40 cm, 84,5 m²) parçalar öne çıkar.
+- **Tarihli parçalar:** Gemini aktarımlarında turların arasındaki tarihler ("25 Eylül 2026") her parçaya işlenir ve alıntıda gösterilir; soruda ay geçiyorsa ("eylül sonu") o ayın parçaları öne alınır.
+- **Görünüm temizliği:** Kutu çizgileri (╔═║─) ve LaTeX artıkları ($6,5\text{ m}$) sade metne çevrilir.
+- Parçalar küçüldü (≈900 karakter); bir tablo iki parçaya bölündüyse başı ve devamı birlikte alınır; zayıf parçalar dolgu olarak eklenmez; en ilgili notlara daha çok yer ayrılır.
+- Örnek 205 KB'lık taş ev–sera sohbetiyle denendi: "taş evin son ölçüleri" sorusunda sondaki "Mimari Yapı Boyut ve Kot Çerçevesi" tablosu (26 Eylül 2026) seçiliyor.
+
 ## 2.7.90
 - **Notlar tam okunur:** Ortak not okuyucu artık her notu baştan sona parçalara böler ve soruyla en ilgili parçaları seçer (önceden yalnızca ilk eşleşmenin çevresindeki ~1400 karakter alınıyordu). Alıntı payı beynin istem bütçesine göre belirlenir ve seçim bu paya göre yapılır; sondan kesme yüzünden yalnızca ilk okunanların kalması sorunu giderildi. Uzmanlar kendi notlarınızı (NOT) da okur; bunlar yalnızca yerel beyinde kullanılır.
 - **Yabancı harfler atılır:** Yanıtlara karışan Çince/Japonca/Korece harfler, bozuk karakter (�) ve görünmez denetim karakterleri temizlenir.

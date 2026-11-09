@@ -184,7 +184,7 @@ DUZELTME = re.compile(
     r"düzelt\w*|duzelt\w*|öyle değil|oyle degil|o değil|hayır|hayir|"
     r"aslında|aslinda)\b", re.IGNORECASE)
 TUR = re.compile(r"^## (Ben|Yapay zekâ)\s*$", re.MULTILINE)
-PARCA_BOYU = 1500        # not/sohbet parçası (karakter)
+PARCA_BOYU = 900         # not/sohbet parçası (karakter); küçük parça = ince seçim
 DOLGU = {"var", "hangi", "nedir", "nasil", "neden", "icin", "gibi", "olan",
          "bir", "bu", "ve", "ile", "mi", "mu", "ne"}
 
@@ -224,10 +224,14 @@ def not_parcalari(icerik, boy=PARCA_BOYU):
         paragraf = paragraf.strip()
         if not paragraf:
             continue
-        while len(paragraf) > boy:              # çok uzun paragraf da bölünür
-            simdiki.append(paragraf[:boy])
+        if len(paragraf) > boy and simdiki:     # önce birikeni kapat
             parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
-            simdiki, paragraf = [], paragraf[boy:]
+            simdiki = []
+        while len(paragraf) > boy:              # çok uzun paragraf da bölünür
+            kes = paragraf.rfind("\n", boy // 2, boy)
+            kes = kes if kes > 0 else boy
+            parcalar.append(("bölüm %d" % (len(parcalar) + 1), paragraf[:kes]))
+            paragraf = paragraf[kes:].lstrip("\n")
         if simdiki and sum(map(len, simdiki)) + len(paragraf) > boy:
             parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
             simdiki = []
@@ -237,50 +241,161 @@ def not_parcalari(icerik, boy=PARCA_BOYU):
     return parcalar
 
 
-def kokler(kelimeler):
-    """Aranacak sözcük kökleri (Türkçe ekler: 'ölçüleri' -> 'olcul')."""
+# Aynı şeyi anlatan farklı sözcükler (normal biçimde, kök olarak).
+ESANLAM = {
+    "olcu": ["boyut", "ebat", "kot", "taban", "genislik", "derinlik",
+             "yukseklik", "kalinlik", "uzunluk", "alan"],
+    "boyut": ["olcu", "ebat", "kot"], "ebat": ["olcu", "boyut"],
+    "fiyat": ["ucret", "tutar", "maliyet"], "maliyet": ["fiyat", "tutar"],
+    "plan": ["proje", "cizim", "tasarim"], "tasarim": ["plan", "proje", "cizim"],
+    "ariza": ["sorun", "problem"], "sorun": ["ariza", "problem"],
+}
+EKLER = ("lerinin", "larinin", "lerini", "larini", "leri", "lari", "ler", "lar",
+         "inin", "unun", "nin", "nun", "sinin", "sunun", "si", "su", "in", "un",
+         "den", "dan", "ten", "tan", "de", "da", "te", "ta", "e", "a", "i", "u")
+SON = re.compile(r"\b(son|en son|guncel|nihai|kesin|simdiki|en yeni)\b")
+OLCU_SORU = re.compile(r"\b(olcu\w*|boyut\w*|ebat\w*|kot\w*|kac\w*|metre\w*)\b")
+OLCU_DEGER = re.compile(r"\d+(?:[.,]\d+)?\s*(?:m²|m2|m³|cm|mm|m|metre|°)(?!\w)")
+
+
+def kok_bul(k):
+    """'evin' -> 'ev', 'olculeri' -> 'olcu' (kaba ek atma; kök ≥ 2 harf)."""
+    for ek in EKLER:
+        if k.endswith(ek) and len(k) - len(ek) >= 2:
+            return k[:-len(ek)]
+    return k
+
+
+def kokler(kelimeler, esanlam=True):
+    """Aranacak sözcük kökleri; istenirse eş anlamlılar da eklenir."""
     sonuc = []
     for k in kelimeler:
         k = normal(k)
-        if len(k) < 3 or k in DOLGU:
+        if len(k) < 2 or k in DOLGU or k in AYLAR or SON.fullmatch(k):
             continue
-        k = k[:max(3, len(k) - 3)] if len(k) >= 6 else k
-        if k not in sonuc:
-            sonuc.append(k)
-    return sonuc[:12]
+        kok = kok_bul(k)
+        adaylar = [kok]
+        if esanlam:
+            for anahtar, liste in ESANLAM.items():
+                if kok.startswith(anahtar):
+                    adaylar += liste
+        for x in adaylar:
+            if x not in sonuc:
+                sonuc.append(x)
+    return sonuc[:20]
+
+
+def eslesir(kok, n):
+    """Kısa kök (≤3 harf, örn. 'ev', 'tas') sözcük başında aranır ve ardından
+    yalnızca ek gelebilir: 'ev' 'evet'i, 'tas' 'tasarım'ı tutmaz."""
+    if len(kok) > 3:
+        return kok in n
+    return re.search(r"\b%s(?:%s)?\b" % (re.escape(kok), "|".join(EKLER)), n) is not None
+
+
+AYLAR = {"ocak": ("oca", "jan"), "subat": ("sub", "feb"), "mart": ("mar",),
+         "nisan": ("nis", "apr"), "mayis": ("may",), "haziran": ("haz", "jun"),
+         "temmuz": ("tem", "jul"), "agustos": ("agu", "aug"), "eylul": ("eyl", "sep"),
+         "ekim": ("eki", "oct"), "kasim": ("kas", "nov"), "aralik": ("ara", "dec")}
+TARIH = re.compile(r"\b(\d{1,2}) (%s)\w* (\d{4})\b" % "|".join(AYLAR))
+
+
+def ay_ipucu(metin):
+    """Soruda geçen ay adı (normal biçim) ya da None: 'eylül sonu' -> 'eylul'."""
+    n = normal(metin or "")
+    for ad in AYLAR:
+        if re.search(r"\b%s" % ad, n):
+            return ad
+    return None
+
+
+KUTU = re.compile("[\u2500-\u257f]+")
+
+
+def gorunum_temizle(metin):
+    """Kutu çizgileri (╔═║─) ve LaTeX artıkları ($6,5\\text{ m}$) yer kaplar,
+    aramayı bozar ve sesle okunur: sade metne çevrilir."""
+    t = KUTU.sub(" ", metin)
+    t = re.sub(r"\\(?:text|mathbf|mathrm)\{([^{}]*)\}", r"\1", t)
+    t = t.replace("\\times", "×").replace("\\(", "").replace("\\)", "")
+    t = re.sub(r"\$([^$\n]{1,80})\$", r"\1", t)
+    t = t.replace("\\ ", " ").replace("\\", "")
+    return re.sub(r"[ \t]{2,}", " ", t)
+
+
+def _parca_tarihleri(parcalar):
+    """Her parçanın tarihi: içinde ya da öncesinde geçen son '25 Eylül 2026'
+    (Gemini aktarımlarında tarih turların arasında yazar)."""
+    sonuc, son = [], ""
+    for _, govde in parcalar:
+        bulunan = TARIH.findall(normal(govde))
+        if bulunan:
+            g, ay, yil = bulunan[-1]
+            son = "%s %s %s" % (g, ay, yil)
+        sonuc.append(son)
+    return sonuc
 
 
 def parcali_alinti(icerik, kelimeler, sinir=2500):
-    """Notun TAMAMI parçalara bölünür; sorudaki sözcüklerden en çoğunu içeren
-    parçalar seçilir (düzeltme içeren parça öne, eşitlikte sonraki parça önce:
-    sonra yazılan geçerli). Seçilenler notun kendi sırasıyla, yer bilgisiyle
-    verilir. Hiç eşleşme yoksa notun başı verilir."""
+    """Notun TAMAMI parçalara bölünür ve her parça puanlanır:
+    - sorudaki sözcük (kökü) 2, eş anlamlısı 1 puan ('ölçü' -> boyut, kot…);
+    - ölçü soruluyorsa ölçü değerleri (6,5 m, 40 cm, 84,5 m²) yoğun parça öne;
+    - 'son/güncel' soruluyorsa notun sonuna doğru olan parça öne;
+    - soruda ay geçiyorsa (eylül) o ayın tarihli parçası öne;
+    - düzeltmenizi içeren parça öne; eşitlikte sonraki parça önce.
+    Seçilenler notun kendi sırasıyla, yer ve tarih bilgisiyle verilir."""
+    soru = normal(" ".join(kelimeler))
+    ay = ay_ipucu(soru)
+    son_mu = bool(SON.search(soru))
+    olcu_mu = bool(OLCU_SORU.search(soru))
+    asil = kokler(kelimeler, esanlam=False)
     kok = kokler(kelimeler)
-    parcalar = not_parcalari(icerik)
+    parcalar = not_parcalari(gorunum_temizle(icerik))
     if not parcalar:
         return ""
+    tarihler = _parca_tarihleri(parcalar)
     rollu = bool(TUR.search(icerik))
+    adet = len(parcalar)
     puanli = []
     for sira, (_, govde) in enumerate(parcalar):
         n = normal(govde)
-        puan = sum(1 for k in kok if k in n)
-        if puan:
-            if "DÜZELTME]" in govde or (not rollu and DUZELTME.search(govde)):
-                puan += 2
-            puanli.append((puan, sira))
+        puan = sum(2 if k in asil else 1 for k in kok if eslesir(k, n))
+        if not puan:
+            continue
+        if olcu_mu:
+            puan += min(6, len(OLCU_DEGER.findall(n)) // 2)
+        if ay and ay in tarihler[sira]:
+            puan += 2
+        if "DÜZELTME]" in govde or (not rollu and DUZELTME.search(govde)):
+            puan += 2
+        if son_mu and adet > 1:          # "son ölçüler": ilgili olanlardan sonraki
+            puan *= 1 + sira / (adet - 1)
+        puanli.append((puan, sira))
     if not puanli:
         return parcalar[0][1][:sinir]
-    secilen, toplam = [], 0
-    for _, sira in sorted(puanli, reverse=True):
-        uzunluk = len(parcalar[sira][1])
-        if toplam + uzunluk > sinir and secilen:
-            continue
-        secilen.append(sira)
-        toplam += uzunluk
-    if len(parcalar) == 1:
+    if adet == 1:
         return parcalar[0][1][:sinir]
+    puanlar = dict((sira, puan) for puan, sira in puanli)
+    en_iyi = max(puanlar.values())
+    secilen, toplam = [], 0
+    for puan, sira in sorted(puanli, reverse=True):
+        if puan < en_iyi * 0.4 and secilen:     # zayıf parça dolgu olmasın
+            break
+        # bir tablo/liste iki parçaya bölünmüşse başı ve devamı da alınsın
+        for i in (sira, sira - 1, sira + 1):
+            if i in secilen or i < 0 or i >= adet:
+                continue
+            if i != sira and puanlar.get(i, 0) < en_iyi * 0.4:
+                continue
+            uzunluk = len(parcalar[i][1])
+            if toplam + uzunluk > sinir and secilen:
+                continue
+            secilen.append(i)
+            toplam += uzunluk
     return "\n…\n".join(
-        "(%s / %d parça) %s" % (parcalar[i][0], len(parcalar), parcalar[i][1])
+        "(%s / %d parça%s) %s" % (parcalar[i][0], adet,
+                                  ", " + tarihler[i] if tarihler[i] else "",
+                                  parcalar[i][1])
         for i in sorted(secilen))
 
 
@@ -306,6 +421,9 @@ def ara(metin, adet=3, alinti_boyu=2500):
     for k in kelimeler:
         if len(k) >= 5 and k[:max(4, len(k) - 3)] not in aranacak:
             aranacak.append(k[:max(4, len(k) - 3)])
+    for k in kokler(kelimeler):           # 'evin' -> 'ev'; ölçü -> boyut, kot…
+        if len(k) >= 2 and k not in aranacak:
+            aranacak.append(k)
     ifade = " OR ".join('"%s"*' % k.replace('"', "") for k in aranacak)
     try:
         satirlar = veritabani.sorgu(
