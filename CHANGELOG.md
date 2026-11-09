@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.94
+- Üst şeritteki **Sağlık** kartı kaldırıldı; yerine **Ajanlar** kartı geldi: genel ve uzman ajan sayısı, o an çalışan ajan(lar) ya da en son çalışan ajan ve saati. Karta tıklayınca Ajanlar sayfası açılır. iPhone ana ekranındaki Sağlık kısayolu da kaldırıldı (yan menüdeki Sağlık & Ölçümler sayfası duruyor).
+
 ## 2.7.93
 - Seslendirmede kutu çizgileri (╔═║), madde imleri (•) ve $ işaretleri de atılır; tablolar sesle düz cümle gibi okunur.
 

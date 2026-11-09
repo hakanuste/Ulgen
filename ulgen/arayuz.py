@@ -445,7 +445,6 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
     <button class="kare" onclick="sekme('sohbet')"><svg class="i"><use href="#i-sohbet"/></svg>Sohbet</button>
     <button class="kare" onclick="sekme('gorevler')"><svg class="i"><use href="#i-gorev"/></svg>Görevler<em class="rz" id="kGorev"></em></button>
     <button class="kare" onclick="sekme('ilac')"><svg class="i"><use href="#i-hap"/></svg>İlaçlar</button>
-    <button class="kare" onclick="sekme('saglik')"><svg class="i"><use href="#i-kalp"/></svg>Sağlık</button>
     <button class="kare" onclick="sekme('projeler')"><svg class="i"><use href="#i-katman"/></svg>Projeler</button>
     <button class="kare" onclick="sekme('ajanlar')"><svg class="i"><use href="#i-cip"/></svg>Ajanlar</button>
     <button class="kare" onclick="sekme('bilgi')"><svg class="i"><use href="#i-veri"/></svg>Hafıza</button>
@@ -1157,10 +1156,15 @@ async function panoYenile() {
     const yz = document.createElement("span"); yz.textContent = "%" + yuzde; oc.appendChild(yz); k0.appendChild(oc);
     kartK(serit, "İlaçlar", bek ? bek + " bekleyen doz" : "Bekleyen doz yok", "hap", bek ? " uyari" : "", "ilac");
     kartK(serit, "Görevler", acik ? acik + " tamamlanmamış" : "Açık görev yok", "gorev", acik ? " uyari" : "", "gorevler");
-    const sg = await panoIstek("/saglik/bugun");
-    kartK(serit, "Sağlık", sg.veri_var ? ["Adım: " + (sg.adim === null ? "—" : sg.adim.toLocaleString("tr-TR")),
-      "Nabız: " + (sg.nabiz === null ? "—" : sg.nabiz) + " • Uyku: " + uykuYazi(sg.uyku_dk)] :
-      ["Veri yok", "iPhone Kestirmesi kurulunca dolar"], "kalp", "", "ilac");
+    // Sağlık kartı yerine Ajanlar: kaç ajan var, hangisi çalışıyor, son iş
+    const aj = await panoIstek("/ajanlar");
+    const uzm = aj.filter(a => a.tur === "uzman").length;
+    const calisan = aj.filter(a => a.durum === "calisiyor").map(a => a.ad.split(" – ")[0]);
+    const sonlar = aj.filter(a => a.son_calisma).sort((a, b) => String(b.son_calisma).localeCompare(String(a.son_calisma)));
+    kartK(serit, "Ajanlar", [(aj.length - uzm) + " genel • " + uzm + " uzman",
+      calisan.length ? "Çalışıyor: " + calisan.join(", ") :
+        (sonlar.length ? "Son: " + sonlar[0].ad.split(" – ")[0] + " " + String(sonlar[0].son_calisma).slice(11, 16) : "Şu an boşta")],
+      "cip", calisan.length ? " uyari" : "", "ajanlar");
     kartK(serit, "Sistem", ["ÜLGEN " + sis.surum + " • " + (sis.butunluk.saglam ? "Çalışıyor" : "SORUNLU"),
       "Veritabanı: " + (sis.veritabani_sifreli ? "şifreli" : "ŞİFRESİZ")], "katman", sis.veritabani_sifreli ? "" : " uyari", "sistem");
     document.getElementById("surumYazi").textContent = "ÜLGEN " + sis.surum;
