@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.93
+- Seslendirmede kutu çizgileri (╔═║), madde imleri (•) ve $ işaretleri de atılır; tablolar sesle düz cümle gibi okunur.
+
 ## 2.7.92
 - **YouTube yorumlama:** Sohbete YouTube bağlantısı (youtube.com/watch, youtu.be, shorts, m.youtube) yapıştırılınca videonun altyazısı çekilir (Türkçe önce, yoksa İngilizce ya da otomatik altyazı), 30 saniyede bir zaman imiyle iletiye eklenir ve Ülgen yorumlar. Bağlantının yanına soru yazarsanız (örn. "bildirim nasıl gönderiliyor?") dökümün o soruyla ilgili bölümleri verilir; yalnızca bağlantı ya da "yorumla" derseniz başı, ortası ve sonu. Tam döküm Obsidian'da `Ülgen/YouTube` notuna yazılır, sonraki sorularda kütüphaneden bulunur. Görüntü anlaşılmaz, yalnızca konuşulanlar; altyazı alınamazsa Ülgen bunu açıkça söyler, içerik uydurmaz. API anahtarı gerekmez (youtube-transcript-api ve izleme sayfası; ücretsiz).
 - Dosya ya da video içeriği eklenmiş ileti doğrudan beyne gider: içindeki sözcükler (örn. "THYAO analiz") komut, uzman aracı ya da kütüphane araması tetiklemez.

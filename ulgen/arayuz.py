@@ -593,7 +593,8 @@ function sesliMetin(m) {
     .replace(/https?:\/\/\S+|www\.\S+/g, " (bağlantı) ")
     .replace(/&[a-zA-Z]+;|&#\d+;/g, " ")
     .replace(/^\s*[-•]\s+/gm, "")
-    .replace(/[#*_`|>~\[\]{}\\]/g, " ")
+    .replace(/[\u2500-\u257f\u2022\u25aa\u25cf]+/g, " ")   // kutu çizgileri ╔═║, madde imleri •
+    .replace(/[#*_`|>~\[\]{}\\$]/g, " ")
     .replace(/\s+/g, " ").trim();
 }
 
