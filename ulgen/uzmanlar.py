@@ -128,7 +128,8 @@ UZMANLAR = {
         "kaynaklar": [
             "csb.gov.tr", "tse.org.tr", "tr.wikipedia.org"],
         "alan": "inşaat, taş ev, kerpiç, mimari",
-        "anahtar": r"\b(kerpiç\w*|horasan\w*|taş ev|duvar\w*|sıva\w*|"
+        "anahtar": r"\b(kerpiç\w*|horasan\w*|taş ev\w*|ev\w* ölçü\w*|sığınak\w*|"
+                   r"kiler\w*|çatı\w*|duvar\w*|sıva\w*|"
                    r"yapı\w*|inşaat\w*|temel\w*|mimari|saman\w*|ahşap)\b",
         "talimat": (
             "You are BALBAL, natural building: stone, timber, clay, straw, "
@@ -500,6 +501,10 @@ KILAVUZ_ISTEMI = (
     "researched this, so build on what his earlier chats found. Earlier "
     "chats can contain mistakes: state part numbers from them as 'eski "
     "sohbetinizde geçen numara' and advise confirming with the dealer. "
+    "Entries are dated and listed newest first: when they disagree (e.g. "
+    "dimensions or a plan changed over time), the newest one is the user's "
+    "current decision - say so, give its date, and when asked for the "
+    "history list the earlier values in date order. "
     "When the "
     "user describes a fault, name the specific parts the manual points to "
     "(including small parts such as valves, solenoids, modulators, seals), "
@@ -541,10 +546,25 @@ def _sec_ve_sirala(ad, bulgular, uygun):
         if b[1] not in gorulen and uygun(b[1]) and b[2]:
             gorulen.add(b[1])
             secilen.append(b)
+    # En yeni önce (tarih dosya adından ya da değişme zamanından); TULGA'da
+    # Musso geçenler her zaman önce.
+    secilen.sort(key=lambda b: tarih_bul(b[1]), reverse=True)
     if ad == "TULGA":
         secilen.sort(key=lambda b: "musso" not in obsidyen.normal(
             "%s %s" % (b[1], b[2])))
     return secilen
+
+
+def tarih_bul(yol):
+    """'2026-10-01 Musso.md' -> '2026-10-01'; yoksa dosyanın değişme günü."""
+    e = re.search(r"(\d{4}-\d{2}-\d{2})", os.path.basename(yol or ""))
+    if e:
+        return e.group(1)
+    try:
+        import time
+        return time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(yol)))
+    except OSError:
+        return "0000-00-00"
 
 
 def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=5000):
@@ -568,9 +588,10 @@ def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=5000):
               and not guvenlik.duyarli_mi(b[2])]
     parcalar, toplam = [], 0
     for etiket, liste in (("KILAVUZ", kilavuz), ("ESKİ SOHBET", sohbet)):
-        for baslik, _, alinti in liste[:4]:
+        for baslik, yol, alinti in liste[:4]:
             if toplam > sinir:
                 break
-            parcalar.append("## %s: %s\n%s" % (etiket, baslik, alinti))
+            parcalar.append("## %s (%s): %s\n%s" % (
+                etiket, tarih_bul(yol), baslik, alinti))
             toplam += len(alinti)
     return "\n\n".join(parcalar)

@@ -78,7 +78,8 @@ class Kilavuz(unittest.TestCase):
         m = uzmanlar.kilavuz_alintilari(
             "TULGA", "şanzıman geçmiyor", ara,
             kilavuz_mu=lambda y: os.path.basename(os.path.dirname(y)) != "notlar")
-        self.assertTrue(m.startswith("## KILAVUZ: Musso - Sayfa 300-320"))
+        self.assertTrue(m.startswith("## KILAVUZ ("))
+        self.assertIn("): Musso - Sayfa 300-320", m.split("\n")[0])
         self.assertNotIn("## Not\n", m)
 
     def test_kilavuz_varsa_istemde_ve_arastirma_yok(self):
@@ -127,7 +128,7 @@ class EskiSohbet(unittest.TestCase):
         m = uzmanlar.kilavuz_alintilari(
             "TULGA", "mussonun şanzımanında geçme sorunu var hangi parça lazım",
             ara, kilavuz_mu=lambda y: False)
-        self.assertIn("## ESKİ SOHBET: 2026-10-01 Musso vites", m)
+        self.assertIn("## ESKİ SOHBET (2026-10-01): 2026-10-01 Musso vites", m)
         self.assertIn("A1159920310", m)
         self.assertNotIn("kredi kartı", m)
 
@@ -141,3 +142,17 @@ class EskiSohbet(unittest.TestCase):
                                         kilavuz_mu=lambda y: False)
         self.assertIn("biberiye", m)
         self.assertNotIn("şanzıman", m)
+
+    def test_tas_ev_olculeri_en_yeni_once(self):
+        k = "/k/Yapay Zekâ Konuşmaları/a/"
+
+        def ara(m, adet):
+            return [("2026-03-02 Taş ev", k + "2026-03-02 Taş ev.md", "taş ev 8x10 m"),
+                    ("2026-09-15 Taş ev", k + "2026-09-15 Taş ev.md", "taş ev 9x12 m"),
+                    ("2026-06-01 Taş ev", k + "2026-06-01 Taş ev.md", "taş ev 9x11 m")]
+        q = "taş evin son ölçüleri tarihsel sıralamaya göre kaçtır"
+        self.assertEqual(uzmanlar.sec(q), "BALBAL")
+        m = uzmanlar.kilavuz_alintilari("BALBAL", q, ara, kilavuz_mu=lambda y: False)
+        sira = [m.index(x) for x in ("9x12", "9x11", "8x10")]
+        self.assertEqual(sira, sorted(sira))
+        self.assertIn("newest one is the user's current decision", uzmanlar.KILAVUZ_ISTEMI)

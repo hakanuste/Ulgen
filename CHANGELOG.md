@@ -2,6 +2,7 @@
 
 ## 2.7.87
 - **Uzmanlar eski sohbetleri okur:** Her uzman, sorunuzla ilgili olarak Obsidian'daki `Yapay Zekâ Konuşmaları` klasöründen (ChatGPT, Gemini vb. aktarılmış sohbetler) yalnızca KENDİ alanına giren soru-cevapları alır (örn. TULGA Musso şanzıman sohbetlerini, OTACI bitki sohbetlerini). Kılavuz notlarıyla birlikte yanıtın dayanağı olur; bunlar bulunduğunda web araştırması yapılmaz, yanıt daha hızlı gelir.
+- Alıntılar tarihli ve en yeniden eskiye sıralıdır (tarih dosya adından, yoksa dosyanın değişme gününden). Bilgi zamanla değiştiyse (örn. taş evin ölçüleri) en yenisi güncel kararınız sayılır ve tarihiyle söylenir; isterseniz önceki değerler tarih sırasıyla verilir. BALBAL "taş evin", "sığınak", "kiler", "çatı", "ev ölçüleri" sorularını da tanır.
 - Eski sohbetlerdeki parça numaraları "eski sohbetinizde geçen numara" diye belirtilir ve parçacıda doğrulanması önerilir. Duyarlı bilgi (kart, şifre, sağlık gibi) içeren sohbet alıntısı alınmaz.
 
 ## 2.7.86
