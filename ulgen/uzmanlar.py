@@ -557,10 +557,54 @@ def _turlar(icerik):
     return [(bol[i], bol[i + 1].strip()) for i in range(1, len(bol) - 1, 2)]
 
 
-def sohbet_alintisi(yol, metin, oku=None, sinir=1800):
-    """Eski sohbetten soruyla ilgili bölüm: ilk geçtiği yer DEĞİL, sohbetin
-    sonlarına doğru olanlar ve kullanıcının düzeltmeleri (düzeltme, önceki
-    yapay zekâ sözünü geçersiz kılar)."""
+PARCA_BOYU = 1500        # sohbet parçası (karakter); Obsidian bölmesine benzer
+
+
+def sohbet_parcalari(icerik, boy=PARCA_BOYU):
+    """Sohbeti baştan sona parçalara böler: [(etiket, metin)].
+
+    Rolleri belli sohbette (ChatGPT aktarımı) parça sınırı tur sınırıdır; her
+    tur 'KULLANICI (Hakan)' / 'YAPAY ZEKÂ' diye, düzeltmeleriniz 'DÜZELTME'
+    diye işaretlenir. Rolsüz metin paragraf sınırından bölünür."""
+    turlar = _turlar(icerik)
+    parcalar, simdiki, ilk = [], [], None
+    if turlar:
+        for i, (rol, govde) in enumerate(turlar):
+            etiket = "KULLANICI (Hakan)" if rol == "Ben" else "YAPAY ZEKÂ"
+            if rol == "Ben" and i and DUZELTME.search(govde):
+                etiket += " - DÜZELTME"
+            satir = "[%d. tur, %s] %s" % (i + 1, etiket, govde[:boy])
+            if simdiki and sum(map(len, simdiki)) + len(satir) > boy:
+                parcalar.append(("tur %d-%d" % (ilk, i), "\n".join(simdiki)))
+                simdiki = []
+            if not simdiki:
+                ilk = i + 1
+            simdiki.append(satir)
+        if simdiki:
+            parcalar.append(("tur %d-%d" % (ilk, len(turlar)), "\n".join(simdiki)))
+        return parcalar
+    govde = re.sub(r"^---.*?---\s*", "", icerik, flags=re.S)
+    for paragraf in re.split(r"\n\s*\n", govde):
+        paragraf = paragraf.strip()
+        if not paragraf:
+            continue
+        while len(paragraf) > boy:              # çok uzun paragraf da bölünür
+            simdiki.append(paragraf[:boy])
+            parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
+            simdiki, paragraf = [], paragraf[boy:]
+        if simdiki and sum(map(len, simdiki)) + len(paragraf) > boy:
+            parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
+            simdiki = []
+        simdiki.append(paragraf)
+    if simdiki:
+        parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
+    return parcalar
+
+
+def sohbet_alintisi(yol, metin, oku=None, sinir=3500):
+    """Eski sohbetin TAMAMI parçalara bölünür; soruyla en ilgili parçalar
+    (sözcük eşleşmesi; düzeltme içeren parça öne) seçilir ve sohbet sırasıyla
+    verilir. Aynı puanda sonraki parça öne geçer (sonraki söz geçerli)."""
     try:
         icerik = (oku or obsidyen._oku)(yol)
     except Exception:
@@ -568,52 +612,27 @@ def sohbet_alintisi(yol, metin, oku=None, sinir=1800):
     sozcukler = [k[:max(3, len(k) - 3)] if len(k) >= 6 else k
                  for k in obsidyen.KELIME.findall(obsidyen.normal(metin))
                  if len(k) >= 3 and k not in ("var", "hangi", "nedir")][:10]
-
-    def ilgili(x):
-        n = obsidyen.normal(x)
-        return any(k in n for k in sozcukler)
-    turlar = _turlar(icerik)
-    if turlar:
-        secilen = set()
-        for i, (rol, govde) in enumerate(turlar):
-            duzeltme = (rol == "Ben" and DUZELTME.search(govde)
-                        and (i - 1) in secilen)
-            if ilgili(govde) or duzeltme or i in secilen:
-                secilen.add(i)
-                # yapay zekâ sözünden sonra kullanıcının yanıtı; düzeltmeden
-                # sonra da yapay zekânın düzeltilmiş yanıtı gelsin
-                if i + 1 < len(turlar) and (rol == "Yapay zekâ" or duzeltme):
-                    secilen.add(i + 1)
-        parcalar, toplam = [], 0
-        for i in sorted(secilen, reverse=True):     # sondan başa: en yeni önce
-            rol, govde = turlar[i]
-            etiket = "KULLANICI (Hakan)" if rol == "Ben" else "YAPAY ZEKÂ"
-            if rol == "Ben" and DUZELTME.search(govde):
-                etiket += " - DÜZELTME"
-            parca = "[%d. tur, %s] %s" % (i + 1, etiket, govde[:700])
-            if toplam + len(parca) > sinir and parcalar:
-                break
-            parcalar.append(parca)
-            toplam += len(parca)
-        return "\n".join(reversed(parcalar))
-    # Rolsüz metin: sözcüğün SON geçtiği yer + yakınında düzeltme olan yerler
-    n = obsidyen.normal(icerik)
-    konumlar = [m.start() for k in sozcukler for m in re.finditer(re.escape(k), n)]
-    if not konumlar:
+    if not sozcukler:
         return ""
-    pencereler = [max(konumlar)]
-    for m in DUZELTME.finditer(icerik):
-        if any(abs(m.start() - k) < 400 for k in konumlar):
-            pencereler.append(m.start())
-    pencereler = sorted(set(pencereler), reverse=True)
-    parcalar, toplam = [], 0
-    for p in pencereler:
-        parca = icerik[max(0, p - 350): p + 350].strip()
-        if toplam + len(parca) > sinir and parcalar:
-            break
-        parcalar.append(parca)
-        toplam += len(parca)
-    return "\n…\n".join(reversed(parcalar))
+    parcalar = sohbet_parcalari(icerik)
+    puanli = []
+    for sira, (etiket, govde) in enumerate(parcalar):
+        n = obsidyen.normal(govde)
+        puan = sum(1 for k in sozcukler if k in n)
+        if puan:
+            if "DÜZELTME" in govde or (not _turlar(icerik) and DUZELTME.search(govde)):
+                puan += 2
+            puanli.append((puan, sira))
+    secilen, toplam = [], 0
+    for puan, sira in sorted(puanli, reverse=True):
+        uzunluk = len(parcalar[sira][1])
+        if toplam + uzunluk > sinir and secilen:
+            continue
+        secilen.append(sira)
+        toplam += uzunluk
+    return "\n…\n".join(
+        "(%s / %d parça) %s" % (parcalar[i][0], len(parcalar), parcalar[i][1])
+        for i in sorted(secilen))
 
 
 def _sec_ve_sirala(ad, bulgular, uygun):
@@ -643,7 +662,7 @@ def tarih_bul(yol):
         return "0000-00-00"
 
 
-def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=5000,
+def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
                        oku=None):
     """Uzmanın alanındaki soruya kasadan alıntılar: kılavuz notları ve
     eski sohbetler (Yapay Zekâ Konuşmaları). TULGA'da Musso geçenler önce.

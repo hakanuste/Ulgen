@@ -197,3 +197,30 @@ Haklısınız, Mercedes 722 ailesi. Vites burçları aşınmış olabilir.
 
     def test_istem_duzeltmeyi_ustun_tutar(self):
         self.assertIn("never repeat the corrected mistake", uzmanlar.KILAVUZ_ISTEMI)
+
+
+class Parcalama(unittest.TestCase):
+
+    def test_uzun_sohbetin_sonundaki_ilgili_parca_bulunur(self):
+        turlar = []
+        for i in range(40):
+            turlar += ["## Ben", "", "zeytin budama sorusu %d %s" % (i, "a" * 300), "",
+                       "## Yapay zekâ", "", "budama yanıtı %d %s" % (i, "b" * 300), ""]
+        turlar += ["## Ben", "", "Taş evin ölçüleri ne olsun?", "",
+                   "## Yapay zekâ", "", "8x10 öneririm.", "",
+                   "## Ben", "", "Hayır, doğrusu 9x12; öyle kararlaştırdık.", "",
+                   "## Yapay zekâ", "", "Anlaşıldı, taş ev 9x12.", ""]
+        icerik = "\n".join(turlar)
+        parcalar = uzmanlar.sohbet_parcalari(icerik)
+        self.assertGreater(len(parcalar), 10)
+        m = uzmanlar.sohbet_alintisi("z.md", "taş evin ölçüleri",
+                                     oku=lambda y: icerik)
+        self.assertIn("DÜZELTME] Hayır, doğrusu 9x12", m)
+        self.assertIn("Anlaşıldı, taş ev 9x12", m)
+        self.assertNotIn("zeytin budama sorusu 3 ", m)
+
+    def test_rolsuz_metin_paragraflara_bolunur(self):
+        metin = "\n\n".join("paragraf %d %s" % (i, "c" * 400) for i in range(20))
+        p = uzmanlar.sohbet_parcalari(metin)
+        self.assertTrue(all(len(g) <= uzmanlar.PARCA_BOYU + 10 for _, g in p))
+        self.assertGreater(len(p), 4)

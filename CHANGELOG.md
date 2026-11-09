@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.89
+- **Uzun sohbetler parçalara bölünür:** Eski sohbetin tamamı, Obsidian'daki kılavuz bölmesine benzer biçimde yaklaşık 1500 karakterlik parçalara ayrılır (rolleri belli sohbette tur sınırından, rolsüz metinde paragraf sınırından). Soruyla en çok eşleşen parçalar seçilir; düzeltmenizi içeren parça öne geçer; aynı puanda sonraki parça önce alınır. Seçilen parçalar sohbet sırasıyla ve "tur 41-44 / 23 parça" gibi yer bilgisiyle verilir. Böylece sohbetin ortasında ya da sonundaki bilgi de bulunur; sohbet başına en çok yaklaşık 3500, toplamda 8000 karakter.
+
 ## 2.7.88
 - **Eski sohbetlerdeki düzeltmeleriniz geçerli:** Uzmanlar bir sohbetten artık sözcüğün ilk geçtiği yeri değil, ilgili turları sohbetin sonundan başa doğru alır. Turlar "KULLANICI (Hakan)" ve "YAPAY ZEKÂ" diye işaretlenir; sizin "yanlış", "doğrusu", "hayır", "öyle değil", "aslında" gibi sözlerle düzelttiğiniz turlar "DÜZELTME" etiketi alır ve hemen ardından gelen düzeltilmiş yanıt da alınır.
 - Uzmana kural: sizin sözünüz yapay zekânın sözünden üstündür; düzeltilmiş yanlış asla tekrarlanmaz; aynı sohbette sonraki tur öncekini geçersiz kılar. Rolsüz aktarılmış sohbetlerde (Gemini vb. HTML) sözcüğün son geçtiği yer ve yakınındaki düzeltmeler alınır.
