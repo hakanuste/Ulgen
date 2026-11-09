@@ -114,3 +114,19 @@ class KasaBulmaTesti(TemizVeri):
             tamam, ileti, _ = obsidyen.erisim_durumu(yol)
         self.assertFalse(tamam)
         self.assertIn("Tam Disk Erişimi", ileti)
+
+
+class TamOkuma(unittest.TestCase):
+
+    def test_notun_sonundaki_bilgi_alinir(self):
+        from ulgen import obsidyen
+        icerik = ("# Taş ev\n\n" + "\n\n".join(
+            "Eski taslak paragrafı %d, ölçüler henüz belli değil. %s" % (i, "x" * 300)
+            for i in range(30)) + "\n\nSon karar: taş ev ölçüleri 9x12 metre.")
+        m = obsidyen.parcali_alinti(icerik, ["tas", "ev", "olculeri"])
+        self.assertIn("9x12", m)
+        self.assertIn("parça)", m)
+
+    def test_eslesme_yoksa_bas(self):
+        from ulgen import obsidyen
+        self.assertTrue(obsidyen.parcali_alinti("kısa not", ["zzz"]).startswith("kısa"))

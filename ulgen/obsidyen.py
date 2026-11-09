@@ -179,19 +179,121 @@ def _guvenli():
         pass
 
 
-def _alinti(yol, kelimeler, uzunluk=1400):
+DUZELTME = re.compile(
+    r"\b(yanlış\w*|yanlis\w*|hatalı\w*|hatali\w*|doğrusu\w*|dogrusu\w*|"
+    r"düzelt\w*|duzelt\w*|öyle değil|oyle degil|o değil|hayır|hayir|"
+    r"aslında|aslinda)\b", re.IGNORECASE)
+TUR = re.compile(r"^## (Ben|Yapay zekâ)\s*$", re.MULTILINE)
+PARCA_BOYU = 1500        # not/sohbet parçası (karakter)
+DOLGU = {"var", "hangi", "nedir", "nasil", "neden", "icin", "gibi", "olan",
+         "bir", "bu", "ve", "ile", "mi", "mu", "ne"}
+
+
+def turlar(icerik):
+    """ChatGPT aktarımındaki '## Ben' / '## Yapay zekâ' turları: [(rol, metin)]."""
+    bol = TUR.split(icerik)
+    return [(bol[i], bol[i + 1].strip()) for i in range(1, len(bol) - 1, 2)]
+
+
+def not_parcalari(icerik, boy=PARCA_BOYU):
+    """Notu baştan sona parçalara böler: [(etiket, metin)].
+
+    Rolleri belli sohbette (ChatGPT aktarımı) parça sınırı tur sınırıdır; her
+    tur 'KULLANICI (Hakan)' / 'YAPAY ZEKÂ', düzeltmeler 'DÜZELTME' diye
+    işaretlenir. Diğer notlar (kılavuz sayfaları, kendi notlarınız, rolsüz
+    sohbetler) paragraf sınırından bölünür."""
+    tlar = turlar(icerik)
+    parcalar, simdiki, ilk = [], [], None
+    if tlar:
+        for i, (rol, govde) in enumerate(tlar):
+            etiket = "KULLANICI (Hakan)" if rol == "Ben" else "YAPAY ZEKÂ"
+            if rol == "Ben" and i and DUZELTME.search(govde):
+                etiket += " - DÜZELTME"
+            satir = "[%d. tur, %s] %s" % (i + 1, etiket, govde[:boy])
+            if simdiki and sum(map(len, simdiki)) + len(satir) > boy:
+                parcalar.append(("tur %d-%d" % (ilk, i), "\n".join(simdiki)))
+                simdiki = []
+            if not simdiki:
+                ilk = i + 1
+            simdiki.append(satir)
+        if simdiki:
+            parcalar.append(("tur %d-%d" % (ilk, len(tlar)), "\n".join(simdiki)))
+        return parcalar
+    govde = re.sub(r"^---.*?---\s*", "", icerik, flags=re.S)
+    for paragraf in re.split(r"\n\s*\n", govde):
+        paragraf = paragraf.strip()
+        if not paragraf:
+            continue
+        while len(paragraf) > boy:              # çok uzun paragraf da bölünür
+            simdiki.append(paragraf[:boy])
+            parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
+            simdiki, paragraf = [], paragraf[boy:]
+        if simdiki and sum(map(len, simdiki)) + len(paragraf) > boy:
+            parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
+            simdiki = []
+        simdiki.append(paragraf)
+    if simdiki:
+        parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
+    return parcalar
+
+
+def kokler(kelimeler):
+    """Aranacak sözcük kökleri (Türkçe ekler: 'ölçüleri' -> 'olcul')."""
+    sonuc = []
+    for k in kelimeler:
+        k = normal(k)
+        if len(k) < 3 or k in DOLGU:
+            continue
+        k = k[:max(3, len(k) - 3)] if len(k) >= 6 else k
+        if k not in sonuc:
+            sonuc.append(k)
+    return sonuc[:12]
+
+
+def parcali_alinti(icerik, kelimeler, sinir=2500):
+    """Notun TAMAMI parçalara bölünür; sorudaki sözcüklerden en çoğunu içeren
+    parçalar seçilir (düzeltme içeren parça öne, eşitlikte sonraki parça önce:
+    sonra yazılan geçerli). Seçilenler notun kendi sırasıyla, yer bilgisiyle
+    verilir. Hiç eşleşme yoksa notun başı verilir."""
+    kok = kokler(kelimeler)
+    parcalar = not_parcalari(icerik)
+    if not parcalar:
+        return ""
+    rollu = bool(TUR.search(icerik))
+    puanli = []
+    for sira, (_, govde) in enumerate(parcalar):
+        n = normal(govde)
+        puan = sum(1 for k in kok if k in n)
+        if puan:
+            if "DÜZELTME]" in govde or (not rollu and DUZELTME.search(govde)):
+                puan += 2
+            puanli.append((puan, sira))
+    if not puanli:
+        return parcalar[0][1][:sinir]
+    secilen, toplam = [], 0
+    for _, sira in sorted(puanli, reverse=True):
+        uzunluk = len(parcalar[sira][1])
+        if toplam + uzunluk > sinir and secilen:
+            continue
+        secilen.append(sira)
+        toplam += uzunluk
+    if len(parcalar) == 1:
+        return parcalar[0][1][:sinir]
+    return "\n…\n".join(
+        "(%s / %d parça) %s" % (parcalar[i][0], len(parcalar), parcalar[i][1])
+        for i in sorted(secilen))
+
+
+def _alinti(yol, kelimeler, uzunluk=2500):
+    """Notun ilk eşleşen yeri DEĞİL, tamamı taranıp en ilgili parçaları."""
     try:
         icerik = _oku(yol)
     except Exception:
         return ""
-    kucuk = normal(icerik)
-    konumlar = [kucuk.find(k) for k in kelimeler if k in kucuk]
-    konum = min(konumlar) if konumlar else 0
-    # normal() uzunluğu değiştirmez (harf başına harf), konum eşleşir
-    return icerik[max(0, konum - 300): konum + uzunluk - 300].strip()
+    return parcali_alinti(icerik, kelimeler, uzunluk)
 
 
-def ara(metin, adet=3):
+def ara(metin, adet=3, alinti_boyu=2500):
     """[(baslik, yol, alinti)]; en iyi eşleşmeler önce (bm25)."""
     if not hazir_mi():
         return []
@@ -215,7 +317,7 @@ def ara(metin, adet=3):
     sonuc = []
     for s in satirlar:
         baslik = os.path.splitext(os.path.basename(s["yol"]))[0]
-        sonuc.append((baslik, s["yol"], _alinti(s["yol"], kelimeler)))
+        sonuc.append((baslik, s["yol"], _alinti(s["yol"], kelimeler, alinti_boyu)))
     return sonuc
 
 

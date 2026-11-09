@@ -501,6 +501,9 @@ KILAVUZ_ISTEMI = (
     "researched this, so build on what his earlier chats found. Earlier "
     "chats can contain mistakes: state part numbers from them as 'eski "
     "sohbetinizde geçen numara' and advise confirming with the dealer. "
+    "Excerpts were chosen from across each whole note (not just its "
+    "beginning); use all of them, not only the first. NOT entries are the "
+    "user's own notes and are authoritative. "
     "In ESKİ SOHBET, turns marked KULLANICI (Hakan) are the user's own "
     "words and outrank the assistant; a turn marked DÜZELTME means he "
     "corrected the assistant - use his corrected version and never repeat "
@@ -544,95 +547,21 @@ def _sohbet_mu(yol):
     return "yapay zeka konusmalari" in obsidyen.normal(yol or "")
 
 
-DUZELTME = re.compile(
-    r"\b(yanlış\w*|yanlis\w*|hatalı\w*|hatali\w*|doğrusu\w*|dogrusu\w*|"
-    r"düzelt\w*|duzelt\w*|öyle değil|oyle degil|o değil|hayır|hayir|"
-    r"aslında|aslinda)\b", re.IGNORECASE)
-TUR = re.compile(r"^## (Ben|Yapay zekâ)\s*$", re.MULTILINE)
-
-
-def _turlar(icerik):
-    """ChatGPT aktarımındaki '## Ben' / '## Yapay zekâ' turları: [(rol, metin)]."""
-    bol = TUR.split(icerik)
-    return [(bol[i], bol[i + 1].strip()) for i in range(1, len(bol) - 1, 2)]
-
-
-PARCA_BOYU = 1500        # sohbet parçası (karakter); Obsidian bölmesine benzer
-
-
-def sohbet_parcalari(icerik, boy=PARCA_BOYU):
-    """Sohbeti baştan sona parçalara böler: [(etiket, metin)].
-
-    Rolleri belli sohbette (ChatGPT aktarımı) parça sınırı tur sınırıdır; her
-    tur 'KULLANICI (Hakan)' / 'YAPAY ZEKÂ' diye, düzeltmeleriniz 'DÜZELTME'
-    diye işaretlenir. Rolsüz metin paragraf sınırından bölünür."""
-    turlar = _turlar(icerik)
-    parcalar, simdiki, ilk = [], [], None
-    if turlar:
-        for i, (rol, govde) in enumerate(turlar):
-            etiket = "KULLANICI (Hakan)" if rol == "Ben" else "YAPAY ZEKÂ"
-            if rol == "Ben" and i and DUZELTME.search(govde):
-                etiket += " - DÜZELTME"
-            satir = "[%d. tur, %s] %s" % (i + 1, etiket, govde[:boy])
-            if simdiki and sum(map(len, simdiki)) + len(satir) > boy:
-                parcalar.append(("tur %d-%d" % (ilk, i), "\n".join(simdiki)))
-                simdiki = []
-            if not simdiki:
-                ilk = i + 1
-            simdiki.append(satir)
-        if simdiki:
-            parcalar.append(("tur %d-%d" % (ilk, len(turlar)), "\n".join(simdiki)))
-        return parcalar
-    govde = re.sub(r"^---.*?---\s*", "", icerik, flags=re.S)
-    for paragraf in re.split(r"\n\s*\n", govde):
-        paragraf = paragraf.strip()
-        if not paragraf:
-            continue
-        while len(paragraf) > boy:              # çok uzun paragraf da bölünür
-            simdiki.append(paragraf[:boy])
-            parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
-            simdiki, paragraf = [], paragraf[boy:]
-        if simdiki and sum(map(len, simdiki)) + len(paragraf) > boy:
-            parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
-            simdiki = []
-        simdiki.append(paragraf)
-    if simdiki:
-        parcalar.append(("bölüm %d" % (len(parcalar) + 1), "\n\n".join(simdiki)))
-    return parcalar
+DUZELTME = obsidyen.DUZELTME
+TUR = obsidyen.TUR
+_turlar = obsidyen.turlar
+PARCA_BOYU = obsidyen.PARCA_BOYU
+sohbet_parcalari = obsidyen.not_parcalari
 
 
 def sohbet_alintisi(yol, metin, oku=None, sinir=3500):
-    """Eski sohbetin TAMAMI parçalara bölünür; soruyla en ilgili parçalar
-    (sözcük eşleşmesi; düzeltme içeren parça öne) seçilir ve sohbet sırasıyla
-    verilir. Aynı puanda sonraki parça öne geçer (sonraki söz geçerli)."""
+    """Notun/sohbetin TAMAMI parçalara bölünür, en ilgili parçalar seçilir."""
     try:
         icerik = (oku or obsidyen._oku)(yol)
     except Exception:
         return ""
-    sozcukler = [k[:max(3, len(k) - 3)] if len(k) >= 6 else k
-                 for k in obsidyen.KELIME.findall(obsidyen.normal(metin))
-                 if len(k) >= 3 and k not in ("var", "hangi", "nedir")][:10]
-    if not sozcukler:
-        return ""
-    parcalar = sohbet_parcalari(icerik)
-    puanli = []
-    for sira, (etiket, govde) in enumerate(parcalar):
-        n = obsidyen.normal(govde)
-        puan = sum(1 for k in sozcukler if k in n)
-        if puan:
-            if "DÜZELTME" in govde or (not _turlar(icerik) and DUZELTME.search(govde)):
-                puan += 2
-            puanli.append((puan, sira))
-    secilen, toplam = [], 0
-    for puan, sira in sorted(puanli, reverse=True):
-        uzunluk = len(parcalar[sira][1])
-        if toplam + uzunluk > sinir and secilen:
-            continue
-        secilen.append(sira)
-        toplam += uzunluk
-    return "\n…\n".join(
-        "(%s / %d parça) %s" % (parcalar[i][0], len(parcalar), parcalar[i][1])
-        for i in sorted(secilen))
+    return obsidyen.parcali_alinti(icerik, obsidyen.KELIME.findall(
+        obsidyen.normal(metin)), sinir)
 
 
 def _sec_ve_sirala(ad, bulgular, uygun):
@@ -663,34 +592,44 @@ def tarih_bul(yol):
 
 
 def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
-                       oku=None):
-    """Uzmanın alanındaki soruya kasadan alıntılar: kılavuz notları ve
-    eski sohbetler (Yapay Zekâ Konuşmaları). TULGA'da Musso geçenler önce.
-    Duyarlı bilgi içeren sohbet alıntısı alınmaz (buluta da gidebilir)."""
+                       oku=None, notlar=True):
+    """Uzmanın alanındaki soruya kasadan alıntılar: kılavuzlar (KILAVUZ),
+    kendi notlarınız (NOT; yalnızca notlar=True iken, yani yerel beyinde) ve
+    eski sohbetler (ESKİ SOHBET). Her not baştan sona taranır; toplam sınır
+    nota bölüştürülür ve her notta en ilgili parçalar seçilir (sondan kesme
+    yok). TULGA'da Musso geçenler önce; duyarlı bilgi içeren alıntı alınmaz."""
     if ad not in UZMANLAR:
         return ""
     ara = ara or obsidyen.ara
     kilavuz_mu = kilavuz_mu or _kilavuz_mu
     try:
         k_bulgu = ara(terim_genislet(metin), 10)        # kılavuzlar İngilizce
-        s_bulgu = ara(metin, 10)                          # sohbetler Türkçe
+        s_bulgu = ara(metin, 12)                          # notlar Türkçe
     except Exception:
         return ""
     from . import guvenlik
-    kilavuz = _sec_ve_sirala(ad, k_bulgu + s_bulgu, kilavuz_mu)
     alan = re.compile(UZMANLAR[ad]["anahtar"], re.IGNORECASE)
-    sohbet = []
-    for b in _sec_ve_sirala(ad, s_bulgu + k_bulgu, _sohbet_mu):
-        alinti = sohbet_alintisi(b[1], metin, oku) or b[2]
-        if (alan.search("%s %s" % (b[0], alinti))           # uzmanın alanında
-                and not guvenlik.duyarli_mi(alinti)):
-            sohbet.append((b[0], b[1], alinti))
+    hepsi = k_bulgu + s_bulgu
+    adaylar = [("KILAVUZ", b) for b in _sec_ve_sirala(ad, hepsi, kilavuz_mu)[:4]]
+    if notlar:
+        adaylar += [("NOT", b) for b in _sec_ve_sirala(
+            ad, s_bulgu + k_bulgu,
+            lambda y: not kilavuz_mu(y) and not _sohbet_mu(y))[:3]]
+    adaylar += [("ESKİ SOHBET", b) for b in _sec_ve_sirala(
+        ad, s_bulgu + k_bulgu, _sohbet_mu)[:4]]
+    if not adaylar:
+        return ""
+    pay = max(1200, sinir // len(adaylar))
     parcalar, toplam = [], 0
-    for etiket, liste in (("KILAVUZ", kilavuz), ("ESKİ SOHBET", sohbet)):
-        for baslik, yol, alinti in liste[:4]:
-            if toplam > sinir:
-                break
-            parcalar.append("## %s (%s): %s\n%s" % (
-                etiket, tarih_bul(yol), baslik, alinti))
-            toplam += len(alinti)
+    for etiket, (baslik, yol, eski) in adaylar:
+        alinti = sohbet_alintisi(yol, metin, oku, pay) or (eski or "")[:pay]
+        if not alinti or guvenlik.duyarli_mi(alinti):
+            continue
+        if etiket != "KILAVUZ" and not alan.search("%s %s" % (baslik, alinti)):
+            continue                                     # uzmanın alanında değil
+        if toplam + len(alinti) > sinir and parcalar:
+            break
+        parcalar.append("## %s (%s): %s\n%s"
+                        % (etiket, tarih_bul(yol), baslik, alinti))
+        toplam += len(alinti)
     return "\n\n".join(parcalar)

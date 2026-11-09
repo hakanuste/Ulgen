@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## 2.7.90
+- **Notlar tam okunur:** Ortak not okuyucu artık her notu baştan sona parçalara böler ve soruyla en ilgili parçaları seçer (önceden yalnızca ilk eşleşmenin çevresindeki ~1400 karakter alınıyordu). Alıntı payı beynin istem bütçesine göre belirlenir ve seçim bu paya göre yapılır; sondan kesme yüzünden yalnızca ilk okunanların kalması sorunu giderildi. Uzmanlar kendi notlarınızı (NOT) da okur; bunlar yalnızca yerel beyinde kullanılır.
+- **Yabancı harfler atılır:** Yanıtlara karışan Çince/Japonca/Korece harfler, bozuk karakter (�) ve görünmez denetim karakterleri temizlenir.
+- **Seslendirme temizliği:** Okunmadan önce kod, HTML etiketi, bağlantı ve Markdown işaretleri atılır; ses bunları harf harf okumaz.
+- **Sohbete dosya/resim ekleme (📎):** PDF, Word, metin, Markdown, CSV, JSON ve HTML okunur; resimlerde yalnızca içindeki yazı (tesseract) okunur, resmin kendisi görülmez. Dosyalar `~/ÜlgenVeri/ekler` altına kaydedilir; en çok 25 MB, iletiye en çok 12000 karakter eklenir.
+- Kodlandı ve test edildi (432 test); Mac ve iPhone'da denenecek.
+
 ## 2.7.89
 - **Uzun sohbetler parçalara bölünür:** Eski sohbetin tamamı, Obsidian'daki kılavuz bölmesine benzer biçimde yaklaşık 1500 karakterlik parçalara ayrılır (rolleri belli sohbette tur sınırından, rolsüz metinde paragraf sınırından). Soruyla en çok eşleşen parçalar seçilir; düzeltmenizi içeren parça öne geçer; aynı puanda sonraki parça önce alınır. Seçilen parçalar sohbet sırasıyla ve "tur 41-44 / 23 parça" gibi yer bilgisiyle verilir. Böylece sohbetin ortasında ya da sonundaki bilgi de bulunur; sohbet başına en çok yaklaşık 3500, toplamda 8000 karakter.
 

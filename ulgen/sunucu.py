@@ -23,7 +23,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import ajan_kayit, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
+from . import ajan_kayit, ekler, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
 from . import ajan_gorevi, obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
 from . import saglik_veri, ses, ses_klip
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
@@ -748,6 +748,22 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(400, {"hata": str(hata)})
             self._cevap(200, {"ad": os.path.basename(yol)})
 
+        def _ek_yukle(self):
+            """Sohbete eklenen dosya/resim (POST ham dosya, ?ad=dosya.pdf)."""
+            q = parse_qs(urlparse(self.path).query)
+            ad = (q.get("ad") or [""])[0]
+            try:
+                uzunluk = int(self.headers.get("Content-Length", 0) or 0)
+            except ValueError:
+                uzunluk = 0
+            if not self._yetkili():
+                return
+            try:
+                kimlik = ekler.kaydet(ad, self.rfile, uzunluk)
+                return self._cevap(200, ekler.ozet(kimlik))
+            except ekler.EkHatasi as hata:
+                return self._cevap(400, {"hata": str(hata)})
+
         def _ses_yaz(self, tur):
             """Ham ses → metin (yerel, internetsiz). Gövde ≤ 8 MB."""
             try:
@@ -781,6 +797,8 @@ def istek_sinifi(ulgen, limit):
                 return self._klip_yukle(tur)
             if urlparse(self.path).path == "/kitap/yukle":
                 return self._kitap_yukle()
+            if urlparse(self.path).path == "/ek/yukle":
+                return self._ek_yukle()
             if not tur.startswith("application/json"):
                 return self._cevap(415, {"hata": "application/json gerekli"})
             veri = self._govde()    # önce gövde okunur (bağlantı sıfırlanmasın)
@@ -801,8 +819,11 @@ def istek_sinifi(ulgen, limit):
                 iptal.ayarla()
                 return self._cevap(200, {"tamam": True})
             if urlparse(self.path).path == "/sohbet":
-                return self._cevap(
-                    200, ulgen.sohbet_isle(str(veri.get("metin", ""))))
+                metin = str(veri.get("metin", ""))
+                eklist = veri.get("ekler") or []
+                if isinstance(eklist, list) and eklist:
+                    metin = ekler.iletiye_ekle(metin, [str(k) for k in eklist])
+                return self._cevap(200, ulgen.sohbet_isle(metin))
             if urlparse(self.path).path == "/takvim/baglanti":
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),

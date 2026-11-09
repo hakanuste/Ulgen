@@ -46,15 +46,16 @@ def cikarimsal_ozet(metin, hedef):
     return "\n".join(parcalar) or metin[:hedef]
 
 
-def kasa_alintilari(metin, sinir=3000):
-    """Obsidian kasasında soruyla en ilgili 3 notun ilgili bölümünü döndürür."""
+def kasa_alintilari(metin, sinir=6000):
+    """Obsidian kasasında soruyla en ilgili 5 notun, baştan sona taranıp
+    seçilmiş en ilgili parçalarını döndürür."""
     from . import obsidyen
     kasa = obsidyen.kasa_yolu()
     if not os.path.isdir(kasa):
         return ""
     if obsidyen.hazir_mi():
         parcalar, toplam = [], 0
-        for baslik, _, alinti in obsidyen.ara(metin):
+        for baslik, _, alinti in obsidyen.ara(metin, 5, max(1000, sinir // 5)):
             if alinti:
                 parcalar.append("## %s\n%s" % (baslik, alinti))
                 toplam += len(alinti)
@@ -85,10 +86,9 @@ def kasa_alintilari(metin, sinir=3000):
     adaylar.sort(key=lambda a: -a[0])
     parcalar = []
     toplam = 0
-    for _, dosya, icerik, kucuk in adaylar[:3]:
-        konum = min((kucuk.find(k) for k in kelimeler if k in kucuk),
-                    default=0)
-        alinti = icerik[max(0, konum - 300): konum + 1200]
+    for _, dosya, icerik, kucuk in adaylar[:5]:
+        alinti = obsidyen.parcali_alinti(icerik, list(kelimeler),
+                                         max(1000, sinir // 5))
         parcalar.append("## %s\n%s" % (dosya[:-3], alinti))
         toplam += len(alinti)
         if toplam > sinir:

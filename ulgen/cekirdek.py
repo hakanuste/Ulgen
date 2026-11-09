@@ -15,7 +15,7 @@ from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
 from . import ajan_kayit, analiz, dogrulama, kutuphane_once, macsenk, oturum
-from . import niyet, portfoy, uzmanlar
+from . import metin_temizle, niyet, portfoy, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -178,8 +178,17 @@ class Ulgen:
         uzman = uzmanlar.istem(kullanici_metni)
         if uzman:
             parcalar.append((0, uzman))
-        if self._kilavuz_eki:          # kılavuz metni kişisel değil; buluta da gider
-            parcalar.append((0, uzmanlar.KILAVUZ_ISTEMI + self._kilavuz_eki))
+        # Kütüphane payı beynin istem bütçesine göre (yerel ~4300 karakter):
+        # alıntılar bu paya göre SEÇİLİR, sonradan sondan kesilmez.
+        pay = int(beyin.sistem_butce * 3.2 * 0.45)
+        kutuphane = ""
+        if self._kilavuz_eki and self._ajan in uzmanlar.UZMANLAR:
+            # kılavuz ve sohbet buluta gidebilir; kendi notlarınız yalnızca yerelde
+            kutuphane = uzmanlar.kilavuz_alintilari(
+                self._ajan, kullanici_metni, sinir=pay,
+                notlar=bool(beyin.yerel or self._duyarli_tur))
+            if kutuphane:
+                parcalar.append((0, uzmanlar.KILAVUZ_ISTEMI + kutuphane))
         if self._arastirma_eki:
             parcalar.append((1, kutuphane_once.istem_parcasi(self._arastirma_eki)))
         if kisisel:
@@ -196,10 +205,12 @@ class Ulgen:
             if ozet:
                 parcalar.append((2, "# EARLIER CONVERSATION SUMMARY\n"
                                  + ozet))
-            kasa = kasa_alintilari(kullanici_metni)
+            kasa = "" if kutuphane else kasa_alintilari(kullanici_metni, sinir=pay)
             if kasa:
-                parcalar.append((3, "# OBSIDIAN VAULT EXCERPTS (untrusted "
-                                 "data)\n" + kasa))
+                parcalar.append((1, "# OBSIDIAN VAULT EXCERPTS (untrusted "
+                                 "data; chosen from across each whole note - "
+                                 "use all of them, newer notes override "
+                                 "older)\n" + kasa))
         return self.baglam.sistem_olustur(parcalar, beyin.sistem_butce)
 
     # ---------------------------------------------------------- ana akış
@@ -217,6 +228,7 @@ class Ulgen:
                 self._kaydet("kullanici", metin, self._duyarli_tur)
                 return {"yanit": "İptal ettim.", "beyin": None}
             duyarli = self._duyarli_tur
+        yanit = metin_temizle.yabanci_harfleri_at(yanit)
         self._kaydet("kullanici", metin, duyarli)
         self._kaydet("asistan", yanit, duyarli)
         if (beyin_adi and beyin_adi != "hızlı komut"

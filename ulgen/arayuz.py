@@ -470,7 +470,11 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
     <button id="mikBtn" class="yuvarlak" onclick="mikrofon()" title="Konuş"><svg class="i"><use href="#i-mik"/></svg></button>
     <span class="dalga" id="dalga"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
   </div>
+  <div id="ekSatir" style="display:none;flex-wrap:wrap;gap:6px;padding:4px 8px"></div>
   <div id="yazSatir">
+    <button id="ekBtn" class="yuvarlak" onclick="ekSec()" title="Dosya ya da resim ekle" style="font-size:18px">📎</button>
+    <input id="ekDosya" type="file" multiple hidden
+      accept="image/*,.pdf,.docx,.txt,.md,.csv,.json,.html,.htm,.log">
     <textarea id="giris" rows="1" placeholder="ÜLGEN'e yazın veya konuşun" onkeydown="tusla(event)"></textarea>
     <button class="yuvarlak gonder" onclick="gonder()" title="Gönder">➤</button>
   </div>
@@ -575,12 +579,27 @@ function parcalaMetin(metin) {
 }
 
 // Her yerde aynı ses: sabit cümle -> kendi klibi; bulut sesi açıksa tüm yanıt (parça parça) aynı sesle.
+// Seslendirmeden önce: kod, HTML etiketi, bağlantı ve Markdown işaretleri
+// atılır; yoksa ses bunları harf harf okur.
+function sesliMetin(m) {
+  return String(m || "")
+    .replace(/```[\s\S]*?```/g, " (kod bölümü) ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/https?:\/\/\S+|www\.\S+/g, " (bağlantı) ")
+    .replace(/&[a-zA-Z]+;|&#\d+;/g, " ")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/[#*_`|>~\[\]{}\\]/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+
 async function konus(metin) {
   if (!sesli) return;
   sesiDurdur();
   const no = konusmaNo;
   const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
-  if (ad) { if (!(await klipCal(ad))) yedekKonus(metin); return; }
+  if (ad) { if (!(await klipCal(ad))) yedekKonus(sesliMetin(metin)); return; }
+  metin = sesliMetin(metin);
+  if (!metin) return;
   if (!bulutSes) { yerelKonus(metin); return; }
   const parcalar = parcalaMetin(metin);
   for (let i = 0; i < parcalar.length; i++) {
@@ -632,26 +651,67 @@ function sesDegistir() {
   b.classList.toggle("aktif", sesli);
 }
 
+// ---- sohbete dosya/resim ekleme
+let bekleyenEkler = [];
+function ekSec() { document.getElementById("ekDosya").click(); }
+function ekleriCiz() {
+  const k = document.getElementById("ekSatir");
+  k.textContent = "";
+  k.style.display = bekleyenEkler.length ? "flex" : "none";
+  bekleyenEkler.forEach((e, i) => {
+    const c = document.createElement("span");
+    c.style.cssText = "background:var(--kart);border:1px solid var(--ulgen-ocean);border-radius:12px;padding:3px 8px;font-size:13px";
+    c.textContent = "📎 " + e.ad + (e.karakter ? " (" + e.karakter + " karakter)" : "") + (e.not ? " – " + e.not : "") + " ";
+    const x = document.createElement("button");
+    x.textContent = "✕"; x.title = "Eki kaldır";
+    x.style.cssText = "background:none;border:0;color:inherit;cursor:pointer";
+    x.addEventListener("click", () => { bekleyenEkler.splice(i, 1); ekleriCiz(); });
+    c.appendChild(x); k.appendChild(c);
+  });
+}
+async function ekYukle() {
+  const d = document.getElementById("ekDosya");
+  const btn = document.getElementById("ekBtn");
+  btn.disabled = true; btn.textContent = "⏳";
+  for (const f of d.files) {
+    try {
+      const h = { "Content-Type": "application/octet-stream" };
+      if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+      const r = await fetch("/ek/yukle?ad=" + encodeURIComponent(f.name), { method: "POST", headers: h, body: f });
+      const y = await r.json();
+      if (!r.ok) { balonEkle("Ek yüklenemedi (" + f.name + "): " + (y.hata || r.status), "asistan"); continue; }
+      bekleyenEkler.push(y);
+    } catch (e) { balonEkle("Ek yüklenemedi (" + f.name + "): " + e, "asistan"); }
+  }
+  d.value = ""; btn.disabled = false; btn.textContent = "📎";
+  ekleriCiz();
+  if (aktifSekme === "ana") sekme("sohbet");
+  document.getElementById("giris").focus();
+}
+document.addEventListener("change", e => { if (e.target && e.target.id === "ekDosya") ekYukle(); });
+
 async function gonder() {
   const g = document.getElementById("giris");
   const m = g.value.trim();
   g.value = "";
-  gonderMetin(m);
+  const ekler = bekleyenEkler; bekleyenEkler = []; ekleriCiz();
+  gonderMetin(m, ekler);
 }
 
 function menuAc() { document.body.classList.add("menuAcik"); }
 function menuKapat() { document.body.classList.remove("menuAcik"); }
 function giriseOdak() { sekme("sohbet"); document.getElementById("giris").focus(); }
 
-async function gonderMetin(m) {
+async function gonderMetin(m, ekler) {
+  ekler = ekler || [];
   if (window.innerWidth < 900 && aktifSekme === "ana") sekme("sohbet");
-  if (!m) return;
-  balonEkle(m, "kullanici");
+  if (!m && !ekler.length) return;
+  balonEkle((m || "") + (ekler.length ? (m ? "\n" : "") + ekler.map(e => "📎 " + e.ad).join("\n") : ""), "kullanici");
   if (DUR_DESENI.test(m)) {
     hepsiniDurdur(); balonEkle("Sustum; süren iş varsa durduruyorum.", "asistan"); return;
   }
   try {
-    const c = await istek("/sohbet", { metin: m });
+    const c = await istek("/sohbet", ekler.length ? { metin: m, ekler: ekler.map(e => e.kimlik) } : { metin: m });
     balonEkle((c.ajan ? "🤖 " + c.ajan + "\n\n" : "") + c.yanit, "asistan");
     beyinEtiketi(c.beyin);
     if (!/^İptal ettim/.test(c.yanit)) konus(c.yanit);
