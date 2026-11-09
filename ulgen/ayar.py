@@ -40,6 +40,7 @@ VARSAYILAN = {
     # adları sürümle değişir: python -m ulgen --modeller nvidia
     "nvidia_model": "meta/llama-3.3-70b-instruct",
     "bulut_sirasi": ["gemini", "nvidia", "groq", "mistral", "openrouter"],
+    "ozel_saglayicilar": [],
     # Arayüzden kapatılan beyinler (örn. ["gemini"]); kapalı beyin hiç denenmez.
     "kapali_beyinler": [],
     # Mac Takvim/Hatırlatıcılar → Ülgen eşitlemesi ve Ülgen → Mac bildirimi

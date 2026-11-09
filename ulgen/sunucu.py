@@ -25,7 +25,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import ajan_kayit, ekler, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
 from . import ajan_gorevi, obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
-from . import saglik_veri, ses, ses_klip, youtube
+from . import ozel_saglayici, saglik_veri, ses, ses_klip, youtube
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -986,12 +986,37 @@ def istek_sinifi(ulgen, limit):
                     pass
                 veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı silindi" % ad)
                 return self._cevap(200, {"silinen": adet})
+            if urlparse(self.path).path == "/yz/ozel":
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                     "tarayıcısından"})
+                islem = veri.get("islem")
+                try:
+                    if islem == "liste":
+                        return self._cevap(200, {"liste": ozel_saglayici.liste(),
+                                                 "ornekler": ozel_saglayici.ORNEKLER})
+                    if islem == "ekle":
+                        t = ozel_saglayici.ekle(veri)
+                        ulgen.yonlendirici.sifirla()
+                        veritabani.gunluge_yaz("bilgi", "anahtar",
+                                               "özel sağlayıcı eklendi: %s" % t["ad"])
+                        return self._cevap(200, {"tamam": True, "ad": t["ad"]})
+                    if islem == "sil" and veri.get("onay") is True:
+                        ozel_saglayici.sil(str(veri.get("ad", "")))
+                        ulgen.yonlendirici.sifirla()
+                        return self._cevap(200, {"tamam": True})
+                    if islem == "dene":
+                        return self._cevap(200, ozel_saglayici.dene(str(veri.get("ad", ""))))
+                except ozel_saglayici.SaglayiciHatasi as hata:
+                    return self._cevap(400, {"hata": str(hata)})
+                return self._cevap(400, {"hata": "islem: liste|ekle|sil|dene"})
             if urlparse(self.path).path == "/yz/saglayici":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
                                                      "tarayıcısından"})
                 ad, acik = veri.get("saglayici"), veri.get("acik")
-                if ad not in BEYIN_ADLARI or not isinstance(acik, bool):
+                ozel = [t["ad"] for t in ozel_saglayici.liste()]
+                if ad not in BEYIN_ADLARI + tuple(ozel) or not isinstance(acik, bool):
                     return self._cevap(400, {"hata": "saglayici ve acik(bool) "
                                                      "gerekli"})
                 kapali = set(ayar.yukle().get("kapali_beyinler") or [])

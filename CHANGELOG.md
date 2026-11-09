@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.7.95
+- **Yeni sağlayıcı ekle:** Yapay Zekâ Modelleri sayfasında listede olmayan bir yapay zekâ servisi eklenebilir: ad, adres, model ve API anahtarı girilir (OpenAI uyumlu her servis: DeepSeek, Claude (Anthropic'in OpenAI uyumlu ucu), bu Mac'teki LM Studio vb.; hazır örnekten doldurma var). Anahtar Anahtar Zinciri'ne yazılır, ayar dosyasında durmaz; ekranda yalnız son 4 hane görünür. Her biri için "Bağlantıyı dene", "Aç/Kapat" ve "Sil" düğmeleri.
+- Adres https olmalı; yalnızca bu Mac'teki sunucu (127.0.0.1/localhost) http olabilir ve **yerel beyin** sayılır (veri Mac'ten çıkmaz, anahtar gerekmez).
+- "Ücretsiz" işaretlenmeyen servise Ülgen kendiliğinden geçmez: tanım durur ama kullanılmaz (ücretli servise otomatik geçiş yok). Duyarlı sorular yine buluta gitmez.
+- Yalnızca Mac'in kendi tarayıcısından eklenir/silinir; en çok 10 özel sağlayıcı.
+
 ## 2.7.94
 - Üst şeritteki **Sağlık** kartı kaldırıldı; yerine **Ajanlar** kartı geldi: genel ve uzman ajan sayısı, o an çalışan ajan(lar) ya da en son çalışan ajan ve saati. Karta tıklayınca Ajanlar sayfası açılır. iPhone ana ekranındaki Sağlık kısayolu da kaldırıldı (yan menüdeki Sağlık & Ölçümler sayfası duruyor).
 

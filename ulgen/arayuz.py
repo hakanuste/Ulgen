@@ -1420,6 +1420,56 @@ async function yzCiz() {
   await beyinKipi(k);
   await beyinAcKapat(k);
   await anahtarlarim(k);
+  await ozelSaglayicilar(k);
+}
+
+// Listede olmayan bir yapay zekâ servisi eklemek (OpenAI uyumlu her servis)
+async function ozelSaglayicilar(k) {
+  baslik(k, "Yeni sağlayıcı ekle");
+  let d = { liste: [], ornekler: [] };
+  try { d = await istek("/yz/ozel", { islem: "liste" }); } catch (e) { ekle(k, "Özel sağlayıcılar okunamadı."); return; }
+  d.liste.forEach(t => {
+    const satir = ekle(k, t.baslik + " — " + (t.yerel ? "yerel (bu Mac)" : "bulut") + " · " + t.model,
+      t.taban + "  ·  " + (t.anahtar_var ? "anahtar VAR …" + t.son4 : (t.yerel ? "anahtarsız" : "anahtar YOK")) +
+      "  ·  " + (t.yerel || t.ucretsiz ? (t.acik ? "kullanılıyor" : "kapalı") : "ÜCRETLİ: Ülgen kendiliğinden kullanmaz"));
+    satir.style.borderLeft = "3px solid " + ((t.yerel || t.ucretsiz) && t.acik ? "var(--ulgen-success)" : "var(--ulgen-offline)");
+    const dugme = (yazi, tehlike) => { const b = document.createElement("button"); b.className = "dugme"; b.textContent = yazi;
+      b.style.cssText = "margin:6px 6px 0 0" + (tehlike ? ";border-color:var(--ulgen-danger);color:var(--ulgen-danger)" : ""); satir.appendChild(b); return b; };
+    const de = dugme("Bağlantıyı dene");
+    de.onclick = async () => { de.disabled = true; balonEkle("Deneniyor: " + t.baslik + "…", "asistan");
+      try { const c = await istek("/yz/ozel", { islem: "dene", ad: t.ad }); balonEkle((c.calisti ? "✔ " : "✘ ") + (c.cikti || c.hata || "Yanıt yok."), "asistan"); }
+      finally { de.disabled = false; } };
+    const ak = dugme(t.acik ? "Kapat" : "Aç");
+    ak.onclick = async () => { const c = await istek("/yz/saglayici", { saglayici: t.ad, acik: !t.acik }); if (c.hata) balonEkle(c.hata, "asistan"); yzCiz(); };
+    const si = dugme("Sil", true);
+    si.onclick = async () => { if (!confirm(t.baslik + " ve anahtarı bu Mac'ten silinecek. Emin misiniz?")) return;
+      const c = await istek("/yz/ozel", { islem: "sil", ad: t.ad, onay: true }); balonEkle(c.hata || t.baslik + " silindi.", "asistan"); yzCiz(); };
+  });
+  const kap = ekle(k, "Listede olmayan bir servis ekleyin",
+    "OpenAI uyumlu her servis olur. Anahtar Mac'in Anahtar Zinciri'ne yazılır. 'Ücretsiz' işaretlemezseniz Ülgen bu servise kendiliğinden geçmez.");
+  const st = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+  const alan = (ph, tur) => { const e = document.createElement("input"); e.type = tur || "text"; e.autocomplete = "off"; e.placeholder = ph; e.style.cssText = st; kap.appendChild(e); return e; };
+  const sec = document.createElement("select"); sec.className = "dugme"; sec.style.cssText = "max-width:100%;margin-top:6px";
+  const bos = document.createElement("option"); bos.value = ""; bos.textContent = "Hazır örnekten doldur…"; sec.appendChild(bos);
+  d.ornekler.forEach((o, i) => { const e = document.createElement("option"); e.value = i; e.textContent = o.baslik; sec.appendChild(e); });
+  kap.appendChild(sec);
+  const ad = alan("Ad (örn. DeepSeek)"), taban = alan("Adres (örn. https://api.deepseek.com/v1)"),
+    model = alan("Model (örn. deepseek-chat)"), anahtar = alan("API anahtarı (bu Mac'teki LM Studio için boş bırakılabilir)", "password");
+  sec.onchange = () => { const o = d.ornekler[sec.value]; if (!o) return; ad.value = o.baslik; taban.value = o.taban; model.value = o.model; };
+  const et = document.createElement("label"); et.style.cssText = "display:block;margin:6px 0;font-size:14px";
+  const ucr = document.createElement("input"); ucr.type = "checkbox"; et.appendChild(ucr);
+  et.appendChild(document.createTextNode(" Bu servis ücretsiz (Ülgen sırası gelince kendiliğinden kullanabilir)"));
+  kap.appendChild(et);
+  const so = document.createElement("div"); so.style.cssText = "font-size:12px;color:var(--soluk)";
+  const kay = document.createElement("button"); kay.className = "dugme aktif"; kay.textContent = "Ekle";
+  kay.onclick = async () => {
+    kay.disabled = true;
+    const c = await istek("/yz/ozel", { islem: "ekle", baslik: ad.value, taban: taban.value, model: model.value, anahtar: anahtar.value, ucretsiz: ucr.checked });
+    anahtar.value = "";
+    if (c.tamam) { balonEkle(ad.value + " eklendi. 'Bağlantıyı dene' ile sınayın.", "asistan"); yzCiz(); }
+    else { so.textContent = c.hata || "Eklenemedi."; kay.disabled = false; }
+  };
+  kap.appendChild(kay); kap.appendChild(so);
 }
 
 const BEYIN_AD = { llamacpp: "Yerel (llama.cpp)", ollama: "Yerel (Ollama)", gemini: "Gemini (bulut)", nvidia: "NVIDIA (bulut)",

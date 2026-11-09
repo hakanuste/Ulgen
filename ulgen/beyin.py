@@ -307,6 +307,9 @@ class OpenAIUyumluBeyin(Beyin):
     def _basliklar(self):
         return {"Authorization": "Bearer " + self.anahtar}
 
+    def _taban(self):
+        return self.TABANLAR[self.saglayici]
+
     # Model emekli olduysa (HTTP 404/410) liste sorulup yeni model seçilir.
     TERCIH = ("llama-3.3-70b", "llama-3.1-70b", "lightning", "nemotron",
               "llama-3.1-8b", "qwen", "mistral", "gemma")
@@ -357,7 +360,7 @@ class OpenAIUyumluBeyin(Beyin):
                  "messages": [{"role": "system", "content": sistem}]
                  + mesajlar}
         veri, basliklar = _json_gonder(
-            self.TABANLAR[self.saglayici] + "/chat/completions", govde,
+            self._taban() + "/chat/completions", govde,
             self._basliklar(), 60, baslik_don=True)
         kota.basliklari_isle(self.saglayici, basliklar)
         kul = veri.get("usage") or {}
@@ -374,7 +377,7 @@ class OpenAIUyumluBeyin(Beyin):
         return metin
 
     def modelleri_listele(self):
-        veri = _json_gonder(self.TABANLAR[self.saglayici] + "/models",
+        veri = _json_gonder(self._taban() + "/models",
                             basliklar=self._basliklar(), zaman_asimi=20)
         sonuc = []
         for m in veri.get("data", []):
@@ -387,6 +390,46 @@ class OpenAIUyumluBeyin(Beyin):
                     continue
             sonuc.append(kimlik)
         return sorted(sonuc)
+
+
+class OzelBeyin(OpenAIUyumluBeyin):
+    """Kullanıcının kendi eklediği OpenAI uyumlu sağlayıcı (Yapay Zekâ
+    Modelleri > Yeni sağlayıcı ekle). Adres 127.0.0.1/localhost ise yerel
+    beyin sayılır (LM Studio vb.; veri Mac'ten çıkmaz)."""
+
+    def __init__(self, tanim, anahtar):
+        self.saglayici = tanim["ad"]
+        self.anahtar = anahtar or ""
+        self.model = tanim.get("model", "")
+        self.taban = tanim["taban"].rstrip("/")
+        self.yerel = ozel_yerel_mi(self.taban)
+        if self.yerel:
+            self.sistem_butce, self.gecmis_butce = 3000, 1000
+        self.ad = "%s (%s)" % (tanim.get("baslik") or tanim["ad"],
+                               "yerel" if self.yerel else "bulut")
+
+    def _taban(self):
+        return self.taban
+
+    def _basliklar(self):
+        return {"Authorization": "Bearer " + self.anahtar} if self.anahtar else {}
+
+    def kullanilabilir_mi(self):
+        return bool(self.model) and (self.yerel or bool(self.anahtar))
+
+    def _yanitla(self, sistem, mesajlar, azami_token=700):
+        return OpenAIUyumluBeyin._yanitla(self, sistem, mesajlar, azami_token)
+
+
+def ozel_yerel_mi(taban):
+    from urllib.parse import urlparse
+    return (urlparse(taban).hostname or "") in ("127.0.0.1", "localhost", "::1")
+
+
+def ozel_tanimlar(a):
+    """Ayardaki geçerli özel sağlayıcı tanımları."""
+    return [t for t in (a.get("ozel_saglayicilar") or [])
+            if isinstance(t, dict) and t.get("ad") and t.get("taban")]
 
 
 class KotaliBeyin(Beyin):
@@ -459,7 +502,12 @@ class BeyinYonlendirici:
             b = LlamaCppBeyin(a["llamacpp_adres"])
             b.saglayici = "llamacpp"
             yerel.append(b)
-        return [KotaliBeyin(b, b.saglayici) for b in yerel]
+        sarili = [KotaliBeyin(b, b.saglayici) for b in yerel]
+        from . import gizli
+        for t in ozel_tanimlar(a):              # kendi eklediğiniz yerel sunucular
+            if ozel_yerel_mi(t["taban"]) and t["ad"] not in kapali:
+                sarili.append(KotaliBeyin(OzelBeyin(t, gizli.sir_oku(t["ad"])), t["ad"]))
+        return sarili
 
     def _bulut(self, a):
         bulut = []
@@ -475,6 +523,15 @@ class BeyinYonlendirici:
             else:
                 continue
             bulut.append(KotaliBeyin(ic, ad))
+        from . import gizli
+        for t in ozel_tanimlar(a):
+            # Ücretli işaretli sağlayıcıya Ülgen kendiliğinden geçmez.
+            if (ozel_yerel_mi(t["taban"]) or t["ad"] in kapali
+                    or not t.get("ucretsiz")):
+                continue
+            anahtar = gizli.sir_oku(t["ad"])
+            if anahtar:
+                bulut.append(KotaliBeyin(OzelBeyin(t, anahtar), t["ad"]))
         return bulut
 
     def _adaylar(self, a):
