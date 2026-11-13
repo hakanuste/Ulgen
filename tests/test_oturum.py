@@ -80,3 +80,34 @@ class Denetimler(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GirisKendiliginden(TemizVeri):
+
+    def test_finans_sitesi_akcaya_eklenir_ve_pencere_acilir(self):
+        from unittest import mock
+        from ulgen import uzmanlar
+        with mock.patch.object(oturum, "hazir_mi", return_value=True), \
+                mock.patch("ulgen.ajanlar.adres_guvenli_mi", return_value=True), \
+                mock.patch.object(oturum.subprocess, "Popen") as ac:
+            y = oturum.giris_baslat("fintables.com")
+        self.assertIn("Eklendi: fintables.com artık AKÇA", y)
+        self.assertIn("tarayıcı penceresi açılıyor", y)
+        self.assertIn("fintables.com", uzmanlar.kullanici_kaynaklari("AKÇA"))
+        ac.assert_called_once()
+
+    def test_finans_disi_site_sorulur(self):
+        from unittest import mock
+        with mock.patch.object(oturum, "hazir_mi", return_value=True), \
+                mock.patch("ulgen.ajanlar.adres_guvenli_mi", return_value=True), \
+                mock.patch.object(oturum.subprocess, "Popen") as ac:
+            y = oturum.giris_baslat("ornekforum.com")
+        self.assertIn("hangi uzmana", y)
+        ac.assert_not_called()
+
+    def test_yardim_ve_yanlis_yonlendirme_yok(self):
+        from ulgen import uzmanlar
+        self.assertIn("kaynak ekle: AKÇA fintables.com",
+                      uzmanlar.komut("kaynak ekle nerden yapılıyor"))
+        self.assertIsNone(uzmanlar.sec("kaynak ekle nerden yapılıyor"))
+        self.assertEqual(uzmanlar.sec("taş evin yapısı"), "BALBAL")

@@ -130,7 +130,7 @@ UZMANLAR = {
         "alan": "inşaat, taş ev, kerpiç, mimari",
         "anahtar": r"\b(kerpiç\w*|horasan\w*|taş ev\w*|ev\w* ölçü\w*|sığınak\w*|"
                    r"kiler\w*|çatı\w*|duvar\w*|sıva\w*|"
-                   r"yapı\w*|inşaat\w*|temel\w*|mimari|saman\w*|ahşap)\b",
+                   r"yapı(?!l)\w*|inşaat\w*|temel\w*|mimari|saman\w*|ahşap)\b",
         "talimat": (
             "You are BALBAL, natural building: stone, timber, clay, straw, "
             "Horasan mortar; NO reinforced concrete or cement. For "
@@ -290,9 +290,24 @@ KAYNAKLAR_DESENI = re.compile(r"^\s*kaynaklar\s*[:\-]\s*(\S+)\s*$",
                               re.IGNORECASE)
 
 
+YARDIM_DESENI = re.compile(
+    r"^\s*(kaynak (ekle|eklemek|ekleme)|giri[sş])\b(?!\s*:)[^:]*\b(nas[ıi]l|ner\w*|ne demek|"
+    r"nedir|yap[ıi]l\w*)", re.IGNORECASE)
+YARDIM = (
+    "Kaynak eklemek için sohbet kutusuna tek satır yazın:\n"
+    "- kaynak ekle: AKÇA fintables.com  (bir uzmana güvenilir site ekler)\n"
+    "- kaynaklar: AKÇA  (o uzmanın sitelerini listeler)\n"
+    "- kaynak sil: AKÇA fintables.com\n"
+    "Üyesi olduğunuz bir siteye giriş için: giris: fintables.com — açılan "
+    "pencerede kendiniz giriş yapıp pencereyi kapatın; Ülgen yalnızca okur.\n"
+    "Uzmanlar: %s")
+
+
 def komut(metin):
     """'kaynak ekle: AKÇA https://...' | 'kaynak sil: AKÇA adres' |
     'kaynaklar: AKÇA'. Eşleşme yoksa None."""
+    if YARDIM_DESENI.match(metin or ""):
+        return YARDIM % ", ".join(UZMANLAR)
     e = KAYNAKLAR_DESENI.match(metin or "")
     if e:
         ad = _uzman_adi(e.group(1))

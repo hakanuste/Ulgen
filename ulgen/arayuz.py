@@ -317,6 +317,8 @@ body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="
   #cipler .genis { display: inline; }
 }
 @media (min-width: 1240px) and (max-width: 1599px) { #baslikOrta small { display: none; } }
+/* Sohbet sekmesi bütün ekranı kullanır: özet kartları ve hatırlatıcı satırı gizli */
+body[data-s="sohbet"] #serit, body[data-s="sohbet"] #yaklasan { display: none !important; }
 </style>
 </head>
 <body>

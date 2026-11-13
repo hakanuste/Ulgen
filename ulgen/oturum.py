@@ -247,6 +247,16 @@ def oturumlu_oku(adres):
         return "Sayfa okunamadı: %s" % str(hata)[:160]
 
 
+FINANS_ALAN = re.compile(r"fintables|isyatirim|matriks|foreks|kap\.org|borsa|yatirim|"
+                         r"menkul|invest|finans|bloomberg|tradingview|midas|"
+                         r"garantibbva|akbank|ziraat|qnb|ykyatirim|gedik", re.IGNORECASE)
+
+
+def uzman_tahmin(alan):
+    """Site adından uzman: finans siteleri AKÇA; yoksa None."""
+    return "AKÇA" if FINANS_ALAN.search(alan or "") else None
+
+
 def giris_baslat(adres):
     """Girişi ayrı süreçte başlatır (sunucu kilitlenmesin)."""
     from .ajanlar import adres_guvenli_mi
@@ -254,15 +264,23 @@ def giris_baslat(adres):
         return "Oturumlu okuyucu kurulu değil. " + YUKLE_IPUCU
     if not adres_guvenli_mi(_tam(adres)):
         return "Bu adres güvenlik nedeniyle açılamaz."
+    ek = ""
     if not alan_izinli_mi(adres):
-        return ("Bu site eklenmemiş. Önce: 'kaynak ekle: AKÇA %s'"
-                % (urlparse(_tam(adres)).hostname or adres))
+        # 'giris:' yazmak o siteye girme izni demektir: siteyi uygun uzmanın
+        # kaynaklarına kendiliğinden ekle (finans siteleri AKÇA'ya).
+        alan = urlparse(_tam(adres)).hostname or adres
+        uzman = uzman_tahmin(alan)
+        if not uzman:
+            return ("Bu siteyi hangi uzmana ekleyeyim? Örnek: 'kaynak ekle: "
+                    "AKÇA %s', sonra yeniden 'giris: %s'." % (alan, adres))
+        from . import uzmanlar
+        ek = uzmanlar.komut("kaynak ekle: %s %s" % (uzman, alan)) + "\n"
     subprocess.Popen([sys.executable, "-m", "ulgen.oturum", "giris",
                       _tam(adres)], stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
-    return ("Bir tarayıcı penceresi açılıyor. Siteye KENDİNİZ giriş yapın "
-            "(şifreyi Ülgen görmez), sonra pencereyi kapatın. Ardından: "
-            "'oturumlu oku: %s'" % adres)
+    return ek + ("Bir tarayıcı penceresi açılıyor. Siteye KENDİNİZ giriş "
+                 "yapın (şifreyi Ülgen görmez), sonra pencereyi kapatın. "
+                 "Ardından: 'oturumlu oku: %s'" % adres)
 
 
 def komut(metin):

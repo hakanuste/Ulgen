@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.8.0
+- **Sohbet bütün ekranı kullanır:** Sohbet sekmesinde üstteki özet kartları ve "Bekleyen hatırlatıcı yok" satırı gizlenir; sohbet başlığın hemen altından ekranın dibine kadar uzanır (önceden ekranın alt yarısına sıkışıyordu). Ana Sayfa'da kartlar yerinde.
+- **`giris:` siteyi kendisi ekler:** `giris: fintables.com` yazmak o siteye girme izni sayılır; finans siteleri (Fintables, İş Yatırım, Matriks, KAP, aracı kurumlar vb.) kendiliğinden AKÇA'nın kaynaklarına eklenir ve giriş penceresi açılır. Finans dışı sitede hangi uzmana ekleneceği sorulur.
+- **Kaynak ekleme yardımı:** "kaynak ekle nasıl/nerden yapılıyor" gibi sorulara Ülgen doğrudan komut örnekleriyle yanıt verir (modele gitmez).
+- BALBAL'ın "yapı" sözcüğü artık "yapılıyor/yapılır" gibi fiilleri tutmaz (yanlış uzmana yönlendirme düzeldi).
+
 ## 2.7.99
 - **Yanıtlar düz yazı/paragraf olarak görünür:** Asistan balonunda Markdown işaretleri artık görünmez, biçime çevrilir: "#" başlıklar altın renkli kalın başlık, "**…**" kalın, "- " madde imi (•), "> " yana çizgili not satırı, "`…`" kod. Boş satırlar paragraf aralığı olur. Güvenli: içerik metin düğümü olarak eklenir (HTML çalıştırılmaz). Sizin yazdığınız iletiler olduğu gibi kalır.
 
