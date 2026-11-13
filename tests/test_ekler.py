@@ -136,3 +136,22 @@ class SesliSayi(unittest.TestCase):
         self.assertIn("BIST yüz, on bir bin sekiz yüz kırk iki virgül seksen iki", cikti)
         self.assertIn("yüzde on üç virgül üç", cikti)
         self.assertIn("yüzde eksi iki virgül üç", cikti)
+
+    def test_teknik_sozcukler_turkce_okunur(self):
+        import shutil
+        import subprocess
+        import tempfile
+        if not shutil.which("node"):
+            self.skipTest("node yok")
+        from ulgen import arayuz
+        js = arayuz.BETIK
+        i = js.index("function sayiYazi")
+        j = js.index("\n}\n", js.index("function sesliMetin")) + 3
+        kod = js[i:j] + ('\nconsole.log(sesliMetin("macOS 12\'de nodejs.org adresinden '
+                         'Node.js 22 kurun: ~/Ülgen/ortam/bin/python"));')
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
+            f.write(kod)
+        c = subprocess.run(["node", f.name], capture_output=True, text=True).stdout
+        self.assertIn("mek o es on iki'de", c)
+        self.assertIn("nod cey es nokta org", c)
+        self.assertIn("(dosya yolu)", c)

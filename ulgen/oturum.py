@@ -32,9 +32,13 @@ KOMUT_OKU = re.compile(r"^\s*oturumlu\s+oku\s*[:\-]\s*(\S+)\s*$",
 YUKLE_IPUCU = ("Bu özellik için bir kez Terminal'de: ~/Ülgen/ortam/bin/python -m "
                "pip install playwright  (Google Chrome kurulu değilse ayrıca: "
                "~/Ülgen/ortam/bin/python -m playwright install chromium)")
-NODE_IPUCU = ("macOS 12'de bir kez nodejs.org adresinden Node.js 22 LTS (macOS "
-              "Installer .pkg) kurun; Playwright'ın kendi Node.js'i bu sürümde "
-              "çalışmıyor. Sonra Ülgen'i yeniden açın.")
+NODE_IPUCU = ("Sitelere girebilmem için bu Mac'e bir kez küçük bir yardımcı program "
+              "kurmanız gerekiyor:\n1. Safari'de şu adresi açın: "
+              "nodejs.org/dist/latest-v22.x/\n2. Listede adı .pkg ile biten "
+              "dosyayı indirin ve normal bir program gibi kurun.\n3. Ülgen'i "
+              "kapatıp yeniden açın, sonra yeniden deneyin.\n(Sitenin ana "
+              "sayfasındaki büyük indirme düğmesi daha yeni bir sürüm verir; o "
+              "macOS 12'de çalışmaz.)")
 
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -313,9 +317,7 @@ def _hata_ozeti(gunluk):
     son = [s for s in metin.strip().splitlines() if s.strip()][-1:] or [""]
     if "Symbol not found" in metin or "libc++" in metin \
             or "Connection closed while reading from the driver" in metin:
-        oneri = ("Playwright'ın kendi Node.js'i bu macOS sürümünde çalışmıyor. "
-                 "nodejs.org adresinden Node.js 22 LTS (macOS Installer .pkg) "
-                 "kurun, sonra Ülgen'i yeniden açıp tekrar deneyin.")
+        oneri = NODE_IPUCU
     elif "Executable doesn't exist" in metin or "playwright install" in metin:
         oneri = ("Chromium indirilmemiş. Terminal'de: ~/Ülgen/ortam/bin/python -m "
                  "playwright install chromium")

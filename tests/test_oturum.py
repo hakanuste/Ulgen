@@ -151,14 +151,14 @@ class MacOS12(unittest.TestCase):
             os.environ.pop("PLAYWRIGHT_NODEJS_PATH", None)
             self.assertTrue(oturum.node_eksik_mi())
             with mock.patch.object(oturum, "hazir_mi", return_value=True):
-                self.assertIn("Node.js 22", oturum.giris_baslat("fintables.com"))
+                self.assertIn("latest-v22.x", oturum.giris_baslat("fintables.com"))
 
     def test_libcpp_hatasi_taninir(self):
         import tempfile
         with tempfile.NamedTemporaryFile("w", delete=False, suffix=".log") as f:
             f.write("dyld: Symbol not found: (__ZNSt3__122__libcpp_verbose_abortEPKcz)\n"
                     "Exception: Connection closed while reading from the driver\n")
-        self.assertIn("Node.js 22", oturum._hata_ozeti(f.name))
+        self.assertIn("latest-v22.x", oturum._hata_ozeti(f.name))
 
     def test_chrome_varsa_kullanilir(self):
         with mock.patch.object(oturum.sys, "platform", "darwin"), \

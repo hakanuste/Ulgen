@@ -657,29 +657,42 @@ function sayiYazi(n) {
 // atılır; yoksa ses bunları harf harf okur.
 function sesliMetin(m) {
   m = String(m || "");
-  // Uzun raporlar (## bölümlü): yalnızca baştaki sade özet okunur; ayrıntı ekranda.
+  // 1) Uzun raporlar (## bölümlü): yalnızca baştaki sade özet okunur.
   const b = m.indexOf("\n## ");
   if (b > 40) m = m.slice(0, b) + "\nAyrıntılar ekranda.";
-  // Yüzdeler Türkçe okunsun: "13.3%" / "%13,3" -> "yüzde 13 virgül 3"
+  // 2) Kod, HTML, bağlantı ve dosya yolları okunmaz
+  m = m.replace(/```[\s\S]*?```/g, " (kod bölümü) ")
+       .replace(/<[^>]+>/g, " ")
+       .replace(/&[a-zA-Z]+;|&#\d+;/g, " ")
+       .replace(/https?:\/\/\S+/g, " (bağlantı) ")
+       .replace(/(^|\s)(~|\.{1,2})?\/[^\s'"]+/g, " (dosya yolu) ");
+  // 3) Yabancı ürün/teknik adlar Türkçe okunuşla
+  const OKUNUS = [[/node\.?js/gi, "nod cey es"], [/\bLTS\b/g, "uzun destekli sürüm"], [/\bmacOS\b/gi, "mek o es"],
+    [/playwright/gi, "pleyrayt"], [/chromium/gi, "kromiyum"], [/\bchrome\b/gi, "krom"], [/github/gi, "githab"],
+    [/gemini/gi, "cemini"], [/obsidian/gi, "obsidyen"], [/fintables/gi, "fintabıls"], [/\byahoo\b/gi, "yahu"],
+    [/\bAPI\b/g, "a pi ay"], [/\bURL\b/g, "adres"], [/\bPDF\b/g, "pe de fe"], [/installer/gi, "kurulum"],
+    [/\bpython3?\b/gi, "paytın"], [/\bLaunchpad\b/g, "lançped"], [/\bZeroTier\b/gi, "ziro tiyır"],
+    [/\bElevenLabs\b/gi, "ilevın lebs"], [/\bYouTube\b/gi, "yutup"], [/\bwww\./gi, ""]];
+  OKUNUS.forEach(([d, o]) => { m = m.replace(d, o); });
+  // 4) Site adı ve dosya adı: "isyatirim.com.tr" -> "isyatirim nokta com nokta te re"
+  m = m.replace(/\b([a-z0-9-]+)\.(com|org|net|io|gov|edu)(\.tr)?\b/gi, (_, a, u, t) => a + " nokta " + u + (t ? " nokta te re" : ""))
+       .replace(/\b([\w-]+)\.(pkg|dmg|zip|py|json|md|pdf|mp3|txt|docx)\b/gi, "$1 dosyası")
+       .replace(/\s\.(pkg|dmg)\b/gi, " paketi");
+  // 5) Madde imleri, kutu çizgileri ve işaretler
+  m = m.replace(/^\s*[-•]\s+/gm, "")
+       .replace(/[─-╿•▪●]+/g, " ")
+       .replace(/[#*_`|>~\[\]{}\\$]/g, " ");
+  // 6) Sayılar: binlik nokta, ondalık virgül, yüzde, sonra sözcüğe
   const yuzde = (isaret, tam, kesir) => " yüzde " + (isaret === "-" || isaret === "−" ? "eksi " : isaret === "+" ? "artı " : "") +
     tam.replace(/\./g, "") + (kesir ? " virgül " + kesir : "") + " ";
-  // Binlik noktalı sayı: "11.842,82" -> "11842 virgül 82" (yoksa "11." sıra sayısı
-  // gibi "on birinci" diye okunur). Ondalık virgül açıkça "virgül" okunur.
-  m = m.replace(/(\d{1,3}(?:\.\d{3})+)(?:,(\d+))?(?!\d)/g, (_, t, k) => t.replace(/\./g, "") + (k ? " virgül " + k : ""))
-       .replace(/(\d),(\d)/g, "$1 virgül $2");
   m = m.replace(/%\s?([+\-−]?)(\d{1,3}(?:\.\d{3})*|\d+)(?:,(\d+))?/g, (_, i, t, k) => yuzde(i, t, k))
-       .replace(/([+\-−]?)(\d+)(?:[.,](\d+))?\s?%/g, (_, i, t, k) => yuzde(i, t, k));
-  // Kalan bütün rakamlar sözcüğe: "BIST 100, 11842" -> "BIST yüz, on bir bin..."
-  m = m.replace(/virgül (0+)(?=\d*)/g, (_, z) => "virgül " + "sıfır ".repeat(z.length))
+       .replace(/([+\-−]?)(\d+)(?:[.,](\d+))?\s?%/g, (_, i, t, k) => yuzde(i, t, k))
+       .replace(/(\d{1,3}(?:\.\d{3})+)(?:,(\d+))?(?!\d)/g, (_, t, k) => t.replace(/\./g, "") + (k ? " virgül " + k : ""))
+       .replace(/(\d),(\d)/g, "$1 virgül $2")
+       .replace(/virgül (0+)(?=\d)/g, (_, z) => "virgül " + "sıfır ".repeat(z.length))
        .replace(/\d+/g, d => " " + sayiYazi(d) + " ");
-  return m.replace(/\s+([,.;:!?])/g, "$1").replace(/\s+/g, " ").trim()
-    .replace(/```[\s\S]*?```/g, " (kod bölümü) ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/https?:\/\/\S+|www\.\S+/g, " (bağlantı) ")
-    .replace(/&[a-zA-Z]+;|&#\d+;/g, " ")
-    .replace(/^\s*[-•]\s+/gm, "")
-    .replace(/[\u2500-\u257f\u2022\u25aa\u25cf]+/g, " ")   // kutu çizgileri ╔═║, madde imleri •
-    .replace(/[#*_`|>~\[\]{}\\$]/g, " ")
+  // 7) Boşluklar; sayıdan sonra gelen ek bitişik kalsın ("on iki'de")
+  return m.replace(/\s+'/g, "'").replace(/\s+([,.;:!?)])/g, "$1").replace(/\(\s+/g, "(")
     .replace(/\s+/g, " ").trim();
 }
 

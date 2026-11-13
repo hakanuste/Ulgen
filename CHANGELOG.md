@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.8.3
+- **Teknik sözcükler anlaşılır okunur:** Seslendirmede dosya yolları "(dosya yolu)", bağlantılar "(bağlantı)" diye geçilir; site adları "isyatirim nokta com nokta te re", dosya adları "rapor dosyası" olur; yabancı adlar Türkçe okunuşla söylenir (Node.js → "nod cey es", macOS → "mek o es", Playwright → "pleyrayt", Chrome → "krom", GitHub → "githab", Gemini → "cemini", YouTube → "yutup", LTS → "uzun destekli sürüm" vb.). Sayıdan sonra gelen ek bitişik okunur ("on iki'de").
+- Seslendirme kuralları sıraya konuldu (önce kod/bağlantı/yol, sonra adlar, sonra sayılar).
+- macOS 12 için Node.js kurulum iletisi sade adımlara çevrildi (Safari'de nodejs.org/dist/latest-v22.x/, .pkg dosyasını kur, Ülgen'i yeniden aç).
+
 ## 2.8.2
 - **macOS 12 (Monterey) desteği – oturumlu okuyucu:** Playwright'ın kendi getirdiği Node.js macOS 13+ için derlendiğinden Monterey'de "Symbol not found … libc++" hatasıyla çöküyordu. Ülgen artık macOS 12'de ayrıca kurulmuş Node.js'i (nodejs.org'dan Node.js 22 LTS; /usr/local/bin/node) kullanır. Kurulu değilse `giris:` ve `oturumlu oku:` komutları bunu açıkça söyler.
 - Mac'te Google Chrome kuruluysa giriş ve okuma Chrome ile yapılır (ayrı Ülgen profiliyle; kendi Chrome profilinize dokunulmaz); Chromium indirmek gerekmez.
