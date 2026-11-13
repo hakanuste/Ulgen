@@ -252,7 +252,8 @@ class Ulgen:
         if EKLI.search(metin):
             # Dosya/video içeriği eklenmiş ileti: içerikteki sözcükler komut,
             # uzman aracı ya da kütüphane araması tetiklemesin; doğrudan beyne.
-            self._ajan = uzmanlar.sec(EKLI.split(metin)[0])
+            self._ajan = ("AKÇA" if "[KODDA HESAPLANAN MALİ ORANLAR" in metin
+                          else uzmanlar.sec(EKLI.split(metin)[0]))
             self._arastirma_eki = self._kilavuz_eki = ""
             durum, yanit, beyin_adi = self._beyinle_dene(metin)
             if durum == "kuyruk":

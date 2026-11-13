@@ -155,7 +155,12 @@ UZMANLAR = {
             "rates, BIST 100, gold, crypto, oil) and report the value with "
             "its source and time exactly as returned; use internette_ara "
             "only for news. Never quote a price from memory or from "
-            "scraped pages. If the tool fails, say you could not fetch it."),
+            "scraped pages. If the tool fails, say you could not fetch it; "
+            "never invent a reason such as network limits. "
+            "If the message contains a '[KODDA HESAPLANAN MALİ ORANLAR]' block, "
+            "those figures were computed in code from the user's own file: use "
+            "them exactly, do not recompute, explain in plain Turkish what each "
+            "means and what stands out, and say which inputs were missing."),
         "klasor": "Akçe",
     },
     "YARGU": {

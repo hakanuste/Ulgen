@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## 2.8.4
+- **Mali tablo çözücü (AKÇA):** Sohbete 📎 ile eklenen bilanço / gelir tablosu (Fintables, KAP ya da İş Yatırım'dan kendiniz indirdiğiniz Excel, CSV, PDF, HTML) tanınır; kalemler Türkçe adlarıyla bulunur (hasılat, brüt kâr, esas faaliyet kârı, dönem kârı, ana ortaklık payı, dönen varlıklar, toplam varlıklar, kısa/uzun vadeli yükümlülükler, özkaynaklar, nakit, ödenmiş sermaye) ve **oranlar kodda hesaplanır**: brüt/esas faaliyet/net kâr marjı, özkaynak kârlılığı, borç/özkaynak, cari oran, önceki döneme göre değişim. AKÇA bu sayıları değiştirmeden sade Türkçe anlatır.
+- Dönem başlıkları (2025/9, 12/2024) okunur; parantezli eksi sayılar ve KAP'ın "Dipnot" sütunu doğru işlenir. F/K ve PD/DD, fiyat ve pay sayısı dosyada olmadığı için hesaplanmaz (uydurulmaz).
+- **📎 Excel (.xlsx) okur:** Sayfalar sekmeyle ayrılmış metne çevrilir (ek kütüphane gerekmez).
+- AKÇA'ya kural: veri alınamazsa "ağ kısıtlaması" gibi bir neden uydurmaz.
+- Not: İş Yatırım mali tablo verisi ve KAP sitesi otomatik erişime (robots.txt) kapalı, Borsa İstanbul gün sonu verisi ücretli veri mağazasında; Ülgen bu sitelerden kendiliğinden veri çekmez. Fintables bot korumalıdır (Cloudflare); otomatik okunmaz.
+
 ## 2.8.3
 - **Teknik sözcükler anlaşılır okunur:** Seslendirmede dosya yolları "(dosya yolu)", bağlantılar "(bağlantı)" diye geçilir; site adları "isyatirim nokta com nokta te re", dosya adları "rapor dosyası" olur; yabancı adlar Türkçe okunuşla söylenir (Node.js → "nod cey es", macOS → "mek o es", Playwright → "pleyrayt", Chrome → "krom", GitHub → "githab", Gemini → "cemini", YouTube → "yutup", LTS → "uzun destekli sürüm" vb.). Sayıdan sonra gelen ek bitişik okunur ("on iki'de").
 - Seslendirme kuralları sıraya konuldu (önce kod/bağlantı/yol, sonra adlar, sonra sayılar).

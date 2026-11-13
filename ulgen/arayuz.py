@@ -489,7 +489,7 @@ body[data-s="sohbet"] #serit, body[data-s="sohbet"] #yaklasan { display: none !i
   <div id="yazSatir">
     <button id="ekBtn" class="yuvarlak" onclick="ekSec()" title="Dosya ya da resim ekle" style="font-size:18px">📎</button>
     <input id="ekDosya" type="file" multiple hidden
-      accept="image/*,.pdf,.docx,.txt,.md,.csv,.json,.html,.htm,.log">
+      accept="image/*,.pdf,.docx,.xlsx,.txt,.md,.csv,.json,.html,.htm,.log">
     <textarea id="giris" rows="1" placeholder="ÜLGEN'e yazın veya konuşun" onkeydown="tusla(event)"></textarea>
     <button class="yuvarlak gonder" onclick="gonder()" title="Gönder">➤</button>
   </div>

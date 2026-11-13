@@ -22,7 +22,8 @@ from . import ayar, obsidyen_yaz
 METIN = (".txt", ".md", ".csv", ".json", ".log")
 HTML = (".html", ".htm")
 RESIM = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff")
-DESTEK = METIN + HTML + RESIM + (".pdf", ".docx")
+TABLO = (".xlsx",)
+DESTEK = METIN + HTML + RESIM + TABLO + (".pdf", ".docx")
 AZAMI = 25 * 1024 * 1024
 ILETI_SINIRI = 12000          # iletiye eklenecek en çok karakter (tüm ekler)
 
@@ -86,6 +87,52 @@ def _docx(yol):
     return metin
 
 
+def _xlsx(yol, azami_satir=3000):
+    """Excel (.xlsx) sayfalarını sekmeyle ayrılmış metne çevirir (ek kütüphanesiz)."""
+    import xml.etree.ElementTree as ET
+    ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    with zipfile.ZipFile(yol) as z:
+        adlar = z.namelist()
+        ortak = []
+        if "xl/sharedStrings.xml" in adlar:
+            kok = ET.fromstring(z.read("xl/sharedStrings.xml"))
+            for si in kok.findall("m:si", ns):
+                ortak.append("".join(t.text or "" for t in si.iter(
+                    "{%s}t" % ns["m"])))
+        sayfa_adlari = []
+        if "xl/workbook.xml" in adlar:
+            kok = ET.fromstring(z.read("xl/workbook.xml"))
+            sayfa_adlari = [s.get("name") for s in kok.iter("{%s}sheet" % ns["m"])]
+        cikti, toplam = [], 0
+        sayfalar = sorted((a for a in adlar if re.match(r"xl/worksheets/sheet\d+\.xml$", a)),
+                          key=lambda a: int(re.findall(r"\d+", a)[-1]))
+        for i, ad in enumerate(sayfalar):
+            cikti.append("## Sayfa: %s" % (sayfa_adlari[i] if i < len(sayfa_adlari) else i + 1))
+            kok = ET.fromstring(z.read(ad))
+            for row in kok.iter("{%s}row" % ns["m"]):
+                hucreler = []
+                for c in row.findall("m:c", ns):
+                    tur, v = c.get("t"), c.find("m:v", ns)
+                    if tur == "s" and v is not None:
+                        deger = ortak[int(v.text)] if int(v.text) < len(ortak) else ""
+                    elif tur == "inlineStr":
+                        deger = "".join(t.text or "" for t in c.iter("{%s}t" % ns["m"]))
+                    else:
+                        deger = v.text if v is not None else ""
+                        try:                        # 1234567.0 -> 1234567
+                            f = float(deger)
+                            deger = ("%d" % f) if f == int(f) else deger
+                        except (TypeError, ValueError):
+                            pass
+                    hucreler.append(deger or "")
+                if any(h.strip() for h in hucreler):
+                    cikti.append("\t".join(hucreler).rstrip())
+                    toplam += 1
+                    if toplam >= azami_satir:
+                        return "\n".join(cikti)
+        return "\n".join(cikti)
+
+
 def _html(yol):
     from .kilavuz import _HtmlMetin
     with open(yol, "r", encoding="utf-8", errors="replace") as f:
@@ -122,6 +169,8 @@ def metin_cikar(yol):
             return _html(yol), "HTML sayfası okunur metne çevrildi."
         if uz == ".docx":
             return _docx(yol), ""
+        if uz in TABLO:
+            return _xlsx(yol), "Excel tablosu okundu."
         if uz == ".pdf":
             metin = _pdf(yol)
             if len(metin.strip()) < 50:
@@ -166,6 +215,9 @@ def iletiye_ekle(metin, kimlikler):
             continue
         icerik, aciklama = metin_cikar(yol)
         icerik = icerik.strip()
+        from . import mali
+        if mali.tablo_mu(icerik):         # bilanço/gelir tablosu: oranlar kodda
+            parcalar.append(mali.ozet(icerik))
         kesildi = len(icerik) > pay
         parcalar.append("[EKLİ DOSYA: %s]%s\n%s%s" % (
             k.split("_", 1)[-1], (" (" + aciklama + ")") if aciklama else "",
