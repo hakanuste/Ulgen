@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.99
+- **Yanıtlar düz yazı/paragraf olarak görünür:** Asistan balonunda Markdown işaretleri artık görünmez, biçime çevrilir: "#" başlıklar altın renkli kalın başlık, "**…**" kalın, "- " madde imi (•), "> " yana çizgili not satırı, "`…`" kod. Boş satırlar paragraf aralığı olur. Güvenli: içerik metin düğümü olarak eklenir (HTML çalıştırılmaz). Sizin yazdığınız iletiler olduğu gibi kalır.
+
 ## 2.7.98
 - **Sayılar sözcükle okunur:** Seslendirmeden önce bütün rakamlar Türkçe sözcüğe çevrilir: "BIST 100, 11.842,82" → "BIST yüz, on bir bin sekiz yüz kırk iki virgül seksen iki"; "2026" → "iki bin yirmi altı"; "0,05" → "sıfır virgül sıfır beş". Ses motoru artık sayıları birleştirip "yüz on birinci" gibi yanlış okumaz. Bin, milyon, milyar, trilyon desteklenir.
 

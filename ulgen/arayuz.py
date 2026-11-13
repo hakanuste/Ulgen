@@ -52,6 +52,15 @@ header .dugme { padding: 6px 8px; font-size: 12px; }
 .balon { max-width: 85%; padding: 10px 13px; border-radius: 16px; margin: 6px 0; line-height: 1.4;
          font-size: 16px; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere;
          min-width: 0; overflow-x: auto; }
+.balon.asistan { white-space: normal; }
+.mdBaslik { font-weight: 700; color: var(--ulgen-gold, #e9c46a); margin: 4px 0 2px; }
+.mdB1 { font-size: 1.15em; } .mdB2 { font-size: 1.05em; } .mdB3 { font-size: 1em; }
+.mdMadde { padding-left: 1.1em; text-indent: -0.8em; }
+.mdMadde::before { content: "• "; }
+.mdNot { border-left: 3px solid var(--kenar); padding-left: 8px; color: var(--soluk); font-style: italic; }
+.mdBos { height: 0.6em; }
+.mdKod { white-space: pre-wrap; background: rgba(0,0,0,.25); padding: 6px 8px; border-radius: 8px; font-size: 13px; }
+.balon code { background: rgba(0,0,0,.25); padding: 0 4px; border-radius: 4px; }
 /* Uzun yanıt sayfayı yana genişletmesin: esnek kutular içeriğe göre büyümez */
 #ana, #icerik, #sohbetKolon, #akis, .sat, #pano { min-width: 0; max-width: 100%; }
 #akis { overflow-x: hidden; }
@@ -529,6 +538,43 @@ async function istek(yol, veri) {
   return c.json();
 }
 
+// Asistan yanıtındaki Markdown işaretlerini (#, **, -, >, `) biçime çevirir.
+// innerHTML kullanılmaz: her parça metin düğümü olarak eklenir (güvenli).
+function mdSatirIci(kap, satir) {
+  const parca = satir.split(/(\*\*[^*]+\*\*|`[^`]+`)/);
+  parca.forEach(p => {
+    if (!p) return;
+    if (/^\*\*[^*]+\*\*$/.test(p)) { const b = document.createElement("b"); b.textContent = p.slice(2, -2); kap.appendChild(b); }
+    else if (/^`[^`]+`$/.test(p)) { const c = document.createElement("code"); c.textContent = p.slice(1, -1); kap.appendChild(c); }
+    else kap.appendChild(document.createTextNode(p));
+  });
+}
+function mdYaz(d, metin) {
+  const satirlar = metin.split("\n");
+  let kod = null;
+  satirlar.forEach(s => {
+    if (/^\s*```/.test(s)) {
+      if (kod) { d.appendChild(kod); kod = null; }
+      else { kod = document.createElement("pre"); kod.className = "mdKod"; }
+      return;
+    }
+    if (kod) { kod.textContent += s + "\n"; return; }
+    const e = document.createElement("div");
+    let m;
+    if ((m = s.match(/^\s*(#{1,6})\s+(.*)$/))) {
+      e.className = "mdBaslik mdB" + Math.min(m[1].length, 3); mdSatirIci(e, m[2]);
+    } else if ((m = s.match(/^\s*[-*•]\s+(.*)$/))) {
+      e.className = "mdMadde"; mdSatirIci(e, m[1]);
+    } else if ((m = s.match(/^\s*>\s?(.*)$/))) {
+      e.className = "mdNot"; mdSatirIci(e, m[1]);
+    } else if (!s.trim()) {
+      e.className = "mdBos";
+    } else mdSatirIci(e, s);
+    d.appendChild(e);
+  });
+  if (kod) d.appendChild(kod);
+}
+
 function balonEkle(metin, tur) {
   const sat = document.createElement("div");
   sat.className = "sat " + (tur === "kullanici" ? "sk" : "sa");
@@ -537,7 +583,8 @@ function balonEkle(metin, tur) {
   if (tur === "kullanici") av.textContent = "H";
   const d = document.createElement("div");
   d.className = "balon " + tur;
-  d.appendChild(document.createTextNode(metin));
+  if (tur === "kullanici") d.appendChild(document.createTextNode(metin));
+  else mdYaz(d, String(metin || ""));
   const z = document.createElement("small");
   z.textContent = new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
   d.appendChild(z);
