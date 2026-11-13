@@ -119,14 +119,13 @@ class SesliSayi(unittest.TestCase):
     """Arayüzdeki sesliMetin/sayiYazi işlevleri node ile denenir (varsa)."""
 
     def test_sayilar_sozcukle_okunur(self):
-        import re
         import shutil
         import subprocess
         import tempfile
         if not shutil.which("node"):
             self.skipTest("node yok")
         from ulgen import arayuz
-        js = max(re.findall(r"<script[^>]*>(.*?)</script>", arayuz.SAYFA, re.S), key=len)
+        js = arayuz.BETIK
         i = js.index("function sayiYazi")
         j = js.index("\n}\n", js.index("function sesliMetin")) + 3
         kod = js[i:j] + ('\nconsole.log(sesliMetin("BIST 100, 11.842,82 puandan; '
