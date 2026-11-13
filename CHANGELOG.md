@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.8.1
+- **Giriş penceresi açılmazsa nedeni söylenir:** `giris:` penceresinin çıktısı `~/ÜlgenVeri/oturum_giris.log` dosyasına yazılır; süreç ilk 6 saniyede kapanırsa Ülgen sohbette nedenini ve çözümünü yazar (Playwright kurulu değil, Chromium indirilmemiş, macOS sürümü desteklenmiyor, önceki pencere açık…). Önceden hata gizli kalıyor, "pencere açılıyor" deniyordu.
+- Giriş süreci Ülgen'in kurulu olduğu klasörde başlatılır (modül her durumda bulunur).
+
 ## 2.8.0
 - **Sohbet bütün ekranı kullanır:** Sohbet sekmesinde üstteki özet kartları ve "Bekleyen hatırlatıcı yok" satırı gizlenir; sohbet başlığın hemen altından ekranın dibine kadar uzanır (önceden ekranın alt yarısına sıkışıyordu). Ana Sayfa'da kartlar yerinde.
 - **`giris:` siteyi kendisi ekler:** `giris: fintables.com` yazmak o siteye girme izni sayılır; finans siteleri (Fintables, İş Yatırım, Matriks, KAP, aracı kurumlar vb.) kendiliğinden AKÇA'nın kaynaklarına eklenir ve giriş penceresi açılır. Finans dışı sitede hangi uzmana ekleneceği sorulur.

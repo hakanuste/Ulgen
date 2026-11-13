@@ -90,6 +90,7 @@ class GirisKendiliginden(TemizVeri):
         with mock.patch.object(oturum, "hazir_mi", return_value=True), \
                 mock.patch("ulgen.ajanlar.adres_guvenli_mi", return_value=True), \
                 mock.patch.object(oturum.subprocess, "Popen") as ac:
+            ac.return_value.poll.return_value = None       # pencere açık kaldı
             y = oturum.giris_baslat("fintables.com")
         self.assertIn("Eklendi: fintables.com artık AKÇA", y)
         self.assertIn("tarayıcı penceresi açılıyor", y)
@@ -111,3 +112,20 @@ class GirisKendiliginden(TemizVeri):
                       uzmanlar.komut("kaynak ekle nerden yapılıyor"))
         self.assertIsNone(uzmanlar.sec("kaynak ekle nerden yapılıyor"))
         self.assertEqual(uzmanlar.sec("taş evin yapısı"), "BALBAL")
+
+    def test_pencere_acilamazsa_neden_soylenir(self):
+        from unittest import mock
+        surec = mock.Mock()
+        surec.poll.return_value = 1
+
+        def baslat(*a, **k):
+            k["stdout"].write("ModuleNotFoundError: No module named 'playwright'\n")
+            k["stdout"].flush()
+            self.assertTrue(k["cwd"])
+            return surec
+        with mock.patch.object(oturum, "hazir_mi", return_value=True), \
+                mock.patch("ulgen.ajanlar.adres_guvenli_mi", return_value=True), \
+                mock.patch.object(oturum.subprocess, "Popen", side_effect=baslat):
+            y = oturum.giris_baslat("fintables.com")
+        self.assertIn("Giriş penceresi açılamadı", y)
+        self.assertIn("pip install playwright", y)

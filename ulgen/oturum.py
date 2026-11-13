@@ -252,6 +252,35 @@ FINANS_ALAN = re.compile(r"fintables|isyatirim|matriks|foreks|kap\.org|borsa|yat
                          r"garantibbva|akbank|ziraat|qnb|ykyatirim|gedik", re.IGNORECASE)
 
 
+BEKLE_SN = 6        # pencere açılmadan süreç ölürse yakalamak için
+
+
+def _hata_ozeti(gunluk):
+    """Günlükteki hatayı sade Türkçe öneriyle döndürür."""
+    try:
+        with open(gunluk, encoding="utf-8", errors="replace") as f:
+            metin = f.read()[-3000:]
+    except OSError:
+        metin = ""
+    son = [s for s in metin.strip().splitlines() if s.strip()][-1:] or [""]
+    if "Executable doesn't exist" in metin or "playwright install" in metin:
+        oneri = ("Chromium indirilmemiş. Terminal'de: ~/Ülgen/ortam/bin/python -m "
+                 "playwright install chromium")
+    elif "No module named" in metin:
+        oneri = ("Playwright Ülgen'in ortamına kurulmamış. Terminal'de: "
+                 "~/Ülgen/ortam/bin/python -m pip install playwright")
+    elif "Host system is missing" in metin or "not supported" in metin.lower() \
+            or "unsupported" in metin.lower():
+        oneri = ("Bu macOS sürümü Playwright'ın bu sürümünü desteklemiyor olabilir; "
+                 "hata satırını Claude'a iletin.")
+    elif "ProcessSingleton" in metin or "SingletonLock" in metin:
+        oneri = ("Önceki bir giriş penceresi hâlâ açık görünüyor; onu kapatıp "
+                 "yeniden deneyin.")
+    else:
+        oneri = "Ayrıntı: %s (tam günlük: %s)" % (son[0][:200], gunluk)
+    return oneri
+
+
 def uzman_tahmin(alan):
     """Site adından uzman: finans siteleri AKÇA; yoksa None."""
     return "AKÇA" if FINANS_ALAN.search(alan or "") else None
@@ -275,9 +304,20 @@ def giris_baslat(adres):
                     "AKÇA %s', sonra yeniden 'giris: %s'." % (alan, adres))
         from . import uzmanlar
         ek = uzmanlar.komut("kaynak ekle: %s %s" % (uzman, alan)) + "\n"
-    subprocess.Popen([sys.executable, "-m", "ulgen.oturum", "giris",
-                      _tam(adres)], stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
+    # Hata gizli kalmasın: çıktı günlüğe yazılır; süreç hemen ölürse neden
+    # sohbette söylenir. Çalışma klasörü paketin bulunduğu yer (modül bulunsun).
+    gunluk = os.path.join(ayar.KLASOR, "oturum_giris.log")
+    with open(gunluk, "w", encoding="utf-8") as g:
+        surec = subprocess.Popen(
+            [sys.executable, "-m", "ulgen.oturum", "giris", _tam(adres)],
+            stdout=g, stderr=subprocess.STDOUT, start_new_session=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for _ in range(BEKLE_SN * 2):
+        if surec.poll() is not None:
+            break
+        time.sleep(0.5)
+    if surec.poll() is not None:
+        return ek + "Giriş penceresi açılamadı.\n" + _hata_ozeti(gunluk)
     return ek + ("Bir tarayıcı penceresi açılıyor. Siteye KENDİNİZ giriş "
                  "yapın (şifreyi Ülgen görmez), sonra pencereyi kapatın. "
                  "Ardından: 'oturumlu oku: %s'" % adres)
