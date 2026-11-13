@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.5
+- **Yapıştırılan mali tablo:** Fintables, KAP ya da İş Yatırım'daki bir tabloyu seçip kopyalayıp sohbete yapıştırdığınızda da (dosya eklemeden) kalemler tanınır, oranlar kodda hesaplanır ve ileti AKÇA'ya gider. İlk satıra soru yazılabilir (örn. "THYAO bilançosu nasıl?").
+
 ## 2.8.4
 - **Mali tablo çözücü (AKÇA):** Sohbete 📎 ile eklenen bilanço / gelir tablosu (Fintables, KAP ya da İş Yatırım'dan kendiniz indirdiğiniz Excel, CSV, PDF, HTML) tanınır; kalemler Türkçe adlarıyla bulunur (hasılat, brüt kâr, esas faaliyet kârı, dönem kârı, ana ortaklık payı, dönen varlıklar, toplam varlıklar, kısa/uzun vadeli yükümlülükler, özkaynaklar, nakit, ödenmiş sermaye) ve **oranlar kodda hesaplanır**: brüt/esas faaliyet/net kâr marjı, özkaynak kârlılığı, borç/özkaynak, cari oran, önceki döneme göre değişim. AKÇA bu sayıları değiştirmeden sade Türkçe anlatır.
 - Dönem başlıkları (2025/9, 12/2024) okunur; parantezli eksi sayılar ve KAP'ın "Dipnot" sütunu doğru işlenir. F/K ve PD/DD, fiyat ve pay sayısı dosyada olmadığı için hesaplanmaz (uydurulmaz).

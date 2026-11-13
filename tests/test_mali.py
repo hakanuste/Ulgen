@@ -106,3 +106,16 @@ class EkExcel(TemizVeri):
         with mock.patch.object(u, "_beyinle_dene", return_value=("tamam", "Y", "sahte")):
             c = u.sohbet_isle(m)
         self.assertTrue(c["ajan"].startswith("AKÇA"))
+
+
+class Yapistirma(unittest.TestCase):
+
+    def test_yapistirilan_tablo_oranlarla(self):
+        m = mali.yapistirmaya_ekle("THYAO bilançosu nasıl?\n" + TABLO)
+        self.assertTrue(m.startswith("THYAO bilançosu nasıl?"))
+        self.assertIn("[KODDA HESAPLANAN MALİ ORANLAR", m)
+        self.assertIn("[EKLİ DOSYA: yapıştırılan tablo]", m)
+
+    def test_siradan_ileti_degismez(self):
+        for m in ("merhaba", "hasılat nedir?\nbir\niki\nüç"):
+            self.assertEqual(mali.yapistirmaya_ekle(m), m)

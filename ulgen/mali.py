@@ -169,3 +169,15 @@ def ozet(metin):
                  "dönem oranları yıllık değildir. F/K ve PD/DD için güncel fiyat ve pay "
                  "sayısı gerekir; dosyada yoksa hesaplanmaz. Kaynak: eklediğiniz dosya.")
     return "\n".join(satir)
+
+
+def yapistirmaya_ekle(metin):
+    """Sohbete yapıştırılmış (Fintables/KAP'tan kopyalanmış) mali tablo:
+    oranlar kodda hesaplanıp iletinin başına eklenir; ileti AKÇA'ya gider."""
+    if (not metin or metin.count("\n") < 3 or "[KODDA HESAPLANAN MALİ ORANLAR" in metin
+            or "[EKLİ DOSYA:" in metin or not tablo_mu(metin)):
+        return metin
+    satirlar = metin.splitlines()
+    soru = satirlar[0] if not _satir_coz(satirlar[0])[1] and len(satirlar[0]) < 200 else ""
+    return "%s\n\n%s\n\n[EKLİ DOSYA: yapıştırılan tablo]\n%s" % (
+        soru or "Bu mali tabloyu yorumla.", ozet(metin), metin)
