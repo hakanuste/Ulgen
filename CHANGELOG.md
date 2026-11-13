@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.7.97
+- **Sayılar doğru okunur:** Binlik noktalı sayılar seslendirmeden önce noktasız yazılır ("11.842,82" → "11842 virgül 82"); önceden "11." sıra sayısı sanılıp "on birinci" diye okunuyordu. Ondalık virgül açıkça "virgül" okunur.
+- Rapor cümlesi: "13 Kasım 2026 günü BIST 100, 11.842,82 puandan kapandı." (ad ile sayı arasında virgül; "BIST 100 11.842" yan yana gelmez).
+
 ## 2.7.96
 - **AKÇA raporu sade Türkçe:** Rapor artık "sade özet" ile başlar: hangi gün kaç puan/TL/dolar kapandığı, tek cümlelik sonuç (örn. "Hem uzun hem kısa vadede düşüş eğiliminde; belirgin bir dönüş işareti yok.") ve son 1 ay / 3 ay / 1 yıl değişimi ("%16,2 düştü"). Ardından "Ne gösteriyor?" maddeleri Olumlu/Olumsuz/Nötr/Dikkat sözleriyle ve açıklamalı (20/50/200 günlük ortalama, RSI'nin ne demek olduğu, dalgalanma). [-] [=] işaretleri, "20g", "RSI(14)" gibi kısaltmalar kaldırıldı.
 - Sayılar tek biçimde Türkçe: %16,2 (önceden -16.2% ile %25 karışıktı). Tarih "13 Kasım 2026" biçiminde. Birim varlığa göre: endeks puan, hisse/kur TL, altın/kripto dolar.

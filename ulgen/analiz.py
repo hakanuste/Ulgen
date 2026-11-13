@@ -112,6 +112,8 @@ def birim(sembol):
     return "dolar"
 
 
+BIRIM_DEN = {"puan": "puandan", "TL": "TL'den", "dolar": "dolardan"}
+
 AYLAR_TR = ("Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz",
             "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık")
 
@@ -194,8 +196,9 @@ def rapor_sembol(sembol, ad, indir=None):
     g = gostergeler(cift)
     bir = birim(sembol)
     satir = ["# %s – sade özet" % ad, "",
-             "%s günü %s %s %s olarak kapandı. %s" % (
-                 _tarih(g["tarih"]), ad, _f(g["son"]), bir, sonuc_cumlesi(g)), "",
+             "%s günü %s, %s %s kapandı. %s" % (
+                 _tarih(g["tarih"]), ad, _f(g["son"]), BIRIM_DEN[bir],
+                 sonuc_cumlesi(g)), "",
              "Son 1 ayda %s, son 3 ayda %s, son 1 yılda %s." % (
                  _degisim(g["g1a"]), _degisim(g["g3a"]), _degisim(g["g1y"])), "",
              "## Ne gösteriyor?"]

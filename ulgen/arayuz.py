@@ -593,6 +593,10 @@ function sesliMetin(m) {
   // Yüzdeler Türkçe okunsun: "13.3%" / "%13,3" -> "yüzde 13 virgül 3"
   const yuzde = (isaret, tam, kesir) => " yüzde " + (isaret === "-" || isaret === "−" ? "eksi " : isaret === "+" ? "artı " : "") +
     tam.replace(/\./g, "") + (kesir ? " virgül " + kesir : "") + " ";
+  // Binlik noktalı sayı: "11.842,82" -> "11842 virgül 82" (yoksa "11." sıra sayısı
+  // gibi "on birinci" diye okunur). Ondalık virgül açıkça "virgül" okunur.
+  m = m.replace(/(\d{1,3}(?:\.\d{3})+)(?:,(\d+))?(?!\d)/g, (_, t, k) => t.replace(/\./g, "") + (k ? " virgül " + k : ""))
+       .replace(/(\d),(\d)/g, "$1 virgül $2");
   m = m.replace(/%\s?([+\-−]?)(\d{1,3}(?:\.\d{3})*|\d+)(?:,(\d+))?/g, (_, i, t, k) => yuzde(i, t, k))
        .replace(/([+\-−]?)(\d+)(?:[.,](\d+))?\s?%/g, (_, i, t, k) => yuzde(i, t, k));
   return m

@@ -51,7 +51,8 @@ class Analiz(TemizVeri):
     def test_rapor_sade_ve_turkce_sayi(self):
         r = analiz.rapor("THYAO", sahte_indir)
         ozet = r.split("\n## ")[0]
-        self.assertIn("TL olarak kapandı", ozet)
+        self.assertIn("THYAO, ", ozet)
+        self.assertIn("TL'den kapandı", ozet)
         self.assertIn("son 1 yılda %", ozet)        # 1 yıl getiri de var
         self.assertNotIn("[", r)                    # [-] [=] işaretleri yok
         self.assertNotIn(".1f", r)
