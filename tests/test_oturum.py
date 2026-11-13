@@ -129,3 +129,38 @@ class GirisKendiliginden(TemizVeri):
             y = oturum.giris_baslat("fintables.com")
         self.assertIn("Giriş penceresi açılamadı", y)
         self.assertIn("pip install playwright", y)
+
+
+class MacOS12(unittest.TestCase):
+
+    def test_sistem_node_kullanilir(self):
+        import os
+        with mock.patch.object(oturum, "_mac_surumu", return_value=12), \
+                mock.patch.dict(os.environ, {}, clear=False), \
+                mock.patch.object(oturum.os.path, "isfile",
+                                  side_effect=lambda y: y == "/usr/local/bin/node"):
+            os.environ.pop("PLAYWRIGHT_NODEJS_PATH", None)
+            oturum.ortam_hazirla()
+            self.assertEqual(os.environ["PLAYWRIGHT_NODEJS_PATH"], "/usr/local/bin/node")
+            self.assertFalse(oturum.node_eksik_mi())
+
+    def test_node_yoksa_ipucu(self):
+        import os
+        with mock.patch.object(oturum, "_mac_surumu", return_value=12), \
+                mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PLAYWRIGHT_NODEJS_PATH", None)
+            self.assertTrue(oturum.node_eksik_mi())
+            with mock.patch.object(oturum, "hazir_mi", return_value=True):
+                self.assertIn("Node.js 22", oturum.giris_baslat("fintables.com"))
+
+    def test_libcpp_hatasi_taninir(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".log") as f:
+            f.write("dyld: Symbol not found: (__ZNSt3__122__libcpp_verbose_abortEPKcz)\n"
+                    "Exception: Connection closed while reading from the driver\n")
+        self.assertIn("Node.js 22", oturum._hata_ozeti(f.name))
+
+    def test_chrome_varsa_kullanilir(self):
+        with mock.patch.object(oturum.sys, "platform", "darwin"), \
+                mock.patch.object(oturum.os.path, "isfile", return_value=True):
+            self.assertEqual(oturum.tarayici_secenegi(), {"channel": "chrome"})

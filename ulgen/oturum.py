@@ -29,9 +29,52 @@ _KILIT = threading.Lock()
 KOMUT_GIRIS = re.compile(r"^\s*giri[sş]\s*[:\-]\s*(\S+)\s*$", re.IGNORECASE)
 KOMUT_OKU = re.compile(r"^\s*oturumlu\s+oku\s*[:\-]\s*(\S+)\s*$",
                        re.IGNORECASE)
-YUKLE_IPUCU = ("Bu özellik için bir kez şunu çalıştırın: ~/Ülgen/ortam/bin/pip "
-               "install playwright && ~/Ülgen/ortam/bin/playwright install "
-               "chromium")
+YUKLE_IPUCU = ("Bu özellik için bir kez Terminal'de: ~/Ülgen/ortam/bin/python -m "
+               "pip install playwright  (Google Chrome kurulu değilse ayrıca: "
+               "~/Ülgen/ortam/bin/python -m playwright install chromium)")
+NODE_IPUCU = ("macOS 12'de bir kez nodejs.org adresinden Node.js 22 LTS (macOS "
+              "Installer .pkg) kurun; Playwright'ın kendi Node.js'i bu sürümde "
+              "çalışmıyor. Sonra Ülgen'i yeniden açın.")
+
+
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+NODE_ADAYLARI = ("/usr/local/bin/node", "/opt/homebrew/bin/node")
+
+
+def _mac_surumu():
+    import platform
+    try:
+        return int((platform.mac_ver()[0] or "0").split(".")[0])
+    except ValueError:
+        return 0
+
+
+def ortam_hazirla():
+    """macOS 12'de Playwright'ın kendi Node.js'i çalışmaz ('Symbol not found
+    ... libc++'): ayrıca kurulmuş Node.js (22 LTS, macOS 11+) kullanılır."""
+    import shutil
+    if os.environ.get("PLAYWRIGHT_NODEJS_PATH") or not 0 < _mac_surumu() <= 12:
+        return
+    for aday in NODE_ADAYLARI + (shutil.which("node") or "",):
+        if aday and os.path.isfile(aday):
+            os.environ["PLAYWRIGHT_NODEJS_PATH"] = aday
+            return
+
+
+def tarayici_secenegi():
+    """Mac'te kurulu Google Chrome varsa o kullanılır (ayrı profille; Chromium
+    indirmeye gerek kalmaz ve macOS 12'de çalışır)."""
+    if sys.platform == "darwin" and os.path.isfile(CHROME):
+        return {"channel": "chrome"}
+    return {}
+
+
+ortam_hazirla()
+
+
+def node_eksik_mi():
+    """macOS 12 ve ayrıca kurulmuş Node.js yok: Playwright çalışamaz."""
+    return 0 < _mac_surumu() <= 12 and not os.environ.get("PLAYWRIGHT_NODEJS_PATH")
 
 
 def hazir_mi():
@@ -101,7 +144,8 @@ def giris(adres, bekle_sn=900):
     from playwright.sync_api import sync_playwright
     _profil_hazirla()
     with _KILIT, sync_playwright() as p:
-        ctx = p.chromium.launch_persistent_context(PROFIL, headless=False)
+        ctx = p.chromium.launch_persistent_context(PROFIL, headless=False,
+                                                   **tarayici_secenegi())
         _cerez_yukle(ctx)
         sayfa = ctx.pages[0] if ctx.pages else ctx.new_page()
         sayfa.goto(_tam(adres), timeout=ZAMAN_ASIMI_MS)
@@ -121,7 +165,8 @@ def oku(adres, ekransiz=True):
     _profil_hazirla()
     with _KILIT, sync_playwright() as p:
         ctx = p.chromium.launch_persistent_context(PROFIL, headless=ekransiz,
-                                                   accept_downloads=False)
+                                                   accept_downloads=False,
+                                                   **tarayici_secenegi())
         try:
             _cerez_yukle(ctx)
             sayfa = ctx.pages[0] if ctx.pages else ctx.new_page()
@@ -145,6 +190,8 @@ def hazirlik_hatasi(adres, giris_gerekli=True):
     from .ajanlar import adres_guvenli_mi
     if not hazir_mi():
         return "Oturumlu okuyucu kurulu değil. " + YUKLE_IPUCU
+    if node_eksik_mi():
+        return NODE_IPUCU
     if not adres_guvenli_mi(_tam(adres)):
         return "Bu adres güvenlik nedeniyle okunamaz."
     if not alan_izinli_mi(adres):
@@ -181,7 +228,8 @@ class Okuyucu:
         try:
             self._p = sync_playwright().start()
             self.ctx = self._p.chromium.launch_persistent_context(
-                PROFIL, headless=True, accept_downloads=False)
+                PROFIL, headless=True, accept_downloads=False,
+                **tarayici_secenegi())
             _cerez_yukle(self.ctx)
             self.sayfa = (self.ctx.pages[0] if self.ctx.pages
                           else self.ctx.new_page())
@@ -263,7 +311,12 @@ def _hata_ozeti(gunluk):
     except OSError:
         metin = ""
     son = [s for s in metin.strip().splitlines() if s.strip()][-1:] or [""]
-    if "Executable doesn't exist" in metin or "playwright install" in metin:
+    if "Symbol not found" in metin or "libc++" in metin \
+            or "Connection closed while reading from the driver" in metin:
+        oneri = ("Playwright'ın kendi Node.js'i bu macOS sürümünde çalışmıyor. "
+                 "nodejs.org adresinden Node.js 22 LTS (macOS Installer .pkg) "
+                 "kurun, sonra Ülgen'i yeniden açıp tekrar deneyin.")
+    elif "Executable doesn't exist" in metin or "playwright install" in metin:
         oneri = ("Chromium indirilmemiş. Terminal'de: ~/Ülgen/ortam/bin/python -m "
                  "playwright install chromium")
     elif "No module named" in metin:
@@ -291,6 +344,8 @@ def giris_baslat(adres):
     from .ajanlar import adres_guvenli_mi
     if not hazir_mi():
         return "Oturumlu okuyucu kurulu değil. " + YUKLE_IPUCU
+    if node_eksik_mi():
+        return NODE_IPUCU
     if not adres_guvenli_mi(_tam(adres)):
         return "Bu adres güvenlik nedeniyle açılamaz."
     ek = ""

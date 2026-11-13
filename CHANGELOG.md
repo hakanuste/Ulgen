@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.8.2
+- **macOS 12 (Monterey) desteği – oturumlu okuyucu:** Playwright'ın kendi getirdiği Node.js macOS 13+ için derlendiğinden Monterey'de "Symbol not found … libc++" hatasıyla çöküyordu. Ülgen artık macOS 12'de ayrıca kurulmuş Node.js'i (nodejs.org'dan Node.js 22 LTS; /usr/local/bin/node) kullanır. Kurulu değilse `giris:` ve `oturumlu oku:` komutları bunu açıkça söyler.
+- Mac'te Google Chrome kuruluysa giriş ve okuma Chrome ile yapılır (ayrı Ülgen profiliyle; kendi Chrome profilinize dokunulmaz); Chromium indirmek gerekmez.
+- Bu hata günlükte görülürse sohbette çözümü yazılır.
+
 ## 2.8.1
 - **Giriş penceresi açılmazsa nedeni söylenir:** `giris:` penceresinin çıktısı `~/ÜlgenVeri/oturum_giris.log` dosyasına yazılır; süreç ilk 6 saniyede kapanırsa Ülgen sohbette nedenini ve çözümünü yazar (Playwright kurulu değil, Chromium indirilmemiş, macOS sürümü desteklenmiyor, önceki pencere açık…). Önceden hata gizli kalıyor, "pencere açılıyor" deniyordu.
 - Giriş süreci Ülgen'in kurulu olduğu klasörde başlatılır (modül her durumda bulunur).
