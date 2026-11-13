@@ -586,7 +586,16 @@ function parcalaMetin(metin) {
 // Seslendirmeden önce: kod, HTML etiketi, bağlantı ve Markdown işaretleri
 // atılır; yoksa ses bunları harf harf okur.
 function sesliMetin(m) {
-  return String(m || "")
+  m = String(m || "");
+  // Uzun raporlar (## bölümlü): yalnızca baştaki sade özet okunur; ayrıntı ekranda.
+  const b = m.indexOf("\n## ");
+  if (b > 40) m = m.slice(0, b) + "\nAyrıntılar ekranda.";
+  // Yüzdeler Türkçe okunsun: "13.3%" / "%13,3" -> "yüzde 13 virgül 3"
+  const yuzde = (isaret, tam, kesir) => " yüzde " + (isaret === "-" || isaret === "−" ? "eksi " : isaret === "+" ? "artı " : "") +
+    tam.replace(/\./g, "") + (kesir ? " virgül " + kesir : "") + " ";
+  m = m.replace(/%\s?([+\-−]?)(\d{1,3}(?:\.\d{3})*|\d+)(?:,(\d+))?/g, (_, i, t, k) => yuzde(i, t, k))
+       .replace(/([+\-−]?)(\d+)(?:[.,](\d+))?\s?%/g, (_, i, t, k) => yuzde(i, t, k));
+  return m
     .replace(/```[\s\S]*?```/g, " (kod bölümü) ")
     .replace(/<[^>]+>/g, " ")
     .replace(/https?:\/\/\S+|www\.\S+/g, " (bağlantı) ")

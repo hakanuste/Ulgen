@@ -41,11 +41,22 @@ class Analiz(TemizVeri):
             analiz.sembol_bul("12")
 
     def test_rapor_emir_icermez(self):
+        import re
         r = analiz.rapor("THYAO", sahte_indir)
-        self.assertIn("Göstergeler", r)
-        self.assertIn("finansal danışmanlık değildir", r)
-        for yasak in ("AL ", "SAT ", "alın", "satın"):
-            self.assertNotIn(yasak, r)
+        self.assertTrue(r.startswith("# THYAO – sade özet"))
+        self.assertIn("## Ne gösteriyor?", r)
+        self.assertIn("yatırım tavsiyesi değildir", r)
+        self.assertIsNone(re.search(r"\b(AL|SAT|alın|satın)\b", r))
+
+    def test_rapor_sade_ve_turkce_sayi(self):
+        r = analiz.rapor("THYAO", sahte_indir)
+        ozet = r.split("\n## ")[0]
+        self.assertIn("TL olarak kapandı", ozet)
+        self.assertIn("son 1 yılda %", ozet)        # 1 yıl getiri de var
+        self.assertNotIn("[", r)                    # [-] [=] işaretleri yok
+        self.assertNotIn(".1f", r)
+        self.assertNotRegex(r, r"\d\.\d%")          # 2.3% gibi yabancı yazım yok
+        self.assertIn("Olumlu – Uzun vadeli yön yukarı", r)
 
     def test_komut_hata_ve_eslesmeme(self):
         self.assertIsNone(analiz.komut("merhaba"))

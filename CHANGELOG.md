@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## 2.7.96
+- **AKÇA raporu sade Türkçe:** Rapor artık "sade özet" ile başlar: hangi gün kaç puan/TL/dolar kapandığı, tek cümlelik sonuç (örn. "Hem uzun hem kısa vadede düşüş eğiliminde; belirgin bir dönüş işareti yok.") ve son 1 ay / 3 ay / 1 yıl değişimi ("%16,2 düştü"). Ardından "Ne gösteriyor?" maddeleri Olumlu/Olumsuz/Nötr/Dikkat sözleriyle ve açıklamalı (20/50/200 günlük ortalama, RSI'nin ne demek olduğu, dalgalanma). [-] [=] işaretleri, "20g", "RSI(14)" gibi kısaltmalar kaldırıldı.
+- Sayılar tek biçimde Türkçe: %16,2 (önceden -16.2% ile %25 karışıktı). Tarih "13 Kasım 2026" biçiminde. Birim varlığa göre: endeks puan, hisse/kur TL, altın/kripto dolar.
+- 1 yıllık getiri artık hesaplanır (2 yıllık veri çekilir; tepe, dip ve en büyük düşüş son 1 yıldan).
+- **Seslendirme:** Uzun raporlarda yalnızca baştaki sade özet okunur ("Ayrıntılar ekranda."). Yüzdeler Türkçe okunur: "13.3%" ve "%13,3" → "yüzde 13 virgül 3", "%-2,3" → "yüzde eksi 2 virgül 3".
+- Ekranda da yabancı yüzde yazımı Türkçeye çevrilir: "13.3%" → "%13,3".
+
 ## 2.7.95
 - **Yeni sağlayıcı ekle:** Yapay Zekâ Modelleri sayfasında listede olmayan bir yapay zekâ servisi eklenebilir: ad, adres, model ve API anahtarı girilir (OpenAI uyumlu her servis: DeepSeek, Claude (Anthropic'in OpenAI uyumlu ucu), bu Mac'teki LM Studio vb.; hazır örnekten doldurma var). Anahtar Anahtar Zinciri'ne yazılır, ayar dosyasında durmaz; ekranda yalnız son 4 hane görünür. Her biri için "Bağlantıyı dene", "Aç/Kapat" ve "Sil" düğmeleri.
 - Adres https olmalı; yalnızca bu Mac'teki sunucu (127.0.0.1/localhost) http olabilir ve **yerel beyin** sayılır (veri Mac'ten çıkmaz, anahtar gerekmez).

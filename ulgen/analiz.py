@@ -73,13 +73,16 @@ def en_buyuk_dusus(kapanis):
 
 
 def gostergeler(cift):
+    """Göstergeler. Getiri için uzun geçmiş (2 yıl) kullanılır; tepe, dip ve
+    en büyük düşüş son 1 yılın (252 işlem günü) içinden hesaplanır."""
     k = [c for _, c in cift]
+    yil = k[-252:]
     return {
         "son": k[-1], "tarih": cift[-1][0],
         "sma20": sma(k, 20), "sma50": sma(k, 50), "sma200": sma(k, 200),
-        "rsi": rsi(k), "oynaklik": yillik_oynaklik(k),
+        "rsi": rsi(k), "oynaklik": yillik_oynaklik(yil),
         "g1a": getiri(k, 21), "g3a": getiri(k, 63), "g1y": getiri(k, 252),
-        "tepe": max(k), "dip": min(k), "dusus": en_buyuk_dusus(k),
+        "tepe": max(yil), "dip": min(yil), "dusus": en_buyuk_dusus(yil),
     }
 
 
@@ -88,38 +91,88 @@ def _f(x, b=2):
 
 
 def _yuzde(x):
-    return "—" if x is None else "%+.1f%%" % x
+    """Türkçe yazım: %+2,3 / %-16,2."""
+    return "—" if x is None else "%" + ("+" if x >= 0 else "-") + piyasa.tr_sayi(abs(x), 1)
+
+
+def _degisim(x):
+    """Sade anlatım: '%2,3 yükseldi' / '%16,2 düştü'."""
+    if x is None:
+        return "bilinmiyor (yeterli geçmiş yok)"
+    if abs(x) < 0.05:
+        return "neredeyse değişmedi"
+    return "%%%s %s" % (piyasa.tr_sayi(abs(x), 1), "yükseldi" if x > 0 else "düştü")
+
+
+def birim(sembol):
+    if sembol.startswith("XU"):
+        return "puan"
+    if sembol.endswith(".IS") or "TRY" in sembol:
+        return "TL"
+    return "dolar"
+
+
+AYLAR_TR = ("Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz",
+            "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık")
+
+
+def _tarih(t):
+    try:
+        y, a, g = t.split("-")
+        return "%d %s %s" % (int(g), AYLAR_TR[int(a) - 1], y)
+    except (ValueError, IndexError):
+        return t
 
 
 def degerlendir(g):
-    """Gözlemler: (yön, cümle) listesi. Emir değil, durum tespiti."""
+    """Gözlemler: (yön, cümle) listesi; sade Türkçe. Emir değil, durum tespiti."""
     o = []
     s = g["son"]
     if g["sma200"]:
         o.append(("+" if s > g["sma200"] else "-",
-                  "Fiyat 200 günlük ortalamanın %s." % (
-                      "üstünde (uzun vadeli eğilim yukarı)" if s > g["sma200"]
-                      else "altında (uzun vadeli eğilim aşağı)")))
+                  "Uzun vadeli yön %s. Fiyat, son 200 işlem gününün "
+                  "ortalamasının (%s) %s." % (
+                      "yukarı" if s > g["sma200"] else "aşağı", _f(g["sma200"]),
+                      "üstünde" if s > g["sma200"] else "altında")))
     if g["sma50"] and g["sma20"]:
-        o.append(("+" if g["sma20"] > g["sma50"] else "-",
-                  "20 günlük ortalama 50 günlüğün %s (kısa vadeli ivme %s)." % (
-                      "üstünde" if g["sma20"] > g["sma50"] else "altında",
-                      "olumlu" if g["sma20"] > g["sma50"] else "olumsuz")))
+        iyi = g["sma20"] > g["sma50"]
+        o.append(("+" if iyi else "-",
+                  "Kısa vadeli yön %s. Son 20 günün ortalaması (%s), son 50 "
+                  "günün ortalamasının (%s) %s." % (
+                      "güçleniyor" if iyi else "zayıf", _f(g["sma20"]),
+                      _f(g["sma50"]), "üstünde" if iyi else "altında")))
     if g["rsi"] is not None:
-        if g["rsi"] >= 70:
-            o.append(("!", "RSI %.0f: aşırı alım bölgesi; sert düzeltme riski "
-                           "artar." % g["rsi"]))
-        elif g["rsi"] <= 30:
-            o.append(("!", "RSI %.0f: aşırı satım bölgesi; tepki yükselişi "
-                           "olasılığı artar ama düşüş sürebilir." % g["rsi"]))
-        else:
-            o.append(("=", "RSI %.0f: nötr bölge." % g["rsi"]))
+        r = g["rsi"]
+        durum = ("fazla alınmış görünüyor; kısa vadede geri çekilme olasılığı artar"
+                 if r >= 70 else
+                 "fazla satılmış görünüyor; tepki yükselişi gelebilir ama düşüş "
+                 "de sürebilir" if r <= 30 else "alıcı ve satıcı dengede")
+        o.append(("!" if r >= 70 or r <= 30 else "=",
+                  "Alım-satım dengesi: %s. (RSI %s; 70 üstü fazla alınmış, "
+                  "30 altı fazla satılmış demektir)." % (durum, _f(r, 0))))
     if g["oynaklik"] is not None:
-        o.append(("!" if g["oynaklik"] > 40 else "=",
-                  "Yıllık oynaklık %%%.0f: %s." % (
-                      g["oynaklik"], "yüksek, fiyat sert dalgalanıyor"
-                      if g["oynaklik"] > 40 else "orta/düşük")))
+        v = g["oynaklik"]
+        o.append(("!" if v > 40 else "=",
+                  "Dalgalanma %s. Fiyat bir yılda ortalama %%%s oynuyor." % (
+                      "yüksek" if v > 40 else "orta" if v > 20 else "düşük",
+                      _f(v, 0))))
     return o
+
+
+def sonuc_cumlesi(g):
+    """Tek cümlelik sade sonuç (göstergelerden kuralla)."""
+    uzun = g["sma200"] and g["son"] > g["sma200"]
+    kisa = g["sma50"] and g["sma20"] and g["sma20"] > g["sma50"]
+    if g["sma200"] is None:
+        return "Uzun vadeli yönü söylemek için yeterli geçmiş yok."
+    if uzun and kisa:
+        return "Hem uzun hem kısa vadede yukarı yönlü bir görünüm var."
+    if uzun and not kisa:
+        return "Uzun vadede yukarı yönlü, ancak son haftalarda ivme kaybediyor."
+    if not uzun and kisa:
+        return ("Uzun vadede düşüş eğiliminde, ama son haftalarda toparlanma "
+                "belirtisi var; dönüş henüz kesinleşmiş değil.")
+    return "Hem uzun hem kısa vadede düşüş eğiliminde; belirgin bir dönüş işareti yok."
 
 
 def senaryolar(g, gun=63):
@@ -130,43 +183,49 @@ def senaryolar(g, gun=63):
     return (g["son"] * (1 - sigma), g["son"] * (1 + sigma))
 
 
-def rapor(metin, indir=None):
-    sembol, ad = sembol_bul(metin)
-    return rapor_sembol(sembol, ad, indir)
+ISARET = {"+": "Olumlu", "-": "Olumsuz", "=": "Nötr", "!": "Dikkat"}
 
 
 def rapor_sembol(sembol, ad, indir=None):
-    cift = piyasa.gecmis(sembol, "1y", indir)
+    try:
+        cift = piyasa.gecmis(sembol, "2y", indir)
+    except ValueError:
+        cift = piyasa.gecmis(sembol, "1y", indir)
     g = gostergeler(cift)
-    satir = ["# Analiz: %s" % ad, "",
-             "Veri: Yahoo Finance günlük kapanışlar (gecikmeli olabilir), "
-             "son kapanış %s: **%s**" % (g["tarih"], _f(g["son"])), "",
-             "## Göstergeler (kodda hesaplandı)",
-             "- Getiri: 1 ay %s · 3 ay %s · 1 yıl %s" % (
-                 _yuzde(g["g1a"]), _yuzde(g["g3a"]), _yuzde(g["g1y"])),
-             "- Ortalamalar: 20g %s · 50g %s · 200g %s" % (
-                 _f(g["sma20"]), _f(g["sma50"]), _f(g["sma200"])),
-             "- RSI(14): %s · Yıllık oynaklık: %s" % (
-                 _f(g["rsi"], 0), _f(g["oynaklik"], 0) + "%"),
-             "- Son 1 yıl: tepe %s · dip %s · en büyük düşüş %s" % (
-                 _f(g["tepe"]), _f(g["dip"]), _yuzde(g["dusus"])), "",
-             "## Değerlendirme (durum tespiti)"]
+    bir = birim(sembol)
+    satir = ["# %s – sade özet" % ad, "",
+             "%s günü %s %s %s olarak kapandı. %s" % (
+                 _tarih(g["tarih"]), ad, _f(g["son"]), bir, sonuc_cumlesi(g)), "",
+             "Son 1 ayda %s, son 3 ayda %s, son 1 yılda %s." % (
+                 _degisim(g["g1a"]), _degisim(g["g3a"]), _degisim(g["g1y"])), "",
+             "## Ne gösteriyor?"]
     for isaret, cumle in degerlendir(g):
-        satir.append("- [%s] %s" % (isaret, cumle))
+        satir.append("- %s – %s" % (ISARET[isaret], cumle))
+    satir += ["- Bilgi – son 1 yılın en yükseği %s, en düşüğü %s %s. En yüksekten "
+              "en büyük geri çekilme %%%s oldu." % (
+                  _f(g["tepe"]), _f(g["dip"]), bir, _f(abs(g["dusus"]), 1))]
     sn = senaryolar(g)
     if sn:
-        satir += ["", "## Ölçek göstergesi",
-                  "Geçmiş oynaklığa göre 3 ay içinde yaklaşık %s – %s aralığı "
-                  "'olağan' sayılır (±1 standart sapma). Bu bir tahmin değil, "
-                  "dalgalanmanın büyüklüğünü gösterir." % (_f(sn[0]), _f(sn[1]))]
-    satir += ["", "## Eksik olan (bu rapor bunları KAPSAMAZ)",
-              "Mali tablolar, çarpanlar (F/K, PD/DD), KAP bildirimleri ve "
-              "haberler. Bunlar için: 'kaynak ekle: AKÇA <sayfa adresi>' ile "
-              "İş Yatırım/KAP sayfası ekleyip 'Akça: %s mali durumu' diye "
-              "sorun." % ad,
-              "", "> Bu bir finansal danışmanlık değildir. Geçmiş veri "
-              "geleceği garanti etmez; karar sizindir."]
+        satir += ["", "## Olağan dalgalanma aralığı",
+                  "Geçmişteki dalgalanmaya bakılırsa önümüzdeki 3 ayda %s ile %s "
+                  "%s arası 'olağan' sayılır. Bu bir tahmin değildir; yalnızca "
+                  "fiyatın ne kadar oynayabildiğini gösterir." % (
+                      _f(sn[0]), _f(sn[1]), bir)]
+    satir += ["", "## Bu rapor neyi kapsamaz?",
+              "Şirket bilançoları, F/K ve PD/DD gibi oranlar, KAP bildirimleri "
+              "ve haberler bu raporda yok. Eklemek için İş Yatırım ya da KAP "
+              "sayfasını 'kaynak ekle: AKÇA <adres>' ile ekleyip 'Akça: %s mali "
+              "durumu' diye sorun." % ad,
+              "", "Kaynak: Yahoo Finance günlük kapanışları (gecikmeli olabilir). "
+              "Hesaplar Ülgen'de yapıldı.",
+              "", "> Bu bir yatırım tavsiyesi değildir. Geçmiş veri geleceği "
+              "garanti etmez; karar sizindir."]
     return "\n".join(satir)
+
+
+def rapor(metin, indir=None):
+    sembol, ad = sembol_bul(metin)
+    return rapor_sembol(sembol, ad, indir)
 
 
 def komut(metin, indir=None):

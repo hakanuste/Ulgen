@@ -39,7 +39,7 @@ class Yonlendirme(TemizVeri):
         ad, yanit = niyet.yonlendir("anadolu efes hissesi ne oldu analiz et",
                                     gecmis_sahte)
         self.assertEqual(ad, "AKÇA")
-        self.assertIn("# Analiz: Anadolu Efes (AEFES)", yanit)
+        self.assertIn("# Anadolu Efes (AEFES) – sade özet", yanit)
         self.assertIn("RSI", yanit)
 
     def test_fiyat_sorusu(self):

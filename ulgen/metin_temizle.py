@@ -39,9 +39,16 @@ def latex_temizle(metin):
     return t.replace("\\ ", " ")
 
 
+def yuzde_turkce(metin):
+    """İngilizce yüzde yazımı Türkçeye: '13.3%' -> '%13,3', '-2.3 %' -> '%-2,3'."""
+    return re.sub(r"(?<![\w.,%])([+\-−]?)(\d+)(?:\.(\d+))?\s?%(?!\w)",
+                  lambda e: "%" + e.group(1) + e.group(2)
+                  + ("," + e.group(3) if e.group(3) else ""), metin)
+
+
 def yabanci_harfleri_at(metin):
     if not metin:
         return metin
-    temiz = YABANCI.sub("", latex_temizle(metin))
+    temiz = YABANCI.sub("", yuzde_turkce(latex_temizle(metin)))
     temiz = re.sub(r"[ \t]{2,}", " ", temiz)
     return re.sub(r" +([,.;:!?])", r"\1", temiz)

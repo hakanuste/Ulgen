@@ -103,3 +103,13 @@ class Latex(unittest.TestCase):
         m = metin_temizle.yabanci_harfleri_at(
             r"$6,5 \times 6,5\text{ m}$ taban, $40\text{ cm}$ duvar, \(84,5\text{ m}^2\)")
         self.assertEqual(m, "6,5 × 6,5 m taban, 40 cm duvar, 84,5 m²")
+
+
+class Yuzde(unittest.TestCase):
+
+    def test_yuzde_turkce_yazim(self):
+        y = metin_temizle.yabanci_harfleri_at
+        self.assertEqual(y("Getiri 13.3% oldu"), "Getiri %13,3 oldu")
+        self.assertEqual(y("-2.3 % düştü"), "%-2,3 düştü")
+        self.assertEqual(y("%25 zaten"), "%25 zaten")
+        self.assertEqual(y("v1.5%x"), "v1.5%x")
