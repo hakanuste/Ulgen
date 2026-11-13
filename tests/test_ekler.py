@@ -113,3 +113,27 @@ class Yuzde(unittest.TestCase):
         self.assertEqual(y("-2.3 % düştü"), "%-2,3 düştü")
         self.assertEqual(y("%25 zaten"), "%25 zaten")
         self.assertEqual(y("v1.5%x"), "v1.5%x")
+
+
+class SesliSayi(unittest.TestCase):
+    """Arayüzdeki sesliMetin/sayiYazi işlevleri node ile denenir (varsa)."""
+
+    def test_sayilar_sozcukle_okunur(self):
+        import re
+        import shutil
+        import subprocess
+        import tempfile
+        if not shutil.which("node"):
+            self.skipTest("node yok")
+        from ulgen import arayuz
+        js = max(re.findall(r"<script[^>]*>(.*?)</script>", arayuz.SAYFA, re.S), key=len)
+        i = js.index("function sayiYazi")
+        j = js.index("\n}\n", js.index("function sesliMetin")) + 3
+        kod = js[i:j] + ('\nconsole.log(sesliMetin("BIST 100, 11.842,82 puandan; '
+                         '13.3% arttı; %-2,3"));')
+        with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
+            f.write(kod)
+        cikti = subprocess.run(["node", f.name], capture_output=True, text=True).stdout
+        self.assertIn("BIST yüz, on bir bin sekiz yüz kırk iki virgül seksen iki", cikti)
+        self.assertIn("yüzde on üç virgül üç", cikti)
+        self.assertIn("yüzde eksi iki virgül üç", cikti)

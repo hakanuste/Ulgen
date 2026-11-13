@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.7.98
+- **Sayılar sözcükle okunur:** Seslendirmeden önce bütün rakamlar Türkçe sözcüğe çevrilir: "BIST 100, 11.842,82" → "BIST yüz, on bir bin sekiz yüz kırk iki virgül seksen iki"; "2026" → "iki bin yirmi altı"; "0,05" → "sıfır virgül sıfır beş". Ses motoru artık sayıları birleştirip "yüz on birinci" gibi yanlış okumaz. Bin, milyon, milyar, trilyon desteklenir.
+
 ## 2.7.97
 - **Sayılar doğru okunur:** Binlik noktalı sayılar seslendirmeden önce noktasız yazılır ("11.842,82" → "11842 virgül 82"); önceden "11." sıra sayısı sanılıp "on birinci" diye okunuyordu. Ondalık virgül açıkça "virgül" okunur.
 - Rapor cümlesi: "13 Kasım 2026 günü BIST 100, 11.842,82 puandan kapandı." (ad ile sayı arasında virgül; "BIST 100 11.842" yan yana gelmez).

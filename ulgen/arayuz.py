@@ -583,6 +583,27 @@ function parcalaMetin(metin) {
 }
 
 // Her yerde aynı ses: sabit cümle -> kendi klibi; bulut sesi açıksa tüm yanıt (parça parça) aynı sesle.
+// Sayıyı Türkçe sözcüklere çevirir: 11842 -> "on bir bin sekiz yüz kırk iki".
+// Ses motoru "100 11.842"yi "yüz on birinci" gibi yanlış birleştirmesin diye.
+function sayiYazi(n) {
+  const b = ["", "bir", "iki", "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz"];
+  const o = ["", "on", "yirmi", "otuz", "kırk", "elli", "altmış", "yetmiş", "seksen", "doksan"];
+  const uc = x => { const y = Math.floor(x / 100), r = x % 100;
+    return [y ? (y > 1 ? b[y] + " " : "") + "yüz" : "", o[Math.floor(r / 10)], b[r % 10]].filter(Boolean).join(" "); };
+  const s = String(n).replace(/^0+(?=\d)/, "");
+  if (s.length > 15) return s.split("").map(d => d === "0" ? "sıfır" : b[+d]).join(" ");
+  let x = Number(s);
+  if (x === 0) return "sıfır";
+  const adlar = ["", "bin", "milyon", "milyar", "trilyon"];
+  const parca = [];
+  for (let i = 0; x > 0; i++, x = Math.floor(x / 1000)) {
+    const g = x % 1000;
+    if (!g) continue;
+    parca.unshift(i === 1 && g === 1 ? "bin" : (uc(g) + (adlar[i] ? " " + adlar[i] : "")).trim());
+  }
+  return parca.join(" ");
+}
+
 // Seslendirmeden önce: kod, HTML etiketi, bağlantı ve Markdown işaretleri
 // atılır; yoksa ses bunları harf harf okur.
 function sesliMetin(m) {
@@ -599,7 +620,10 @@ function sesliMetin(m) {
        .replace(/(\d),(\d)/g, "$1 virgül $2");
   m = m.replace(/%\s?([+\-−]?)(\d{1,3}(?:\.\d{3})*|\d+)(?:,(\d+))?/g, (_, i, t, k) => yuzde(i, t, k))
        .replace(/([+\-−]?)(\d+)(?:[.,](\d+))?\s?%/g, (_, i, t, k) => yuzde(i, t, k));
-  return m
+  // Kalan bütün rakamlar sözcüğe: "BIST 100, 11842" -> "BIST yüz, on bir bin..."
+  m = m.replace(/virgül (0+)(?=\d*)/g, (_, z) => "virgül " + "sıfır ".repeat(z.length))
+       .replace(/\d+/g, d => " " + sayiYazi(d) + " ");
+  return m.replace(/\s+([,.;:!?])/g, "$1").replace(/\s+/g, " ").trim()
     .replace(/```[\s\S]*?```/g, " (kod bölümü) ")
     .replace(/<[^>]+>/g, " ")
     .replace(/https?:\/\/\S+|www\.\S+/g, " (bağlantı) ")
