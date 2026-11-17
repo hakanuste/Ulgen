@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.15
+- **Düzenle:** Eklediğiniz sağlayıcının satırında tek bir "Düzenle" düğmesi: ad, adres, model (servisteki modeller listesinden seçilebilir; AnythingLLM'de çalışma alanları), API anahtarı (boş bırakılırsa eskisi kalır) ve "ücretsiz" işareti, mevcut değerleriyle dolu bir formda yerinde değiştirilir. "Kaydet ve dene" ile bağlantı hemen denenir, sonuç birkaç saniye görünür, sonra satır yeni bilgilerle yenilenir. Öne alma ve uzman bağı korunur. Şu anki model adı serviste yoksa uyarı çıkar. (Ayrı "Anahtarı değiştir" ve "Modeli değiştir" düğmelerinin yerini aldı.)
+
 ## 2.8.14
 - **Modeli değiştir:** Eklediğiniz sağlayıcının satırında "Modeli değiştir" düğmesi; Ülgen servisin sunduğu modelleri (AnythingLLM'de çalışma alanlarını) sorup listeler, birini seçip ya da adını yazıp "Kaydet ve dene" dersiniz. Yalnızca model değişir; anahtar, öne alma ve uzman bağı aynı kalır; bağlantı hemen denenir.
 

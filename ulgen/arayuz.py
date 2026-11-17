@@ -1635,52 +1635,54 @@ async function ozelSaglayicilar(k) {
     bag.title = "Seçilen uzmanın soruları önce bu sağlayıcıya gider (örn. TULGA → belgelerinizin olduğu AnythingLLM)";
     bag.onchange = async () => { const c = await istek("/yz/ozel", { islem: "uzman", ad: t.ad, uzman: bag.value }); if (c.hata) alert(c.hata); yzCiz(); };
     satir.appendChild(bag);
-    const an = dugme("Anahtarı değiştir");
-    an.onclick = () => {
-      if (satir.querySelector(".anahtarKutu")) return;
-      const f = document.createElement("div"); f.className = "anahtarKutu"; f.style.cssText = "margin-top:8px;display:flex;gap:6px;flex-wrap:wrap";
-      const g = document.createElement("input"); g.type = "password"; g.autocomplete = "off"; g.placeholder = "Yeni API anahtarı";
-      g.style.cssText = "flex:1;min-width:200px;padding:8px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
-      const k = document.createElement("button"); k.className = "dugme aktif"; k.textContent = "Kaydet ve dene";
-      const v = document.createElement("button"); v.className = "dugme"; v.textContent = "Vazgeç";
-      v.onclick = () => f.remove();
-      k.onclick = async () => {
-        k.disabled = true;
-        const c = await istek("/yz/ozel", { islem: "anahtar", ad: t.ad, anahtar: g.value });
-        g.value = "";
-        if (c.hata) { alert(c.hata); k.disabled = false; return; }
-        f.remove();
-        await deneYaz(satir, de, () => istek("/yz/ozel", { islem: "dene", ad: t.ad }));
-      };
-      f.appendChild(g); f.appendChild(k); f.appendChild(v); satir.appendChild(f); g.focus();
-    };
-    const md = dugme("Modeli değiştir");
-    md.onclick = async () => {
-      if (satir.querySelector(".modelKutu")) return;
-      const f = document.createElement("div"); f.className = "modelKutu"; f.style.cssText = "margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center";
-      const bilgi = document.createElement("span"); bilgi.style.cssText = "font-size:13px;color:var(--soluk)"; bilgi.textContent = "Servisten model listesi alınıyor…";
-      f.appendChild(bilgi); satir.appendChild(f);
-      const sec = document.createElement("select"); sec.className = "dugme";
-      const el = document.createElement("input"); el.placeholder = "ya da adını yazın"; el.value = t.model;
-      el.style.cssText = "min-width:180px;padding:8px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
-      const c = await istek("/yz/ozel", { islem: "modeller", ad: t.ad });
-      if (c.modeller && c.modeller.length) {
-        bilgi.textContent = "Seçin:";
-        c.modeller.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m + (m === t.model ? " (şu anki)" : ""); sec.appendChild(o); });
-        sec.value = c.modeller.includes(t.model) ? t.model : c.modeller[0];
-        el.value = sec.value; sec.onchange = () => { el.value = sec.value; };
-        f.appendChild(sec);
-      } else bilgi.textContent = (c.hata || "Liste alınamadı") + " – adını elle yazın:";
+    // Düzenle: ad, adres, model (servisin listesinden), anahtar, ücretsiz – hepsi yerinde
+    const dz = dugme("Düzenle");
+    dz.onclick = async () => {
+      if (satir.querySelector(".duzenKutu")) return;
+      const f = document.createElement("div"); f.className = "duzenKutu";
+      f.style.cssText = "margin-top:8px;display:grid;gap:6px;max-width:560px";
+      const st = "padding:8px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+      const etiketli = (yazi, e) => { const l = document.createElement("label"); l.style.cssText = "font-size:12px;color:var(--soluk);display:grid;gap:3px"; l.appendChild(document.createTextNode(yazi)); l.appendChild(e); f.appendChild(l); return e; };
+      const kutu = (deger, tur) => { const e = document.createElement("input"); e.type = tur || "text"; e.autocomplete = "off"; e.value = deger || ""; e.style.cssText = st; return e; };
+      const ad = etiketli("Ad", kutu(t.baslik));
+      const taban = etiketli("Adres", kutu(t.taban));
+      const model = etiketli("Model (AnythingLLM'de çalışma alanının kısa adı)", kutu(t.model));
+      const sec = document.createElement("select"); sec.className = "dugme"; sec.style.display = "none";
+      f.appendChild(sec);
+      const anahtar = etiketli("API anahtarı (boş bırakırsanız eskisi kalır: …" + (t.son4 || "yok") + ")", kutu("", "password"));
+      const et = document.createElement("label"); et.style.cssText = "font-size:14px";
+      const ucr = document.createElement("input"); ucr.type = "checkbox"; ucr.checked = !!t.ucretsiz; et.appendChild(ucr);
+      et.appendChild(document.createTextNode(" Bu servis ücretsiz (Ülgen sırası gelince kendiliğinden kullanabilir)"));
+      f.appendChild(et);
+      const dugmeler = document.createElement("div"); dugmeler.style.cssText = "display:flex;gap:6px;flex-wrap:wrap";
       const k = document.createElement("button"); k.className = "dugme aktif"; k.textContent = "Kaydet ve dene";
       const v = document.createElement("button"); v.className = "dugme"; v.textContent = "Vazgeç"; v.onclick = () => f.remove();
+      dugmeler.appendChild(k); dugmeler.appendChild(v); f.appendChild(dugmeler);
+      const so = document.createElement("div"); so.style.cssText = "font-size:12px;color:var(--ulgen-danger)"; f.appendChild(so);
+      satir.appendChild(f); ad.focus();
+      // Servisin model listesi (varsa) seçim kutusuna
+      istek("/yz/ozel", { islem: "modeller", ad: t.ad }).then(c => {
+        if (!c.modeller || !c.modeller.length) return;
+        const b0 = document.createElement("option"); b0.value = ""; b0.textContent = "Servisteki modellerden seç…"; sec.appendChild(b0);
+        c.modeller.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m + (m === t.model ? " (şu anki)" : ""); sec.appendChild(o); });
+        sec.style.display = ""; sec.onchange = () => { if (sec.value) model.value = sec.value; };
+        if (!c.modeller.includes(t.model)) so.textContent = "Şu anki model adı (" + t.model + ") serviste yok; listeden seçin.";
+      }).catch(() => {});
       k.onclick = async () => {
-        k.disabled = true;
-        const y = await istek("/yz/ozel", { islem: "model", ad: t.ad, model: el.value });
-        if (y.hata) { alert(y.hata); k.disabled = false; return; }
+        k.disabled = true; so.textContent = "";
+        const y = await istek("/yz/ozel", { islem: "duzenle", ad: t.ad, baslik: ad.value, taban: taban.value,
+          model: model.value, anahtar: anahtar.value, ucretsiz: ucr.checked });
+        anahtar.value = "";
+        if (y.hata) { so.textContent = y.hata; k.disabled = false; return; }
         f.remove();
         await deneYaz(satir, de, () => istek("/yz/ozel", { islem: "dene", ad: t.ad }));
+        // sonucu okuyabilmeniz için biraz bekleyip satırı yeni bilgilerle yenile
+        const kalici = satir.querySelector(".deneSonuc");
+        setTimeout(() => { yzCiz().then(() => {
+          if (!kalici) return;
+          document.querySelectorAll(".deneSonuc").forEach(x => x.remove());
+        }); }, 8000);
       };
-      f.appendChild(el); f.appendChild(k); f.appendChild(v);
     };
     const on = dugme(t.one ? "Normal sıraya al" : "Öne al");
     on.title = "Öne alınan sağlayıcı beyin sırasında en başta denenir (duyarlı sorular yine buluta gitmez)";

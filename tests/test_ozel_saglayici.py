@@ -218,3 +218,23 @@ class YanlisModel(TemizVeri):
         self.assertEqual((t["model"], t["son4"]), ("musso", "5678"))
         with self.assertRaises(oz.SaglayiciHatasi):
             oz.model_degistir("ozel_anythingllm", "boşluklu ad")
+
+
+class Duzenle(TemizVeri):
+
+    def test_yerinde_duzenleme(self):
+        oz.ekle({"baslik": "AnythingLLM", "taban": "http://127.0.0.1:3001/api/v1/openai",
+                 "model": "ulgen", "anahtar": "ESKI-AAAA-PKA8"})
+        oz.one_al("ozel_anythingllm")
+        oz.uzmana_bagla("ozel_anythingllm", "TULGA")
+        oz.duzenle("ozel_anythingllm",
+                   {"baslik": "AnythingLLM Musso", "model": "assistant-chats", "anahtar": ""})
+        t = oz.liste()[0]
+        self.assertEqual((t["ad"], t["baslik"], t["model"], t["son4"]),
+                         ("ozel_anythingllm", "AnythingLLM Musso", "assistant-chats", "PKA8"))
+        self.assertTrue(t["one"])
+        self.assertEqual(t["uzmanlar"], ["TULGA"])
+        oz.duzenle("ozel_anythingllm", {"anahtar": "YENI-BBBB-THWQ"})
+        self.assertEqual(oz.liste()[0]["son4"], "THWQ")
+        with self.assertRaises(oz.SaglayiciHatasi):
+            oz.duzenle("ozel_anythingllm", {"taban": "http://dis.com/v1"})

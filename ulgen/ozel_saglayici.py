@@ -195,3 +195,26 @@ def model_degistir(ad, model):
             ayar.guncelle("ozel_saglayicilar", tanimlar)
             return model
     raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
+
+
+def duzenle(ad, veri):
+    """Kayıtlı sağlayıcıyı yerinde değiştirir: görünen ad, adres, model,
+    ücretsiz işareti ve (verilirse) anahtar. İç ad (öne alma, uzman bağı,
+    anahtar kaydı buna bağlı) değişmez. Boş anahtar: eskisi kalır."""
+    a = ayar.yukle()
+    tanimlar = [dict(x) for x in (a.get("ozel_saglayicilar") or []) if isinstance(x, dict)]
+    eski = next((x for x in tanimlar if x.get("ad") == ad), None)
+    if not eski:
+        raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
+    yeni = dogrula({"baslik": veri.get("baslik", eski.get("baslik")),
+                    "taban": veri.get("taban", eski.get("taban")),
+                    "model": veri.get("model", eski.get("model")),
+                    "ucretsiz": veri.get("ucretsiz", eski.get("ucretsiz"))})
+    yeni["ad"] = ad
+    anahtar = str(veri.get("anahtar") or "").strip()
+    if anahtar:
+        anahtar_degistir(ad, anahtar)
+    elif not ozel_yerel_mi(yeni["taban"]) and gizli.sir_durumu(ad)[0] is None:
+        raise SaglayiciHatasi("Bu servis için API anahtarı gerekli.")
+    ayar.guncelle("ozel_saglayicilar", [yeni if x.get("ad") == ad else x for x in tanimlar])
+    return yeni
