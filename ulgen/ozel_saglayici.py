@@ -117,7 +117,21 @@ def dene(ad):
                                                "content": "Yalnızca 'merhaba' yaz."}], 20)
         return {"calisti": True, "cikti": "%s yanıt verdi: %s" % (t["baslik"], yanit[:80])}
     except BeyinHatasi as hata:
-        return {"calisti": False, "cikti": str(hata)[:240]}
+        cikti = str(hata)[:240]
+        # 401/404 ama anahtar doğru olabilir: model (AnythingLLM'de çalışma alanı
+        # kısa adı) yanlışsa da böyle döner. Geçerli adları sorup yaz.
+        if re.match(r"HTTP (401|404)", cikti):
+            try:
+                adlar = b.modelleri_listele()
+            except Exception:
+                adlar = []
+            if adlar and t["model"] not in adlar:
+                cikti += ("\nModel adı '%s' bu serviste yok. Geçerli adlar: %s"
+                          % (t["model"], ", ".join(adlar[:15])))
+            elif not adlar:
+                cikti += ("\nAnahtar ya da model adı (AnythingLLM'de çalışma alanının "
+                          "kısa adı) yanlış olabilir.")
+        return {"calisti": False, "cikti": cikti}
 
 
 def uzmana_bagla(ad, uzman):

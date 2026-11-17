@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.13
+- **Yanlış model adı söylenir:** "Bağlantıyı dene" 401/404 alırsa Ülgen servisin geçerli model adlarını sorup yazar ("Model adı 'ulgen' bu serviste yok. Geçerli adlar: …"). AnythingLLM, çalışma alanının kısa adı yanlışken anahtar doğru olsa da boş 401 döndürür; artık bu ayırt edilir.
+
 ## 2.8.12
 - **Anahtarı değiştir:** Eklediğiniz her sağlayıcının satırında "Anahtarı değiştir" düğmesi; yeni anahtarı yapıştırıp "Kaydet ve dene" deyince yalnızca anahtar değişir (adres, model, öne alma ve uzman bağı aynı kalır) ve bağlantı hemen denenir, sonuç düğmenin altında görünür.
 

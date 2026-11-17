@@ -171,3 +171,37 @@ class AnahtarDegistir(TemizVeri):
             oz.anahtar_degistir("ozel_anythingllm", "kısa")
         with self.assertRaises(oz.SaglayiciHatasi):
             oz.anahtar_degistir("ozel_yok", "YENI-BBBB-THWQ")
+
+
+class CalismaAlani(BaseHTTPRequestHandler):
+    """AnythingLLM gibi: model (çalışma alanı) yoksa boş 401."""
+
+    def do_GET(self):
+        v = json.dumps({"data": [{"id": "musso"}, {"id": "genel"}]}).encode()
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(v)))
+        self.end_headers()
+        self.wfile.write(v)
+
+    def do_POST(self):
+        self.rfile.read(int(self.headers["Content-Length"]))
+        self.send_response(401)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def log_message(self, *a):
+        pass
+
+
+class YanlisModel(TemizVeri):
+
+    def test_gecerli_adlar_soylenir(self):
+        srv = HTTPServer(("127.0.0.1", 0), CalismaAlani)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.shutdown)
+        oz.ekle({"baslik": "AnythingLLM", "model": "ulgen", "anahtar": "anahtar-12345678",
+                 "taban": "http://127.0.0.1:%d/api/v1/openai" % srv.server_address[1]})
+        c = oz.dene("ozel_anythingllm")
+        self.assertFalse(c["calisti"])
+        self.assertIn("Model adı 'ulgen' bu serviste yok. Geçerli adlar: genel, musso",
+                      c["cikti"])
