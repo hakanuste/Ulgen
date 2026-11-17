@@ -6,7 +6,8 @@ from . import ajan_kayit, uzmanlar, uzun_arastirma
 
 AZAMI_UZMAN = 4000
 AZAMI_SONUC = 12000
-_KILIT = threading.Lock()
+AZAMI_ESZAMANLI = 3                       # aynı anda en çok bu kadar ajan görevi
+_SIRA = threading.BoundedSemaphore(AZAMI_ESZAMANLI)
 
 
 def dogrula(ajan, gorev):
@@ -37,7 +38,7 @@ def calistir(ulgen, ad, gorev):
             ulgen._kaydet("asistan", sonuc[:AZAMI_SONUC])
         else:
             is_ = ajan_kayit.sar(uzmanlar.kimlik(ad), lambda g: ulgen.sohbet_isle(
-                "%s: %s" % (ad, g))["yanit"])
+                "%s: %s" % (ad, g), ajan_gorevi=True)["yanit"])
             sonuc = is_(gorev)
     except BaseException as hata:       # iptal dahil; kullanıcı bilsin
         sonuc = "Görev tamamlanamadı: %s" % str(hata)[:200]
@@ -47,7 +48,7 @@ def calistir(ulgen, ad, gorev):
 
 def arka_planda(ulgen, ad, gorev):
     def kos():
-        with _KILIT:                      # görevler sırayla
+        with _SIRA:                       # en çok 3 görev aynı anda; sohbet beklemez
             calistir(ulgen, ad, gorev)
     t = threading.Thread(target=kos, daemon=True)
     t.start()

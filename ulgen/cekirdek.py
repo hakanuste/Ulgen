@@ -74,6 +74,34 @@ def arac_cagrisi_ayikla(metin):
 EKLI = re.compile(r"\n\[(?:EKLİ DOSYA|YOUTUBE VİDEO): ")
 
 
+class _BosKilit:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+_BOS_KILIT = _BosKilit()
+
+
+class _TurDurumu(threading.local):
+    """Bir iletinin işlenmesi sırasındaki durum. İş parçacığına özeldir:
+    aynı anda çalışan ajan görevleri ve sohbet birbirinin durumunu bozmaz."""
+
+    def __init__(self):
+        self._duyarli_tur = False
+        self._arastirma_eki = ""
+        self._kilavuz_eki = ""
+        self._ajan = None
+        self._ajan_isi = False
+
+
+def _tur_ozelligi(ad):
+    return property(lambda self: getattr(self._tur, ad),
+                    lambda self, deger: setattr(self._tur, ad, deger))
+
+
 class Ulgen:
     """Kişisel asistan: tüm modüllerin sahibi ve tek giriş noktası."""
 
@@ -107,11 +135,7 @@ class Ulgen:
         self._bildirim_kilit = threading.Lock()
         self._sayac = 0
         self._sohbet_kilit = threading.Lock()
-        self._duyarli_tur = False
-        self._arastirma_eki = ""
-        self._kilavuz_eki = ""
-        self._ajan = None
-        self._ajan_isi = False
+        self._tur = _TurDurumu()          # tura özgü durum (iş parçacığına özel)
         self._durdur = threading.Event()
         if veritabani.GOC_NOTU:
             veritabani.gunluge_yaz("bilgi", "veritabani", veritabani.GOC_NOTU)
@@ -218,13 +242,17 @@ class Ulgen:
         return self.baglam.sistem_olustur(parcalar, beyin.sistem_butce)
 
     # ---------------------------------------------------------- ana akış
-    def sohbet_isle(self, metin):
-        """Bir kullanıcı mesajını işler; {"yanit", "beyin"} döndürür."""
+    def sohbet_isle(self, metin, ajan_gorevi=False):
+        """Bir kullanıcı mesajını işler; {"yanit", "beyin"} döndürür.
+
+        Sohbet iletileri sırayla işlenir; ajan görevleri (ajan_gorevi=True)
+        sohbet kilidini tutmaz, sohbetle ve birbirleriyle aynı anda yürür."""
         metin = (metin or "").strip()[:4000]
         if not metin:
             return {"yanit": "Sizi dinliyorum.", "beyin": None}
-        with self._sohbet_kilit:
-            iptal.temizle()
+        with (_BOS_KILIT if ajan_gorevi else self._sohbet_kilit):
+            if not ajan_gorevi:
+                iptal.temizle()
             self._duyarli_tur = duyarli_mi(metin)
             try:
                 yanit, beyin_adi = self._isle(metin)
@@ -462,3 +490,7 @@ class Ulgen:
                          daemon=True).start()
         threading.Thread(target=kilavuz.otomatik_dongu, args=(self._durdur,),
                          daemon=True).start()
+
+
+for _ad in ("_duyarli_tur", "_arastirma_eki", "_kilavuz_eki", "_ajan", "_ajan_isi"):
+    setattr(Ulgen, _ad, _tur_ozelligi(_ad))

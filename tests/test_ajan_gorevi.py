@@ -16,7 +16,8 @@ class SahteUlgen:
     def _kaydet(self, rol, metin, duyarli=False):
         self.kayit.append((rol, metin))
 
-    def sohbet_isle(self, metin):
+    def sohbet_isle(self, metin, ajan_gorevi=False):
+        assert ajan_gorevi                       # görev sohbet kilidini tutmaz
         return {"yanit": "UZMAN YANITI: " + metin}
 
     def bildir(self, metin, eylem=None):
@@ -94,3 +95,36 @@ class SunucuUcu(TemizVeri):
                      json.dumps({"ajan": "arastirma", "gorev": "x"}),
                      {"Content-Type": "application/json"}, yetkisiz=True)
         self.assertEqual(d, 401)
+
+
+class Eszamanli(TemizVeri):
+    """Bir ajan çalışırken diğer ajanlar ve sohbet beklemez."""
+
+    def test_iki_uzman_ve_sohbet_ayni_anda(self):
+        import threading
+        import time
+        from unittest import mock
+        from ulgen import ajan_gorevi
+        from ulgen.cekirdek import Ulgen
+        u = Ulgen()
+        gorulen = {}
+
+        def yavas(metin):
+            # her tur kendi uzmanını görmeli (durum iş parçacığına özel)
+            gorulen[threading.current_thread().name] = u._ajan
+            time.sleep(0.6)
+            return ("tamam", "yanıt: " + metin[:12], "sahte")
+        with mock.patch.object(u, "_beyinle_dene", side_effect=yavas), \
+                mock.patch.object(u, "bildir"):
+            bas = time.time()
+            t1 = ajan_gorevi.arka_planda(u, "OTACI", "biberiye neye iyi gelir")
+            t2 = ajan_gorevi.arka_planda(u, "BALBAL", "kerpiç duvar nasıl örülür")
+            time.sleep(0.05)
+            y = u.sohbet_isle("merhaba, nasılsın bugün")
+            t1.join(3)
+            t2.join(3)
+            sure = time.time() - bas
+        self.assertLess(sure, 1.5)                 # sırayla olsaydı ≥ 1,8 sn
+        self.assertTrue(y["yanit"])
+        self.assertIn("OTACI", gorulen.values())
+        self.assertIn("BALBAL", gorulen.values())

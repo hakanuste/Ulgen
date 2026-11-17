@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.8.6
+- **Ajanlar aynı anda çalışır:** Bir ajan görevi çalışırken başka bir ajan görev alıp araştırma yapabilir; aynı anda en çok 3 ajan görevi yürür (fazlası sırada bekler). Önceden görevler tek tek işleniyordu ve bir uzman görevi bitene kadar sohbet de bekliyordu.
+- Sohbet, çalışan ajan görevlerini beklemez. Tura özgü durum (hangi uzman, kılavuz/araştırma alıntıları, duyarlılık) artık her iş parçacığına ayrı tutulur; aynı anda çalışan işler birbirinin uzmanını ya da alıntısını karıştırmaz.
+- Not: Yerel beyin (llama.cpp) aynı anda tek yanıt üretir; bulut beyinlerde görevler gerçekten paralel ilerler.
+
 ## 2.8.5
 - **Yapıştırılan mali tablo:** Fintables, KAP ya da İş Yatırım'daki bir tabloyu seçip kopyalayıp sohbete yapıştırdığınızda da (dosya eklemeden) kalemler tanınır, oranlar kodda hesaplanır ve ileti AKÇA'ya gider. İlk satıra soru yazılabilir (örn. "THYAO bilançosu nasıl?").
 
