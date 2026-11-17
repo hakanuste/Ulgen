@@ -126,6 +126,35 @@ def duyarli_mi(metin):
     return bool(DUYARLI_DESENI.search(metin or ""))
 
 
+# Kimlik bilgisi kalıpları: metin içinde "[gizli]" ile örtülür
+_KIMLIK_KALIPLARI = (
+    re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"),                  # e-posta
+    re.compile(r"\bTR\s?\d{2}(?:\s?\d{4}){5}\s?\d{2}\b", re.I),  # IBAN
+    re.compile(r"\b(?:\d{4}[ -]?){3}\d{4}\b"),                      # kart
+    re.compile(r"\b[1-9]\d{10}\b"),                                  # TC no
+    re.compile(r"(?:\+90[\s-]?|\b0)?5\d{2}[\s-]?\d{3}[\s-]?\d{2}"
+               r"[\s-]?\d{2}\b"),                                    # cep tel
+)
+
+
+def kisisel_ayikla(metin):
+    """Buluta gidecek metinden kişisel verileri ayıklar.
+
+    Sağlık, ilaç, kimlik, parola, banka, adres, tapu gibi duyarlı sözcük
+    geçen satırlar tümüyle atılır; kalan satırlardaki e-posta, telefon,
+    IBAN, kart ve TC kimlik numaraları "[gizli]" ile örtülür. Notun geri
+    kalanı (ölçüler, kılavuz bilgisi, teknik konular) olduğu gibi kalır.
+    """
+    satirlar = []
+    for satir in (metin or "").splitlines():
+        if DUYARLI_DESENI.search(satir):
+            continue
+        for kalip in _KIMLIK_KALIPLARI:
+            satir = kalip.sub("[gizli]", satir)
+        satirlar.append(satir)
+    return "\n".join(satirlar).strip()
+
+
 def kod_ayikla(metin):
     """'onay 1234' ya da 'onay bir iki üç dört' ifadesinden kodu çıkarır."""
     kucuk = metin.lower().strip()

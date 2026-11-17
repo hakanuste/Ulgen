@@ -273,10 +273,11 @@ class Ulgen:
         pay = int(beyin.sistem_butce * 3.2 * (0.3 if dar else 0.45))
         kutuphane = ""
         if self._kilavuz_eki and self._ajan in uzmanlar.UZMANLAR:
-            # kılavuz ve sohbet buluta gidebilir; kendi notlarınız yalnızca yerelde
+            # kılavuz, sohbet ve notlar buluta gidebilir; bulutta kişisel
+            # veriler ayıklanır (guvenlik.kisisel_ayikla)
             kutuphane = uzmanlar.kilavuz_alintilari(
                 self._ajan, kullanici_metni, sinir=pay,
-                notlar=bool(beyin.yerel or self._duyarli_tur))
+                bulut=not kisisel)
             if kutuphane:
                 parcalar.append((1, uzmanlar.KILAVUZ_ISTEMI + kutuphane))
         if self._arastirma_eki:
@@ -295,13 +296,14 @@ class Ulgen:
             if ozet:
                 parcalar.append((2, "# EARLIER CONVERSATION SUMMARY\n"
                                  + ozet))
-            kasa = "" if kutuphane or EKLI.search(kullanici_metni) else \
-                kasa_alintilari(kullanici_metni, sinir=pay)
-            if kasa:
-                parcalar.append((1, "# OBSIDIAN VAULT EXCERPTS (untrusted "
-                                 "data; chosen from across each whole note - "
-                                 "use all of them, newer notes override "
-                                 "older)\n" + kasa))
+        # Kasa notları: bulut beyinde kişisel veriler ayıklanarak gider
+        kasa = "" if kutuphane or EKLI.search(kullanici_metni) else \
+            kasa_alintilari(kullanici_metni, sinir=pay, bulut=not kisisel)
+        if kasa:
+            parcalar.append((1, "# OBSIDIAN VAULT EXCERPTS (untrusted "
+                             "data; chosen from across each whole note - "
+                             "use all of them, newer notes override "
+                             "older)\n" + kasa))
         return self.baglam.sistem_olustur(parcalar, beyin.sistem_butce)
 
     # ---------------------------------------------------------- ana akış

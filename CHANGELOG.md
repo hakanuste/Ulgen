@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.18
+- **Bulut beyin Obsidian notlarını görür, kişisel verileriniz gizli kalır:** Gemini gibi bulut beyinler artık kasa notlarından ve uzman notlarından alıntı alır (ör. "taş evin son ölçüleri nedir?"). Gönderilmeden önce sağlık, ilaç, kimlik, parola, banka, maaş, adres, tapu/arsa geçen satırlar tümüyle çıkarılır; e-posta, telefon, IBAN, kart ve TC kimlik numaraları "[gizli]" ile örtülür. "kasa_ara" aracı da bulutta bu ayıklanmış sonuçla çalışır. Uzun süreli hafıza, sohbet özeti ve duyarlı sorular yine yalnızca yerel beyinde kalır.
+
 ## 2.8.17
 - **Obsidian'da bul:** "obsidyende taş ev ölçüleri bul", "obsidyende ara: Musso şanzıman", "kasada kerpiç ara" gibi komutlar notları Mac'te arar; bulunan notlar adı, tarihi, yeri ve ilgili bölümüyle doğrudan gösterilir. Model kullanılmaz, hiçbir içerik buluta gitmez. "obsidyende bu sohbeti bul" denirse bir önceki sorunun konusu aranır.
 - **Sahne anlatımı yok:** "*(Ülgen öne eğilir…)*" gibi satırlar yazılmaz (modele kural) ve gelse bile yanıttan atılır; sesle de okunmaz.

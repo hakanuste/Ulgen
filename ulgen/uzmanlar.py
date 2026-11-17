@@ -612,12 +612,14 @@ def tarih_bul(yol):
 
 
 def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
-                       oku=None, notlar=True):
+                       oku=None, notlar=True, bulut=False):
     """Uzmanın alanındaki soruya kasadan alıntılar: kılavuzlar (KILAVUZ),
     kendi notlarınız (NOT; yalnızca notlar=True iken, yani yerel beyinde) ve
     eski sohbetler (ESKİ SOHBET). Her not baştan sona taranır; toplam sınır
     nota bölüştürülür ve her notta en ilgili parçalar seçilir (sondan kesme
-    yok). TULGA'da Musso geçenler önce; duyarlı bilgi içeren alıntı alınmaz."""
+    yok). TULGA'da Musso geçenler önce. Duyarlı satırlar (sağlık, kimlik,
+    banka, adres...) atılır, kimlik numaraları örtülür; bulut=True iken
+    bulut beyne yalnızca bu ayıklanmış metin gider."""
     if ad not in UZMANLAR:
         return ""
     ara = ara or obsidyen.ara
@@ -644,7 +646,8 @@ def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
     parcalar, toplam = [], 0
     for etiket, (baslik, yol, eski) in adaylar:
         alinti = sohbet_alintisi(yol, metin, oku, pay) or (eski or "")[:pay]
-        if not alinti or guvenlik.duyarli_mi(alinti):
+        alinti = guvenlik.kisisel_ayikla(alinti)
+        if not alinti:
             continue
         if etiket != "KILAVUZ" and not alan.search("%s %s" % (baslik, alinti)):
             continue                                     # uzmanın alanında değil

@@ -46,9 +46,18 @@ def cikarimsal_ozet(metin, hedef):
     return "\n".join(parcalar) or metin[:hedef]
 
 
-def kasa_alintilari(metin, sinir=6000):
+def kasa_alintilari(metin, sinir=6000, bulut=False):
     """Obsidian kasasında soruyla en ilgili 5 notun, baştan sona taranıp
-    seçilmiş en ilgili parçalarını döndürür."""
+    seçilmiş en ilgili parçalarını döndürür. bulut=True iken kişisel
+    veriler ayıklanır (guvenlik.kisisel_ayikla)."""
+    sonuc = _kasa_alintilari(metin, sinir)
+    if bulut and sonuc:
+        from .guvenlik import kisisel_ayikla
+        sonuc = kisisel_ayikla(sonuc)
+    return sonuc
+
+
+def _kasa_alintilari(metin, sinir):
     from . import obsidyen
     kasa = obsidyen.kasa_yolu()
     if not os.path.isdir(kasa):

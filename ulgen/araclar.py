@@ -236,10 +236,11 @@ class SistemKontrol:
 
 # ------------------------------------------------------------------- kayıt
 
-# Kişisel veri döndüren araçlar: sonuçları bulut beyne GİTMEZ
+# Kişisel veri döndüren araçlar: sonuçları bulut beyne GİTMEZ.
+# kasa_ara burada değil: bulutta kişisel veriler ayıklanarak çalışır.
 KISISEL_ARACLAR = frozenset({
     "hafiza_ara", "hafiza_goster", "karar_listele", "saglik_raporu",
-    "sabah_ozeti", "kasa_ara", "dosya_listele", "dosya_oku", "dosya_yaz",
+    "sabah_ozeti", "dosya_listele", "dosya_oku", "dosya_yaz",
     "dosya_ozetle", "dosya_ara", "en_yeni_dosya", "hatirlaticilari_listele",
     "ekrani_incele", "terminal", "oturumlu_oku",
 })
@@ -323,7 +324,8 @@ class Araclar:
             "sabah_ozeti": ("Haber ve sağlık içeren sabah raporu hazırlar",
                             self.sabah.hazirla, ()),
             "kasa_ara": ("Obsidian kasasında arar",
-                         lambda sorgu: kasa_alintilari(sorgu) or
+                         lambda sorgu: kasa_alintilari(
+                             sorgu, bulut=self.bulut_modu) or
                          "Kasada ilgili not bulunamadı.", ("sorgu",)),
             "dosya_listele": ("İzinli klasörde dosyaları listeler",
                               d.listele, ("yol",)),
