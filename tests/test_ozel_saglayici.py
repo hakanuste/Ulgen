@@ -205,3 +205,16 @@ class YanlisModel(TemizVeri):
         self.assertFalse(c["calisti"])
         self.assertIn("Model adı 'ulgen' bu serviste yok. Geçerli adlar: genel, musso",
                       c["cikti"])
+
+    def test_model_listeden_degisir(self):
+        srv = HTTPServer(("127.0.0.1", 0), CalismaAlani)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.shutdown)
+        oz.ekle({"baslik": "AnythingLLM", "model": "ulgen", "anahtar": "anahtar-12345678",
+                 "taban": "http://127.0.0.1:%d/api/v1/openai" % srv.server_address[1]})
+        self.assertEqual(oz.modeller("ozel_anythingllm"), ["genel", "musso"])
+        self.assertEqual(oz.model_degistir("ozel_anythingllm", "musso"), "musso")
+        t = oz.liste()[0]
+        self.assertEqual((t["model"], t["son4"]), ("musso", "5678"))
+        with self.assertRaises(oz.SaglayiciHatasi):
+            oz.model_degistir("ozel_anythingllm", "boşluklu ad")

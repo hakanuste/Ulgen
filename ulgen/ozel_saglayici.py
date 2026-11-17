@@ -169,3 +169,29 @@ def anahtar_degistir(ad, anahtar):
         raise SaglayiciHatasi("Anahtar geçersiz görünüyor.")
     gizli.sir_yaz(ad, anahtar)
     return anahtar[-4:]
+
+
+def modeller(ad):
+    """Servisin sunduğu model adları (AnythingLLM'de çalışma alanları)."""
+    t = next((x for x in liste() if x["ad"] == ad), None)
+    if not t:
+        raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
+    try:
+        return OzelBeyin(t, gizli.sir_oku(ad)).modelleri_listele()
+    except BeyinHatasi as hata:
+        raise SaglayiciHatasi("Model listesi alınamadı: %s" % str(hata)[:160])
+
+
+def model_degistir(ad, model):
+    """Yalnızca model adını değiştirir; anahtar ve diğer ayarlar aynı kalır."""
+    model = str(model or "").strip()
+    if not re.fullmatch(r"[\w.:/@+-]{1,120}", model):
+        raise SaglayiciHatasi("Model adını servisin yazdığı gibi girin.")
+    a = ayar.yukle()
+    tanimlar = [dict(x) for x in (a.get("ozel_saglayicilar") or []) if isinstance(x, dict)]
+    for x in tanimlar:
+        if x.get("ad") == ad:
+            x["model"] = model
+            ayar.guncelle("ozel_saglayicilar", tanimlar)
+            return model
+    raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
