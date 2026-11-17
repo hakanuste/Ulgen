@@ -1355,7 +1355,9 @@ async function panoYenile() {
     const k3 = kartK(p2, "Yapay Zekâ Modelleri", [], "katman");
     const aktif = ((sis.beyin && sis.beyin.beyin) || "").toLowerCase();
     sis.kota.forEach(t => {
-      const durum = (t.yerel && t.ulasilir === false) ? "Kapalı" : t.engelli ? (t.yerel ? "Çevrimdışı" : "Engelli") : (aktif && aktif.indexOf(t.ad.toLowerCase().split(" ")[0]) >= 0 ? "Aktif" : "Hazır");
+      const durum = t.kapali ? "Kapattınız" : t.ucretli ? "Ücretli – kendiliğinden kullanılmaz"
+        : (t.yerel && t.ulasilir === false) ? "Kapalı" : t.engelli ? (t.yerel ? "Çevrimdışı" : "Engelli")
+        : (aktif && aktif.indexOf(t.ad.toLowerCase().split(" ")[0]) >= 0 ? "Aktif" : "Hazır");
       satirS(k3, t.ad, durum, durum === "Hazır" || durum === "Aktif" ? "ok" : "", rozetBul(t.ad));
     });
     const k4 = kartK(p2, "Sistem Durumu", [], "ayar");
@@ -1579,13 +1581,18 @@ async function yzCiz() {
   baslik(k, "Yapay zekâ modelleri (ücretsiz katmanlar, maliyet 0)");
   ekle(k, "Şu an kullanılan: " + (s.beyin.beyin || "yok"), "Kuyrukta bekleyen istek: " + s.kuyruk);
   s.kota.forEach(t => { const e = t.tahmini;
-    ekle(k, t.ad + " — " + (t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir"),
+    ekle(k, t.ad + " — " + kotaDurumu(t),
       "bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms + " ms; hata %" + Math.round(t.hata_orani * 100)); });
   if (!yerel) { ekle(k, "Anahtar eklemek güvenlik için yalnızca Mac'in kendi tarayıcısından yapılır."); return; }
   await beyinKipi(k);
   await beyinAcKapat(k);
   await anahtarlarim(k);
   await ozelSaglayicilar(k);
+}
+
+function kotaDurumu(t) {
+  return t.kapali ? "KAPALI (siz kapattınız)" : t.ucretli ? "ÜCRETLİ – kendiliğinden kullanılmaz"
+    : t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir";
 }
 
 // Listede olmayan bir yapay zekâ servisi eklemek (OpenAI uyumlu her servis)
@@ -2184,7 +2191,7 @@ async function sistemCiz() {
   baslik(k, "Kota (ücretsiz katmanlar, maliyet 0)");
   s.kota.forEach(t => {
     const e = t.tahmini;
-    const d = ekle(k, t.ad + " — " + (t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir"),
+    const d = ekle(k, t.ad + " — " + kotaDurumu(t),
       "Tahmini (kendi sayacım): bugün " + e.istek_gun + " istek, ~" + e.token_gun + " token; gecikme " + e.gecikme_ms +
       " ms; hata %" + Math.round(t.hata_orani * 100));
     if (t.gercek) {

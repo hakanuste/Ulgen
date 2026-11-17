@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.8.8
+- **Yapay Zekâ Modelleri kartı doğru durumu gösterir:** "Beyinleri aç / kapat" ile kapattığınız beyinler ana sayfadaki kartta ve Yapay Zekâ Modelleri / Sistem sayfalarındaki kota listesinde artık "Kapattınız" / "KAPALI (siz kapattınız)" görünür (önceden "Hazır" yazıyordu).
+- Kendi eklediğiniz sağlayıcılar (Claude, AnythingLLM vb.) da bu listelerde görünür; ücretsiz işaretlenmemiş bulut sağlayıcısı "Ücretli – kendiliğinden kullanılmaz" diye belirtilir.
+
 ## 2.8.7
 - **Yanıt sesi kesilmez:** Yanıt okunurken gelen bildirim (doğrulama sonucu, hatırlatma vb.) artık yanıtı kesmez; yanıt bitince sırayla okunur. "Dur" ya da yeni bir yanıt, sırada bekleyen bildirim seslerini de iptal eder.
 - **Ses kilidi açılır:** iPhone Safari ve Chrome kullanıcı dokunmadan ses çalmaya izin vermediği için geç gelen yanıt bazen hiç okunmuyordu; ilk dokunuşta ses birimi sessizce açılır.

@@ -98,3 +98,17 @@ class Ozel(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KotaTablosu(TemizVeri):
+
+    def test_kapali_ve_ozel_saglayici_gorunur(self):
+        from ulgen import kota
+        ayar.guncelle("gemini_anahtar", "AIza-deneme-123456")
+        ayar.guncelle("kapali_beyinler", ["gemini"])
+        oz.ekle({"baslik": "Claude", "taban": "https://api.anthropic.com/v1",
+                 "model": "claude-sonnet-5-5", "anahtar": "sk-ant-12345678"})
+        t = {x["saglayici"]: x for x in kota.tablo()}
+        self.assertTrue(t["gemini"]["kapali"])
+        self.assertTrue(t["ozel_claude"]["ucretli"])
+        self.assertEqual(t["ozel_claude"]["ad"], "Claude (bulut)")

@@ -254,6 +254,7 @@ def tablo(simdi=None):
     """Panel için sağlayıcı başına durum listesi."""
     simdi = time.time() if simdi is None else simdi
     a = ayar.yukle()
+    kapali = set(a.get("kapali_beyinler") or [])
     sonuc = []
     for ad in YEREL + ("gemini", "nvidia", "groq", "mistral", "openrouter"):
         if ad in ayar.SIRLAR and not a.get(ad + "_anahtar"):
@@ -278,7 +279,25 @@ def tablo(simdi=None):
             "gercek": gercek or None, "gercek_yas_sn": yas,
             "hata_orani": (k["hata_24s"] / k["istek_24s"]
                            if k["istek_24s"] else 0.0),
-            "son_hata": d["son_hata"], "maliyet": MALIYET})
+            "son_hata": d["son_hata"], "maliyet": MALIYET,
+            "kapali": ad in kapali})
+    # Kendi eklediğiniz sağlayıcılar (Yapay Zekâ Modelleri > Yeni sağlayıcı ekle)
+    from .beyin import ozel_tanimlar, ozel_yerel_mi
+    for t in ozel_tanimlar(a):
+        ad = t["ad"]
+        yerel = ozel_yerel_mi(t["taban"])
+        engelli, neden, bekle = engel(ad, simdi)
+        k = kullanim(ad, simdi)
+        sonuc.append({
+            "saglayici": ad, "ad": "%s (%s)" % (t.get("baslik") or ad,
+                                                "yerel" if yerel else "bulut"),
+            "yerel": yerel, "ozel": True, "ucretli": not yerel and not t.get("ucretsiz"),
+            "engelli": engelli, "neden": neden, "bekle_sn": bekle, "ulasilir": True,
+            "sinir": {x: None for x in ("rpm", "rpd", "tpm", "tpd", "tpay")},
+            "sinir_kaynagi": "", "tahmini": {"kalan_istek_gun": None, **k},
+            "gercek": None, "gercek_yas_sn": None,
+            "hata_orani": (k["hata_24s"] / k["istek_24s"] if k["istek_24s"] else 0.0),
+            "son_hata": "", "maliyet": MALIYET, "kapali": ad in kapali})
     return sonuc
 
 
