@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2.8.7
+- **Yanıt sesi kesilmez:** Yanıt okunurken gelen bildirim (doğrulama sonucu, hatırlatma vb.) artık yanıtı kesmez; yanıt bitince sırayla okunur. "Dur" ya da yeni bir yanıt, sırada bekleyen bildirim seslerini de iptal eder.
+- **Ses kilidi açılır:** iPhone Safari ve Chrome kullanıcı dokunmadan ses çalmaya izin vermediği için geç gelen yanıt bazen hiç okunmuyordu; ilk dokunuşta ses birimi sessizce açılır.
+- **Chrome aksaklığı:** Konuşma iptalinin hemen ardından başlatılan yeni konuşmanın yutulması ve takılı kalan ses motoru için kısa bekleme ve yeniden başlatma eklendi.
+- **Okunmadıysa nedeni yazılır:** "Yalnız benim sesim" açıkken kendi sesiniz çalınamazsa ya da yanıt hassas bilgi içerdiği için bulut sesine gönderilmezse, yanıtın altında küçük bir not neden okunmadığını söyler (önceden sessiz kalıyordu).
+
 ## 2.8.6
 - **Ajanlar aynı anda çalışır:** Bir ajan görevi çalışırken başka bir ajan görev alıp araştırma yapabilir; aynı anda en çok 3 ajan görevi yürür (fazlası sırada bekler). Önceden görevler tek tek işleniyordu ve bir uzman görevi bitene kadar sohbet de bekliyordu.
 - Sohbet, çalışan ajan görevlerini beklemez. Tura özgü durum (hangi uzman, kılavuz/araştırma alıntıları, duyarlılık) artık her iş parçacığına ayrı tutulur; aynı anda çalışan işler birbirinin uzmanını ya da alıntısını karıştırmaz.

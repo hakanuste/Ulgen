@@ -614,6 +614,8 @@ function hepsiniDurdur() {
 // Her şeyi susturur: yerel ses, bulut sesi, sıradaki parçalar.
 function sesiDurdur() {
   konusmaNo++;
+  sesNesli++;
+  konusuyor = false;
   if ("speechSynthesis" in window) speechSynthesis.cancel();
   if (klipSes) { try { klipSes.pause(); } catch (e) {} }
 }
@@ -696,32 +698,71 @@ function sesliMetin(m) {
     .replace(/\s+/g, " ").trim();
 }
 
-async function konus(metin) {
-  if (!sesli) return;
+// Ses sırası: yanıt okunurken gelen bildirim yanıtı KESMEZ, ardından okunur.
+let sesKuyrugu = Promise.resolve();
+let konusuyor = false;
+
+// Yanıt: önceki konuşmayı keser, hemen okunur.
+function konus(metin) {
+  if (!sesli) return Promise.resolve();
   sesiDurdur();
-  const no = konusmaNo;
-  const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
-  if (ad) { if (!(await klipCal(ad))) yedekKonus(sesliMetin(metin)); return; }
-  metin = sesliMetin(metin);
-  if (!metin) return;
-  if (!bulutSes) { yerelKonus(metin); return; }
-  const parcalar = parcalaMetin(metin);
-  for (let i = 0; i < parcalar.length; i++) {
-    if (no !== konusmaNo) return;                       // araya "dur" girdi
-    if (!(await bulutOku(parcalar[i], true))) {         // kota/ağ/hassas içerik: kalanı yerel sesle
-      if (no === konusmaNo) { if (!/hassas/.test(sonBulutNeden)) bulutHataBildir(); yedekKonus(parcalar.slice(i).join(" "), true); }
-      return;
-    }
-  }
+  sesKuyrugu = konusIc(metin).catch(() => {});
+  return sesKuyrugu;
 }
+
+// Bildirim: o an konuşma varsa bitmesini bekler, sonra okunur. "Dur" ya da
+// yeni bir yanıt, sırada bekleyen bildirim seslerini de iptal eder.
+let sesNesli = 0;
+function konusSirayla(metin) {
+  if (!sesli) return Promise.resolve();
+  if (!konusuyor) return konus(metin);
+  const n = sesNesli;
+  sesKuyrugu = sesKuyrugu.then(() => (n === sesNesli ? konusIc(metin) : null)).catch(() => {});
+  return sesKuyrugu;
+}
+
+async function konusIc(metin) {
+  const no = konusmaNo;
+  konusuyor = true;
+  try {
+    const ad = klipler[metin.replace(/\s+/g, " ").trim().toLowerCase()];
+    if (ad) { if (!(await klipCal(ad))) await yedekKonus(sesliMetin(metin)); return; }
+    metin = sesliMetin(metin);
+    if (!metin) return;
+    if (!bulutSes) { await yerelKonus(metin); return; }
+    const parcalar = parcalaMetin(metin);
+    for (let i = 0; i < parcalar.length; i++) {
+      if (no !== konusmaNo) return;                       // araya "dur" girdi
+      if (!(await bulutOku(parcalar[i], true))) {         // kota/ağ/hassas içerik: kalanı yerel sesle
+        if (no === konusmaNo) { bulutHataBildir(); await yedekKonus(parcalar.slice(i).join(" "), true); }
+        return;
+      }
+    }
+  } finally { if (no === konusmaNo) konusuyor = false; }
+}
+
+// iPhone Safari ve Chrome, kullanıcı dokunmadan ses çalmaya izin vermez:
+// ilk dokunuşta ses birimi sessizce "açılır"; geç gelen yanıt da okunabilir.
+let sesAcildi = false;
+function sesKilidiniAc() {
+  if (sesAcildi) return;
+  sesAcildi = true;
+  try {
+    sesKap.muted = true;
+    sesKap.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+    const p = sesKap.play(); if (p && p.then) p.then(() => { sesKap.pause(); sesKap.muted = false; }).catch(() => { sesKap.muted = false; });
+  } catch (e) { sesKap.muted = false; }
+  try { if ("speechSynthesis" in window) { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+}
+["pointerdown", "keydown", "touchstart"].forEach(o => document.addEventListener(o, sesKilidiniAc, { once: true, passive: true }));
 
 // "Yalnız benim sesim": bulut sesi (kendi sesiniz) okuyamazsa kadın sistem sesine DÖNME, sessiz kal (yazı görünür).
 function yalnizBenimSes() {
   try { return localStorage.getItem("ulgen_yalniz_ben") === "1"; } catch (e) { return false; }
 }
 function yedekKonus(metin, sirada) {
-  if (yalnizBenimSes()) return;
-  yerelKonus(metin, sirada);
+  if (yalnizBenimSes()) return Promise.resolve();
+  return yerelKonus(metin, sirada);
 }
 
 function sesTercihi() {
@@ -729,22 +770,32 @@ function sesTercihi() {
 }
 
 function yerelKonus(metin, sirada) {
-  if (!("speechSynthesis" in window)) return;
+  if (!("speechSynthesis" in window)) return Promise.resolve();
   if (!sirada) speechSynthesis.cancel();
   const t = sesTercihi();
   const secili = t.ad ? speechSynthesis.getVoices().find(v => v.name === t.ad) : null;
   // Uzun metinler (sabah raporu) tek parça okununca tarayıcıda kesilir;
   // bu yüzden cümle cümle okunur.
-  const parcalar = metin.replace(/\s+/g, " ").match(/[^.!?]+[.!?]*/g) || [metin];
-  for (const p of parcalar) {
-    if (!p.trim()) continue;
-    const u = new SpeechSynthesisUtterance(p.trim());
-    u.lang = "tr-TR";
-    if (secili) u.voice = secili;
-    u.rate = t.hiz || 0.95;
-    u.pitch = t.perde || 0.8;
-    speechSynthesis.speak(u);
-  }
+  const parcalar = (metin.replace(/\s+/g, " ").match(/[^.!?]+[.!?]*/g) || [metin]).filter(p => p.trim());
+  if (!parcalar.length) return Promise.resolve();
+  return new Promise(coz => {
+    // Chrome: cancel() ardından hemen speak() bazen yutulur; kısa bekleme +
+    // resume() takılı kalmış ses motorunu açar.
+    setTimeout(() => {
+      try { speechSynthesis.resume(); } catch (e) {}
+      parcalar.forEach((p, i) => {
+        const u = new SpeechSynthesisUtterance(p.trim());
+        u.lang = "tr-TR";
+        if (secili) u.voice = secili;
+        u.rate = t.hiz || 0.95;
+        u.pitch = t.perde || 0.8;
+        if (i === parcalar.length - 1) { u.onend = () => coz(); u.onerror = () => coz(); }
+        speechSynthesis.speak(u);
+      });
+      // Güvenlik: onend hiç gelmezse kuyruk kilitlenmesin
+      setTimeout(coz, 4000 + metin.length * 90);
+    }, sirada ? 0 : 60);
+  });
 }
 
 function sesDegistir() {
@@ -924,9 +975,24 @@ function sesCal(url, bitenKadar) {
 
 // Kendi sesiniz çalınamayınca nedenini (en çok 10 dakikada bir) sohbette gösterir: sessizce kadın sesine düşülmez.
 function bulutHataBildir() {
-  if (Date.now() - sonBulutBildirim < 600000) return;
+  const hassas = /hassas/.test(sonBulutNeden);
+  // "Yalnız benim sesim" açıksa yanıt hiç okunmaz: her seferinde kısaca söyle.
+  if (yalnizBenimSes()) {
+    sesNotu(hassas ? "🔇 Bu yanıt kişisel/hassas bilgi içerdiği için bulut sesine gönderilmedi; 'Yalnız benim sesim' açık olduğundan okunmadı."
+                   : "🔇 Kendi sesiniz çalınamadı (" + (sonBulutNeden || "bilinmeyen neden") + "); yanıt yazı olarak kaldı.");
+    return;
+  }
+  if (hassas || Date.now() - sonBulutBildirim < 600000) return;
   sonBulutBildirim = Date.now();
-  balonEkle("Kendi sesiniz çalınamadı: " + (sonBulutNeden || "bilinmeyen neden") + (yalnizBenimSes() ? ". Yanıt yazı olarak kaldı." : ". Bu yanıt sistem sesiyle okunuyor."), "asistan");
+  balonEkle("Kendi sesiniz çalınamadı: " + (sonBulutNeden || "bilinmeyen neden") + ". Bu yanıt sistem sesiyle okunuyor.", "asistan");
+}
+function sesNotu(m) {
+  const akis = document.getElementById("akis");
+  if (!akis) return;
+  const d = document.createElement("div");
+  d.style.cssText = "font-size:12px;color:var(--soluk);margin:2px 0 8px 52px";
+  d.textContent = m;
+  akis.appendChild(d); akis.scrollTop = akis.scrollHeight;
 }
 
 // Bulut sesi açıksa (ElevenLabs, kendi sesiniz) yanıt metni oraya gider; olmazsa yerel ses okur.
@@ -1038,7 +1104,7 @@ async function bildirimleriAl() {
       if (aktifSekme === "bildirim") bildirimCiz();
       if (b.eylem && b.eylem.tur === "doz") dozDugmeleri(b.eylem.doz);
       const yerel = ["127.0.0.1", "localhost"].includes(location.hostname);
-      if (!(yerel && b.eylem && b.eylem.sunucu_sesi)) konus(b.metin);
+      if (!(yerel && b.eylem && b.eylem.sunucu_sesi)) konusSirayla(b.metin);
     }
     if (liste.length && navigator.vibrate) navigator.vibrate([200, 100, 200]);
   } catch (e) { /* sessizce geç */ }
