@@ -74,6 +74,19 @@ def arac_cagrisi_ayikla(metin):
 EKLI = re.compile(r"\n\[(?:EKLİ DOSYA|YOUTUBE VİDEO): ")
 
 
+def _tani_yaz(beyin, mesajlar):
+    """Son model isteğinin özeti (yalnızca bu Mac'te, ~/ÜlgenVeri/son_istek.json):
+    yanıt yanlış soruya verilirse sıranın doğruluğu buradan görülür."""
+    try:
+        import json as _json
+        with open(os.path.join(ayar.KLASOR, "son_istek.json"), "w", encoding="utf-8") as f:
+            _json.dump({"zaman": time.strftime("%Y-%m-%d %H:%M:%S"), "beyin": beyin.ad,
+                        "mesajlar": [{"rol": m["role"], "metin": m["content"][:200]}
+                                     for m in mesajlar]}, f, ensure_ascii=False, indent=1)
+    except Exception:
+        pass
+
+
 class _BosKilit:
     def __enter__(self):
         return self
@@ -201,6 +214,10 @@ class Ulgen:
             (0, kisilik.SISTEM_TEMEL + "\n\n" + kisilik.KIMLIK_EKI),
             (0, ARAC_PROTOKOLU % self.araclar.katalog()),
             (0, "Şu an: " + self.araclar.saat_tarih()),
+            (0, "Answer ONLY the user's LAST message. Earlier messages are "
+                "context only; never answer an earlier question again. If you "
+                "have no data for what is asked (e.g. a plan, a task list), say "
+                "so plainly instead of inventing one."),
         ]
         uzman = uzmanlar.istem(kullanici_metni)
         if uzman:
@@ -460,7 +477,11 @@ class Ulgen:
         sistem = self.sistem_istemi(beyin, metin)
         mesajlar = self.baglam.gecmis(beyin.gecmis_butce,
                                       bulut=not beyin.yerel)
+        if mesajlar and mesajlar[-1]["role"] == "user":
+            # yanıtsız kalmış önceki ileti (iptal/hata): son soruyla karışmasın
+            mesajlar.append({"role": "assistant", "content": "(yanıtlanmadı)"})
         mesajlar.append({"role": "user", "content": metin})
+        _tani_yaz(beyin, mesajlar)
         yanit = ""
         for tur in range(AZAMI_ARAC_TURU + 1):
             iptal.denetle()

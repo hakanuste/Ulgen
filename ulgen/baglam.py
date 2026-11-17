@@ -142,7 +142,16 @@ class BaglamYoneticisi:
              "content": s["metin"]} for s in secilen]
         while mesajlar and mesajlar[0]["role"] != "user":
             mesajlar.pop(0)
-        return mesajlar
+        # Aynı rolden ardışık iletiler (yanıtsız kalmış soru) birleştirilir:
+        # küçük yerel modeller sıra bozulunca bir önceki soruya yanıt verir.
+        duz = []
+        for m in mesajlar:
+            if duz and duz[-1]["role"] == m["role"]:
+                duz[-1] = {"role": m["role"],
+                           "content": duz[-1]["content"] + "\n\n" + m["content"]}
+            else:
+                duz.append(dict(m))
+        return duz
 
     def _sikistir(self, eski):
         """Eski mesajları özetleyip işaretler (özet tabloya yazılır)."""

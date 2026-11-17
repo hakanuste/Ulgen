@@ -47,6 +47,11 @@ def uygun_mu(soru, yanit, kisisel_kullanildi=False):
     return not (SAGLIK.search(soru or "") or SAGLIK.search(yanit or ""))
 
 
+KENDI = re.compile(r"\b\w+(eceğim|acağım|eceğiz|acağız|iyorum|ıyorum|uyorum|üyorum|"
+                   r"abilirim|ebilirim|dim|dım|tim|tım)\b|\b(ben|bana|benim|sana|senin|"
+                   r"Hakan)\b|\bplan\w*", re.IGNORECASE)
+
+
 def iddialar_ayikla(yanit):
     """Somut iddia taşıyan cümleler: sayı ya da cümle içinde özel ad."""
     temiz = re.sub(r"[*_`#>]+", " ", yanit)
@@ -55,6 +60,8 @@ def iddialar_ayikla(yanit):
     for c in cumleler:
         c = re.sub(r"^[\-•\d.)\s]+", "", c).strip()
         if not (AZ_UZUNLUK <= len(c) <= AZAMI_UZUNLUK) or c.endswith("?"):
+            continue
+        if KENDI.search(c):          # Ülgen'in kendi niyeti/planı: denetlenecek iddia değil
             continue
         ozel = OZEL_AD.findall(c[1:]) if c else []
         if SAYI.search(c) or ozel:

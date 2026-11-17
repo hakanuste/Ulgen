@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.8.10
+- **Yanıt bir önceki soruya kaymasın:** Modele "yalnızca son iletiyi yanıtla; önceki iletiler bağlamdır" kuralı ve "verisi olmadığı bir şeyi (plan, görev listesi) uydurmasın" kuralı eklendi. Geçmişte aynı rolden ardışık iletiler (yanıtsız kalmış soru) birleştirilir; son soru her zaman tek başına en sonda durur. Küçük yerel modellerin bir önceki soruya yanıt verme eğilimini azaltır.
+- **Tanı kaydı:** Son model isteğinin özeti `~/ÜlgenVeri/son_istek.json` dosyasına yazılır (yalnızca bu Mac'te); yanıt yanlış soruya verilirse sıra buradan görülür.
+- **Doğrulama gürültüsü azaldı:** Ülgen'in kendi niyet/plan cümleleri ("…yapacağım", "planım", "Hakan'ın…") artık denetlenecek iddia sayılmaz.
+
 ## 2.8.9
 - **"Bağlantıyı dene" sonucu görünür:** Sonuç artık düğmenin hemen altında, yeşil (✔) ya da kırmızı (✘) olarak gösterilir. Önceden sohbete yazılıyordu; Yapay Zekâ Modelleri sayfasında sohbet görünmediği için sonuç kayboluyordu. Hem hazır sağlayıcılar hem kendi eklediğiniz sağlayıcılar için geçerli; silme/açma-kapama hataları da ekranda uyarı olarak çıkar.
 
