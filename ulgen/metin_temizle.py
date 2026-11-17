@@ -46,9 +46,18 @@ def yuzde_turkce(metin):
                   + ("," + e.group(3) if e.group(3) else ""), metin)
 
 
+SAHNE = re.compile(r"^\s*\*?\((?:Ülgen|ÜLGEN|ülgen)[^)\n]{0,300}\)\*?\s*$\n?", re.MULTILINE)
+
+
+def sahne_at(metin):
+    """'*(Ülgen hafifçe öne eğilir…)*' gibi sahne anlatımı satırlarını atar."""
+    return SAHNE.sub("", metin).lstrip("\n")
+
+
 def yabanci_harfleri_at(metin):
     if not metin:
         return metin
+    metin = sahne_at(metin)
     temiz = YABANCI.sub("", yuzde_turkce(latex_temizle(metin)))
     temiz = re.sub(r"[ \t]{2,}", " ", temiz)
     return re.sub(r" +([,.;:!?])", r"\1", temiz)

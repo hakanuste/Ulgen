@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.8.17
+- **Obsidian'da bul:** "obsidyende taş ev ölçüleri bul", "obsidyende ara: Musso şanzıman", "kasada kerpiç ara" gibi komutlar notları Mac'te arar; bulunan notlar adı, tarihi, yeri ve ilgili bölümüyle doğrudan gösterilir. Model kullanılmaz, hiçbir içerik buluta gitmez. "obsidyende bu sohbeti bul" denirse bir önceki sorunun konusu aranır.
+- **Sahne anlatımı yok:** "*(Ülgen öne eğilir…)*" gibi satırlar yazılmaz (modele kural) ve gelse bile yanıttan atılır; sesle de okunmaz.
+
 ## 2.8.16
 - **AnythingLLM gerçek sorularda da yanıt verir:** AnythingLLM belgeleri kendisi bulup isteme eklediği için Ülgen ona artık kısa istem gönderir (uzun talimat ve araç listesi yok); yerel özel sağlayıcıların istem bütçesi küçültüldü. Ülgen'in uzun talimatı + AnythingLLM'in alıntıları llama.cpp'nin 4096 token bağlamını taşırıyor, AnythingLLM boş "HTTP 500" döndürüyordu. Yerel sunucudan ayrıntısız 500 gelirse bir kez en kısa istemle yeniden denenir.
 - **Doğrulama hata iletisini denetlemez:** "Beyin yanıt veremedi", "HTTP 500" gibi hata/durum iletileri iddia sayılmaz (gereksiz doğrulama bildirimi çıkmaz).

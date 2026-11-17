@@ -15,7 +15,7 @@ from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
 from . import ajan_kayit, analiz, dogrulama, kutuphane_once, macsenk, oturum
-from . import metin_temizle, niyet, portfoy, uzmanlar
+from . import kasa_bul, metin_temizle, niyet, portfoy, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -258,7 +258,9 @@ class Ulgen:
                 (0, ARAC_PROTOKOLU % self.araclar.katalog(kisa=dar))]
         parcalar += [
             (0, "Şu an: " + self.araclar.saat_tarih()),
-            (0, "Answer ONLY the user's LAST message. Earlier messages are "
+            (0, "Never write stage directions or narration about yourself "
+                "(e.g. '*(Ülgen leans forward…)*'); answer directly. "
+                "Answer ONLY the user's LAST message. Earlier messages are "
                 "context only; never answer an earlier question again. If you "
                 "have no data for what is asked (e.g. a plan, a task list), say "
                 "so plainly instead of inventing one."),
@@ -349,6 +351,11 @@ class Ulgen:
                 return self._kuyruga_al(metin), None
             return yanit, beyin_adi
         self._ajan = uzmanlar.sec(metin)      # hangi uzmana soruldu
+        sorgu = kasa_bul.esles(metin)
+        if sorgu is not None:                 # Obsidian'da bul: Mac'te, modelsiz
+            self._ajan, self._duyarli_tur = "YAZIT", True
+            self._ajan_isi = True
+            return kasa_bul.bul(sorgu, self._onceki_soru()), "hızlı komut"
         kaynak_yaniti = uzmanlar.komut(metin)
         if kaynak_yaniti is None:
             kaynak_yaniti = analiz.komut(metin)
@@ -391,6 +398,16 @@ class Ulgen:
         if durum == "kuyruk":
             return self._kuyruga_al(metin), None
         return yanit, beyin_adi
+
+    def _onceki_soru(self):
+        """Bir önceki kullanıcı iletisi ('bu sohbeti bul' için konu)."""
+        try:
+            satir = veritabani.sorgu(
+                "SELECT metin FROM sohbet WHERE rol = 'kullanici' ORDER BY id DESC LIMIT 1",
+                (), True)
+            return satir[0]["metin"] if satir else ""
+        except Exception:
+            return ""
 
     def _kutuphane_yoksa_arastir(self, metin):
         """Bilgi sorusu kütüphanede (Obsidian) yoksa Araştırma ajanı hemen
