@@ -110,4 +110,5 @@ class AnythingLLMKisa(TemizVeri):
             self.assertFalse(dogrulama.uygun_mu("Musso şanzımanı nedir?", y))
             self.assertTrue(dogrulama.uygun_mu(
                 "Musso şanzımanı nedir?", "Daewoo Musso 3.2 Mercedes 722 ailesi bir "
-                "otomatik şanzıman kullanır; 1998 modellerde dört ileri vites vardır."))
+                "otomatik şanzıman kullanır; 1998 modellerde dört ileri vites vardır. "
+                "Arazi şanzımanı BorgWarner yapımı, yarı zamanlı dört çekerdir."))
