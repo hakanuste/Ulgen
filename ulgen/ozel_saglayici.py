@@ -144,3 +144,14 @@ def one_al(ad, one=True):
         liste_.append(ad)
     ayar.guncelle("one_alinanlar", liste_)
     return liste_
+
+
+def anahtar_degistir(ad, anahtar):
+    """Yalnızca anahtarı değiştirir (Anahtar Zinciri); tanım aynı kalır."""
+    if ad not in [t["ad"] for t in liste()]:
+        raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
+    anahtar = str(anahtar or "").strip()
+    if not 8 <= len(anahtar) <= 400 or re.search(r"\s", anahtar) or not anahtar.isprintable():
+        raise SaglayiciHatasi("Anahtar geçersiz görünüyor.")
+    gizli.sir_yaz(ad, anahtar)
+    return anahtar[-4:]

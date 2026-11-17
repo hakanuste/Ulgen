@@ -1009,6 +1009,13 @@ def istek_sinifi(ulgen, limit):
                         return self._cevap(200, {"tamam": True})
                     if islem == "dene":
                         return self._cevap(200, ozel_saglayici.dene(str(veri.get("ad", ""))))
+                    if islem == "anahtar":
+                        son4 = ozel_saglayici.anahtar_degistir(
+                            str(veri.get("ad", "")), veri.get("anahtar"))
+                        ulgen.yonlendirici.sifirla()
+                        veritabani.gunluge_yaz("bilgi", "anahtar", "özel sağlayıcı "
+                                               "anahtarı değişti: %s" % veri.get("ad"))
+                        return self._cevap(200, {"tamam": True, "son4": son4})
                     if islem == "one":
                         sira = ozel_saglayici.one_al(str(veri.get("ad", "")),
                                                      bool(veri.get("one", True)))

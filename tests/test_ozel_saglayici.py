@@ -156,3 +156,18 @@ class OneAl(TemizVeri):
         self.assertTrue(tablo[-1]["kapali"] or tablo[-1].get("ucretli"))
         oz.one_al("ozel_claude", False)
         self.assertEqual(ayar.yukle()["one_alinanlar"], ["ozel_anythingllm"])
+
+
+class AnahtarDegistir(TemizVeri):
+
+    def test_yalniz_anahtar_degisir(self):
+        oz.ekle({"baslik": "AnythingLLM", "taban": "http://127.0.0.1:3001/api/v1/openai",
+                 "model": "ulgen", "anahtar": "ESKI-AAAA-PKA8"})
+        self.assertEqual(oz.anahtar_degistir("ozel_anythingllm", " YENI-BBBB-THWQ "), "THWQ")
+        self.assertEqual(gizli.sir_oku("ozel_anythingllm"), "YENI-BBBB-THWQ")
+        t = oz.liste()[0]
+        self.assertEqual((t["model"], t["son4"]), ("ulgen", "THWQ"))
+        with self.assertRaises(oz.SaglayiciHatasi):
+            oz.anahtar_degistir("ozel_anythingllm", "kısa")
+        with self.assertRaises(oz.SaglayiciHatasi):
+            oz.anahtar_degistir("ozel_yok", "YENI-BBBB-THWQ")

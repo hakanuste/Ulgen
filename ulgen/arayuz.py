@@ -1635,6 +1635,25 @@ async function ozelSaglayicilar(k) {
     bag.title = "Seçilen uzmanın soruları önce bu sağlayıcıya gider (örn. TULGA → belgelerinizin olduğu AnythingLLM)";
     bag.onchange = async () => { const c = await istek("/yz/ozel", { islem: "uzman", ad: t.ad, uzman: bag.value }); if (c.hata) alert(c.hata); yzCiz(); };
     satir.appendChild(bag);
+    const an = dugme("Anahtarı değiştir");
+    an.onclick = () => {
+      if (satir.querySelector(".anahtarKutu")) return;
+      const f = document.createElement("div"); f.className = "anahtarKutu"; f.style.cssText = "margin-top:8px;display:flex;gap:6px;flex-wrap:wrap";
+      const g = document.createElement("input"); g.type = "password"; g.autocomplete = "off"; g.placeholder = "Yeni API anahtarı";
+      g.style.cssText = "flex:1;min-width:200px;padding:8px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+      const k = document.createElement("button"); k.className = "dugme aktif"; k.textContent = "Kaydet ve dene";
+      const v = document.createElement("button"); v.className = "dugme"; v.textContent = "Vazgeç";
+      v.onclick = () => f.remove();
+      k.onclick = async () => {
+        k.disabled = true;
+        const c = await istek("/yz/ozel", { islem: "anahtar", ad: t.ad, anahtar: g.value });
+        g.value = "";
+        if (c.hata) { alert(c.hata); k.disabled = false; return; }
+        f.remove();
+        await deneYaz(satir, de, () => istek("/yz/ozel", { islem: "dene", ad: t.ad }));
+      };
+      f.appendChild(g); f.appendChild(k); f.appendChild(v); satir.appendChild(f); g.focus();
+    };
     const on = dugme(t.one ? "Normal sıraya al" : "Öne al");
     on.title = "Öne alınan sağlayıcı beyin sırasında en başta denenir (duyarlı sorular yine buluta gitmez)";
     on.onclick = async () => { const c = await istek("/yz/ozel", { islem: "one", ad: t.ad, one: !t.one }); if (c.hata) alert(c.hata); yzCiz(); };

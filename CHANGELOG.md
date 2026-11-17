@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.12
+- **Anahtarı değiştir:** Eklediğiniz her sağlayıcının satırında "Anahtarı değiştir" düğmesi; yeni anahtarı yapıştırıp "Kaydet ve dene" deyince yalnızca anahtar değişir (adres, model, öne alma ve uzman bağı aynı kalır) ve bağlantı hemen denenir, sonuç düğmenin altında görünür.
+
 ## 2.8.11
 - **Bağlam taşması giderildi (llama.cpp):** Ülgen, llama-server'ın gerçek bağlam uzunluğunu (/props → n_ctx) okuyup sistem istemi, geçmiş ve yanıt uzunluğunu ona göre ayarlar (Türkçe için %25 pay). Bağlamı küçük modelde araç listesi kısa yazılır, kimlik eki ve uzman talimatı kısaltılabilir, kütüphane alıntısı payı küçülür. Yine de "Context size has been exceeded" gelirse bir kez daha kısa istemle (araçsız, geçmişsiz) denenir. Bağlam taşması, yanıtın bir önceki soruya kaymasının da olası nedeniydi.
 - **Öne al:** Eklediğiniz sağlayıcılarda "Öne al" düğmesi; öne alınanlar beyin sırasında en başta denenir (duyarlı sorular yine buluta gitmez).
