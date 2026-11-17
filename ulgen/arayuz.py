@@ -1590,6 +1590,22 @@ async function yzCiz() {
   await ozelSaglayicilar(k);
 }
 
+// "Bağlantıyı dene" sonucu düğmenin hemen altında görünür (sohbete değil:
+// bu sayfada sohbet görünmez).
+async function deneYaz(satir, dugme, iste) {
+  let kutu = satir.querySelector(".deneSonuc");
+  if (!kutu) { kutu = document.createElement("div"); kutu.className = "deneSonuc";
+    kutu.style.cssText = "margin-top:8px;padding:8px 10px;border-radius:8px;font-size:13px;white-space:pre-wrap;background:rgba(0,0,0,.25)";
+    satir.appendChild(kutu); }
+  dugme.disabled = true; kutu.style.color = "var(--soluk)"; kutu.textContent = "Deneniyor…";
+  try {
+    const c = await iste();
+    kutu.style.color = c.calisti ? "var(--ulgen-success)" : "var(--ulgen-danger)";
+    kutu.textContent = (c.calisti ? "✔ " : "✘ ") + (c.cikti || c.hata || "Yanıt yok.");
+  } catch (e) { kutu.style.color = "var(--ulgen-danger)"; kutu.textContent = "✘ İstek gönderilemedi: " + e; }
+  finally { dugme.disabled = false; }
+}
+
 function kotaDurumu(t) {
   return t.kapali ? "KAPALI (siz kapattınız)" : t.ucretli ? "ÜCRETLİ – kendiliğinden kullanılmaz"
     : t.engelli ? "ENGELLİ: " + t.neden : "kullanılabilir";
@@ -1608,14 +1624,12 @@ async function ozelSaglayicilar(k) {
     const dugme = (yazi, tehlike) => { const b = document.createElement("button"); b.className = "dugme"; b.textContent = yazi;
       b.style.cssText = "margin:6px 6px 0 0" + (tehlike ? ";border-color:var(--ulgen-danger);color:var(--ulgen-danger)" : ""); satir.appendChild(b); return b; };
     const de = dugme("Bağlantıyı dene");
-    de.onclick = async () => { de.disabled = true; balonEkle("Deneniyor: " + t.baslik + "…", "asistan");
-      try { const c = await istek("/yz/ozel", { islem: "dene", ad: t.ad }); balonEkle((c.calisti ? "✔ " : "✘ ") + (c.cikti || c.hata || "Yanıt yok."), "asistan"); }
-      finally { de.disabled = false; } };
+    de.onclick = () => deneYaz(satir, de, () => istek("/yz/ozel", { islem: "dene", ad: t.ad }));
     const ak = dugme(t.acik ? "Kapat" : "Aç");
-    ak.onclick = async () => { const c = await istek("/yz/saglayici", { saglayici: t.ad, acik: !t.acik }); if (c.hata) balonEkle(c.hata, "asistan"); yzCiz(); };
+    ak.onclick = async () => { const c = await istek("/yz/saglayici", { saglayici: t.ad, acik: !t.acik }); if (c.hata) alert(c.hata); yzCiz(); };
     const si = dugme("Sil", true);
     si.onclick = async () => { if (!confirm(t.baslik + " ve anahtarı bu Mac'ten silinecek. Emin misiniz?")) return;
-      const c = await istek("/yz/ozel", { islem: "sil", ad: t.ad, onay: true }); balonEkle(c.hata || t.baslik + " silindi.", "asistan"); yzCiz(); };
+      const c = await istek("/yz/ozel", { islem: "sil", ad: t.ad, onay: true }); if (c.hata) alert(c.hata); yzCiz(); };
   });
   const kap = ekle(k, "Listede olmayan bir servis ekleyin",
     "OpenAI uyumlu her servis olur. Anahtar Mac'in Anahtar Zinciri'ne yazılır. 'Ücretsiz' işaretlemezseniz Ülgen bu servise kendiliğinden geçmez.");
@@ -1638,7 +1652,7 @@ async function ozelSaglayicilar(k) {
     kay.disabled = true;
     const c = await istek("/yz/ozel", { islem: "ekle", baslik: ad.value, taban: taban.value, model: model.value, anahtar: anahtar.value, ucretsiz: ucr.checked });
     anahtar.value = "";
-    if (c.tamam) { balonEkle(ad.value + " eklendi. 'Bağlantıyı dene' ile sınayın.", "asistan"); yzCiz(); }
+    if (c.tamam) { so.textContent = ad.value + " eklendi. Yukarıdaki satırında 'Bağlantıyı dene' ile sınayın."; yzCiz(); }
     else { so.textContent = c.hata || "Eklenemedi."; kay.disabled = false; }
   };
   kap.appendChild(kay); kap.appendChild(so);
@@ -1703,15 +1717,13 @@ async function anahtarlarim(k) {
     };
     if (d.var) {
       const de = dugme("Bağlantıyı dene");
-      de.onclick = async () => { de.disabled = true; balonEkle("Deneniyor: " + SAGLAYICI_AD[ad] + "…", "asistan");
-        try { const c = await istek("/yz/dene", { saglayici: ad }); balonEkle((c.calisti ? "✔ " : "✘ ") + (c.cikti || c.hata || "Yanıt yok."), "asistan"); }
-        finally { de.disabled = false; } };
+      de.onclick = () => deneYaz(satir, de, () => istek("/yz/dene", { saglayici: ad }));
       const si = dugme("Sil", true);
       si.onclick = async () => {
         if (!confirm(SAGLAYICI_AD[ad] + " anahtarı bu Mac'ten silinecek. Emin misiniz?")) return;
         si.disabled = true;
         const c = await istek("/yz/anahtar-sil", { saglayici: ad, onay: true });
-        balonEkle(c.hata ? c.hata : SAGLAYICI_AD[ad] + " anahtarı silindi.", "asistan"); yzCiz();
+        if (c.hata) alert(c.hata); yzCiz();
       };
     }
   });

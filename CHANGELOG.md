@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.9
+- **"Bağlantıyı dene" sonucu görünür:** Sonuç artık düğmenin hemen altında, yeşil (✔) ya da kırmızı (✘) olarak gösterilir. Önceden sohbete yazılıyordu; Yapay Zekâ Modelleri sayfasında sohbet görünmediği için sonuç kayboluyordu. Hem hazır sağlayıcılar hem kendi eklediğiniz sağlayıcılar için geçerli; silme/açma-kapama hataları da ekranda uyarı olarak çıkar.
+
 ## 2.8.8
 - **Yapay Zekâ Modelleri kartı doğru durumu gösterir:** "Beyinleri aç / kapat" ile kapattığınız beyinler ana sayfadaki kartta ve Yapay Zekâ Modelleri / Sistem sayfalarındaki kota listesinde artık "Kapattınız" / "KAPALI (siz kapattınız)" görünür (önceden "Hazır" yazıyordu).
 - Kendi eklediğiniz sağlayıcılar (Claude, AnythingLLM vb.) da bu listelerde görünür; ücretsiz işaretlenmemiş bulut sağlayıcısı "Ücretli – kendiliğinden kullanılmaz" diye belirtilir.
