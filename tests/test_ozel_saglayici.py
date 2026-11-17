@@ -112,3 +112,47 @@ class KotaTablosu(TemizVeri):
         self.assertTrue(t["gemini"]["kapali"])
         self.assertTrue(t["ozel_claude"]["ucretli"])
         self.assertEqual(t["ozel_claude"]["ad"], "Claude (bulut)")
+
+
+class UzmanaBagla(TemizVeri):
+
+    def test_tulga_sorusu_once_anythingllm(self):
+        from types import SimpleNamespace as N
+        from ulgen.cekirdek import oncelikli_sirala
+        oz.ekle({"baslik": "AnythingLLM", "taban": "http://127.0.0.1:3001/api/v1/openai",
+                 "model": "ulgen", "anahtar": "anahtar-12345678"})
+        baglar = oz.uzmana_bagla("ozel_anythingllm", "TULGA")
+        self.assertEqual(baglar, {"TULGA": "ozel_anythingllm"})
+        self.assertEqual(oz.liste()[0]["uzmanlar"], ["TULGA"])
+        adaylar = [N(saglayici="llamacpp"), N(saglayici="ozel_anythingllm")]
+        self.assertEqual(oncelikli_sirala(adaylar, "TULGA", baglar)[0].saglayici,
+                         "ozel_anythingllm")
+        self.assertEqual(oncelikli_sirala(adaylar, "OTACI", baglar)[0].saglayici, "llamacpp")
+        self.assertEqual(oz.uzmana_bagla("ozel_anythingllm", ""), {})
+        with self.assertRaises(oz.SaglayiciHatasi):
+            oz.uzmana_bagla("ozel_anythingllm", "YOKUZMAN")
+
+
+class OneAl(TemizVeri):
+
+    def test_one_alinan_ilk_denenir_ve_listede_ustte(self):
+        from ulgen import kota
+        ayar.guncelle("gemini_anahtar", "AIza-deneme-123456")
+        oz.ekle({"baslik": "Claude", "taban": "https://api.anthropic.com/v1",
+                 "model": "claude-sonnet-5-5", "anahtar": "sk-ant-12345678",
+                 "ucretsiz": True})
+        oz.ekle({"baslik": "AnythingLLM", "taban": "http://127.0.0.1:3001/api/v1/openai",
+                 "model": "ulgen", "anahtar": "anahtar-12345678"})
+        ayar.guncelle("kapali_beyinler", ["ollama"])
+        ayar.guncelle("beyin", "otomatik")
+        oz.one_al("ozel_anythingllm")
+        oz.one_al("ozel_claude")
+        y = beyin.BeyinYonlendirici(ayar.yukle)
+        sira = [b.saglayici for b in y._adaylar(ayar.yukle())]
+        self.assertEqual(sira[:2], ["ozel_anythingllm", "ozel_claude"])
+        tablo = kota.tablo()
+        self.assertEqual([x["saglayici"] for x in tablo[:2]],
+                         ["ozel_anythingllm", "ozel_claude"])
+        self.assertTrue(tablo[-1]["kapali"] or tablo[-1].get("ucretli"))
+        oz.one_al("ozel_claude", False)
+        self.assertEqual(ayar.yukle()["one_alinanlar"], ["ozel_anythingllm"])

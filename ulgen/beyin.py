@@ -119,6 +119,34 @@ class OllamaBeyin(Beyin):
             raise BeyinHatasi("Ollama beklenmeyen yanıt verdi.") from hata
 
 
+_CTX_ONBELLEK = {}
+
+
+def llama_baglam(adres, simdi=None):
+    """llama-server'ın bağlam uzunluğu (n_ctx); /props'tan okunur, 2 dk önbellek."""
+    simdi = time.time() if simdi is None else simdi
+    kayit = _CTX_ONBELLEK.get(adres)
+    if kayit and simdi - kayit[0] < 120:
+        return kayit[1]
+    n_ctx = None
+    try:
+        d = _json_gonder(adres + "/props", zaman_asimi=2)
+        n_ctx = int((d.get("default_generation_settings") or {}).get("n_ctx")
+                    or d.get("n_ctx") or 0) or None
+    except (BeyinHatasi, ValueError, TypeError, AttributeError):
+        n_ctx = None
+    _CTX_ONBELLEK[adres] = (simdi, n_ctx)
+    return n_ctx
+
+
+def baglam_butceleri(n_ctx):
+    """n_ctx -> (sistem bütçesi, geçmiş bütçesi, en çok çıktı) token.
+    Türkçe metin bu modellerde kestirimden fazla token tutar: %25 pay bırakılır."""
+    cikti = min(700, max(128, n_ctx // 4))
+    kullan = max(300, int((n_ctx - cikti - 200) * 0.75))
+    return int(kullan * 0.65), int(kullan * 0.35), cikti
+
+
 class LlamaCppBeyin(Beyin):
     """llama.cpp 'llama-server' (OpenAI uyumlu arayüz)."""
 
@@ -126,9 +154,15 @@ class LlamaCppBeyin(Beyin):
     # Eski Mac'lerde istem işleme saniyede ~10 token olabilir: istem kısa tutulur.
     sistem_butce = 2200
     gecmis_butce = 700
+    cikti = 700
 
     def __init__(self, adres):
         self.adres = adres.rstrip("/")
+        # Sunucunun gerçek bağlam uzunluğuna göre bütçe ("Context size has
+        # been exceeded" hatası ve bağlam taşınca önceki soruya kayma olmasın)
+        n_ctx = llama_baglam(self.adres)
+        if n_ctx:
+            self.sistem_butce, self.gecmis_butce, self.cikti = baglam_butceleri(n_ctx)
 
     def kullanilabilir_mi(self):
         try:
@@ -140,7 +174,7 @@ class LlamaCppBeyin(Beyin):
     def yanitla(self, sistem, mesajlar, azami_token=700):
         govde = {
             "messages": [{"role": "system", "content": sistem}] + mesajlar,
-            "max_tokens": azami_token,
+            "max_tokens": min(azami_token, self.cikti),
             "temperature": 0.6,
             "stream": False,
         }
@@ -361,7 +395,8 @@ class OpenAIUyumluBeyin(Beyin):
                  + mesajlar}
         veri, basliklar = _json_gonder(
             self._taban() + "/chat/completions", govde,
-            self._basliklar(), 60, baslik_don=True)
+            self._basliklar(), 300 if getattr(self, "yerel", False) else 60,
+            baslik_don=True)
         kota.basliklari_isle(self.saglayici, basliklar)
         kul = veri.get("usage") or {}
         if "prompt_tokens" in kul:
@@ -537,12 +572,18 @@ class BeyinYonlendirici:
     def _adaylar(self, a):
         mod = a.get("beyin", "otomatik")
         if mod == "yerel":
-            return self._yerel(a)
-        if mod == "bulut":
-            return self._bulut(a)
-        if mod == "hizli":     # önce bulut (hızlı); özel sorular çekirdekte buluttan atlanır
-            return self._bulut(a) + self._yerel(a)
-        return self._yerel(a) + self._bulut(a)
+            liste = self._yerel(a)
+        elif mod == "bulut":
+            liste = self._bulut(a)
+        elif mod == "hizli":   # önce bulut (hızlı); özel sorular çekirdekte buluttan atlanır
+            liste = self._bulut(a) + self._yerel(a)
+        else:
+            liste = self._yerel(a) + self._bulut(a)
+        # "Öne al" ile işaretlenenler en başa (işaretlenme sırasıyla); duyarlı
+        # sorular yine buluta gitmez (çekirdekte atlanır).
+        one = list(a.get("one_alinanlar") or [])
+        return sorted(liste, key=lambda b: one.index(b.saglayici)
+                      if getattr(b, "saglayici", None) in one else len(one))
 
     def _ulasilabilir(self, aday):
         if not aday.yerel:

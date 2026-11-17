@@ -122,6 +122,8 @@ class BaglamYoneticisi:
 
     def gecmis(self, butce_token, bulut=False):
         """Bütçeye sığan sohbet geçmişini model mesaj listesi olarak verir."""
+        if butce_token <= 0:
+            return []
         satirlar = self._satirlar(bulut)
         toplam = sum(token_say(s["metin"]) for s in satirlar)
         if toplam > butce_token and not bulut \

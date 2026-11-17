@@ -41,6 +41,8 @@ VARSAYILAN = {
     "nvidia_model": "meta/llama-3.3-70b-instruct",
     "bulut_sirasi": ["gemini", "nvidia", "groq", "mistral", "openrouter"],
     "ozel_saglayicilar": [],
+    "uzman_saglayici": {},
+    "one_alinanlar": [],        # beyin sırasında en başa alınan sağlayıcılar      # {"TULGA": "ozel_anythingllm"}: uzmanın öncelikli beyni
     # Arayüzden kapatılan beyinler (örn. ["gemini"]); kapalı beyin hiç denenmez.
     "kapali_beyinler": [],
     # Mac Takvim/Hatırlatıcılar → Ülgen eşitlemesi ve Ülgen → Mac bildirimi

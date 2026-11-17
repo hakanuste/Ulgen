@@ -582,8 +582,12 @@ class Araclar:
                              for o in liste) or "Eskimiş görünen çıkarım yok."
         return None
 
-    def katalog(self):
-        """Modele verilecek araç listesi metni."""
+    def katalog(self, kisa=False):
+        """Modele verilecek araç listesi metni. kisa=True: yalnızca adlar ve
+        parametreler (bağlamı küçük yerel modeller için, ~5 kat kısa)."""
+        if kisa:
+            return ", ".join("%s(%s)" % (ad, ", ".join(p))
+                             for ad, (_, _, p) in self._kayit.items())
         satirlar = []
         for ad, (aciklama, _, parametreler) in self._kayit.items():
             satirlar.append("- %s(%s): %s" % (ad, ", ".join(parametreler),

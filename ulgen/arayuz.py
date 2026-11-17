@@ -1619,12 +1619,25 @@ async function ozelSaglayicilar(k) {
   d.liste.forEach(t => {
     const satir = ekle(k, t.baslik + " — " + (t.yerel ? "yerel (bu Mac)" : "bulut") + " · " + t.model,
       t.taban + "  ·  " + (t.anahtar_var ? "anahtar VAR …" + t.son4 : (t.yerel ? "anahtarsız" : "anahtar YOK")) +
-      "  ·  " + (t.yerel || t.ucretsiz ? (t.acik ? "kullanılıyor" : "kapalı") : "ÜCRETLİ: Ülgen kendiliğinden kullanmaz"));
+      "  ·  " + (t.yerel || t.ucretsiz ? (t.acik ? "kullanılıyor" : "kapalı") : "ÜCRETLİ: Ülgen kendiliğinden kullanmaz") +
+      (t.uzmanlar && t.uzmanlar.length ? "  ·  öncelikli uzman: " + t.uzmanlar.join(", ") : "") +
+      (t.one ? "  ·  ÖNE ALINDI (ilk denenir)" : ""));
     satir.style.borderLeft = "3px solid " + ((t.yerel || t.ucretsiz) && t.acik ? "var(--ulgen-success)" : "var(--ulgen-offline)");
     const dugme = (yazi, tehlike) => { const b = document.createElement("button"); b.className = "dugme"; b.textContent = yazi;
       b.style.cssText = "margin:6px 6px 0 0" + (tehlike ? ";border-color:var(--ulgen-danger);color:var(--ulgen-danger)" : ""); satir.appendChild(b); return b; };
     const de = dugme("Bağlantıyı dene");
     de.onclick = () => deneYaz(satir, de, () => istek("/yz/ozel", { islem: "dene", ad: t.ad }));
+    // Uzmana bağla: o uzmanın soruları önce bu sağlayıcıya gider
+    const bag = document.createElement("select"); bag.className = "dugme"; bag.style.cssText = "margin:6px 6px 0 0;max-width:100%";
+    const b0 = document.createElement("option"); b0.value = ""; b0.textContent = "Uzmana bağla: yok"; bag.appendChild(b0);
+    (d.uzmanlar || []).forEach(u => { const o = document.createElement("option"); o.value = u; o.textContent = "Öncelikli: " + u; bag.appendChild(o); });
+    bag.value = (t.uzmanlar && t.uzmanlar[0]) || "";
+    bag.title = "Seçilen uzmanın soruları önce bu sağlayıcıya gider (örn. TULGA → belgelerinizin olduğu AnythingLLM)";
+    bag.onchange = async () => { const c = await istek("/yz/ozel", { islem: "uzman", ad: t.ad, uzman: bag.value }); if (c.hata) alert(c.hata); yzCiz(); };
+    satir.appendChild(bag);
+    const on = dugme(t.one ? "Normal sıraya al" : "Öne al");
+    on.title = "Öne alınan sağlayıcı beyin sırasında en başta denenir (duyarlı sorular yine buluta gitmez)";
+    on.onclick = async () => { const c = await istek("/yz/ozel", { islem: "one", ad: t.ad, one: !t.one }); if (c.hata) alert(c.hata); yzCiz(); };
     const ak = dugme(t.acik ? "Kapat" : "Aç");
     ak.onclick = async () => { const c = await istek("/yz/saglayici", { saglayici: t.ad, acik: !t.acik }); if (c.hata) alert(c.hata); yzCiz(); };
     const si = dugme("Sil", true);

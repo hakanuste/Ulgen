@@ -37,7 +37,10 @@ def liste():
         if not isinstance(t, dict) or not t.get("ad"):
             continue
         yer, son4 = gizli.sir_durumu(t["ad"])
-        sonuc.append(dict(t, anahtar_var=yer is not None, son4=son4 or "",
+        uzmanlari = [u for u, s in (a.get("uzman_saglayici") or {}).items() if s == t["ad"]]
+        one = t["ad"] in (a.get("one_alinanlar") or [])
+        sonuc.append(dict(t, anahtar_var=yer is not None, son4=son4 or "", uzmanlar=uzmanlari,
+                          one=one,
                           yerel=ozel_yerel_mi(t.get("taban", "")),
                           acik=t["ad"] not in set(a.get("kapali_beyinler") or [])))
     return sonuc
@@ -96,6 +99,9 @@ def sil(ad):
     gizli.sir_sil(ad)
     kapali = [k for k in (a.get("kapali_beyinler") or []) if k != ad]
     ayar.guncelle("kapali_beyinler", kapali)
+    ayar.guncelle("one_alinanlar", [x for x in (a.get("one_alinanlar") or []) if x != ad])
+    ayar.guncelle("uzman_saglayici", {u: x for u, x in
+                                      (a.get("uzman_saglayici") or {}).items() if x != ad})
 
 
 def dene(ad):
@@ -112,3 +118,29 @@ def dene(ad):
         return {"calisti": True, "cikti": "%s yanıt verdi: %s" % (t["baslik"], yanit[:80])}
     except BeyinHatasi as hata:
         return {"calisti": False, "cikti": str(hata)[:240]}
+
+
+def uzmana_bagla(ad, uzman):
+    """Sağlayıcıyı bir uzmanın öncelikli beyni yapar; uzman boşsa bağı kaldırır."""
+    from . import uzmanlar
+    if ad not in [t["ad"] for t in liste()]:
+        raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
+    baglar = {k: v for k, v in (ayar.yukle().get("uzman_saglayici") or {}).items()
+              if v != ad}
+    if uzman:
+        if uzman not in uzmanlar.UZMANLAR:
+            raise SaglayiciHatasi("Böyle bir uzman yok.")
+        baglar[uzman] = ad
+    ayar.guncelle("uzman_saglayici", baglar)
+    return baglar
+
+
+def one_al(ad, one=True):
+    """Sağlayıcıyı beyin sırasında en başa alır (one=False: normal sırasına döner)."""
+    if ad not in [t["ad"] for t in liste()]:
+        raise SaglayiciHatasi("Böyle bir sağlayıcı yok.")
+    liste_ = [x for x in (ayar.yukle().get("one_alinanlar") or []) if x != ad]
+    if one:
+        liste_.append(ad)
+    ayar.guncelle("one_alinanlar", liste_)
+    return liste_

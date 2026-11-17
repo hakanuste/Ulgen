@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## 2.8.11
+- **Bağlam taşması giderildi (llama.cpp):** Ülgen, llama-server'ın gerçek bağlam uzunluğunu (/props → n_ctx) okuyup sistem istemi, geçmiş ve yanıt uzunluğunu ona göre ayarlar (Türkçe için %25 pay). Bağlamı küçük modelde araç listesi kısa yazılır, kimlik eki ve uzman talimatı kısaltılabilir, kütüphane alıntısı payı küçülür. Yine de "Context size has been exceeded" gelirse bir kez daha kısa istemle (araçsız, geçmişsiz) denenir. Bağlam taşması, yanıtın bir önceki soruya kaymasının da olası nedeniydi.
+- **Öne al:** Eklediğiniz sağlayıcılarda "Öne al" düğmesi; öne alınanlar beyin sırasında en başta denenir (duyarlı sorular yine buluta gitmez).
+- **Uzmana bağla:** Bir sağlayıcı bir uzmana bağlanabilir (örn. TULGA → belgelerinizin olduğu AnythingLLM); o uzmanın soruları önce o sağlayıcıya gider.
+- **Listelerde sıra:** Yapay Zekâ Modelleri kartında ve kota listelerinde öne alınanlar üstte, kapalı ve ücretli olanlar altta.
+- Yerel özel sağlayıcıların (AnythingLLM vb.) yanıt bekleme süresi 300 saniyeye çıkarıldı.
+
 ## 2.8.10
 - **Yanıt bir önceki soruya kaymasın:** Modele "yalnızca son iletiyi yanıtla; önceki iletiler bağlamdır" kuralı ve "verisi olmadığı bir şeyi (plan, görev listesi) uydurmasın" kuralı eklendi. Geçmişte aynı rolden ardışık iletiler (yanıtsız kalmış soru) birleştirilir; son soru her zaman tek başına en sonda durur. Küçük yerel modellerin bir önceki soruya yanıt verme eğilimini azaltır.
 - **Tanı kaydı:** Son model isteğinin özeti `~/ÜlgenVeri/son_istek.json` dosyasına yazılır (yalnızca bu Mac'te); yanıt yanlış soruya verilirse sıra buradan görülür.

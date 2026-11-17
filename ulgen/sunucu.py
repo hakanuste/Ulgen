@@ -995,7 +995,8 @@ def istek_sinifi(ulgen, limit):
                 try:
                     if islem == "liste":
                         return self._cevap(200, {"liste": ozel_saglayici.liste(),
-                                                 "ornekler": ozel_saglayici.ORNEKLER})
+                                                 "ornekler": ozel_saglayici.ORNEKLER,
+                                                 "uzmanlar": list(uzmanlar.UZMANLAR)})
                     if islem == "ekle":
                         t = ozel_saglayici.ekle(veri)
                         ulgen.yonlendirici.sifirla()
@@ -1008,6 +1009,15 @@ def istek_sinifi(ulgen, limit):
                         return self._cevap(200, {"tamam": True})
                     if islem == "dene":
                         return self._cevap(200, ozel_saglayici.dene(str(veri.get("ad", ""))))
+                    if islem == "one":
+                        sira = ozel_saglayici.one_al(str(veri.get("ad", "")),
+                                                     bool(veri.get("one", True)))
+                        ulgen.yonlendirici.sifirla()
+                        return self._cevap(200, {"tamam": True, "one_alinanlar": sira})
+                    if islem == "uzman":
+                        baglar = ozel_saglayici.uzmana_bagla(
+                            str(veri.get("ad", "")), str(veri.get("uzman") or ""))
+                        return self._cevap(200, {"tamam": True, "baglar": baglar})
                 except ozel_saglayici.SaglayiciHatasi as hata:
                     return self._cevap(400, {"hata": str(hata)})
                 return self._cevap(400, {"hata": "islem: liste|ekle|sil|dene"})

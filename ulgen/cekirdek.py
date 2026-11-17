@@ -74,6 +74,41 @@ def arac_cagrisi_ayikla(metin):
 EKLI = re.compile(r"\n\[(?:EKLİ DOSYA|YOUTUBE VİDEO): ")
 
 
+BAGLAM_ASIMI = re.compile(r"context size|exceeds? the (available )?context|"
+                          r"context length|too many tokens", re.IGNORECASE)
+
+
+KISA_TEMEL = ("Sen Ülgen'sin: Hakan'ın Türkçe konuşan, saygılı ve bilge kişisel "
+              "yardımcısısın. Kısa, doğru ve düzgün Türkçe yanıt ver. Bilmediğini "
+              "uydurma; verilen alıntılar varsa onlara dayan.")
+
+
+class _KisaBeyin:
+    """Bağlam taşınca: aynı beyin, yarı sistem bütçesi, geçmişsiz, araçsız istem."""
+
+    kisa = True
+
+    def __init__(self, ic):
+        self._ic = ic
+        self.sistem_butce = max(400, ic.sistem_butce // 2)
+        self.gecmis_butce = 0
+
+    def __getattr__(self, ad):
+        return getattr(self._ic, ad)
+
+    def yanitla(self, sistem, mesajlar, azami_token=700):
+        return self._ic.yanitla(sistem, mesajlar, azami_token)
+
+
+def oncelikli_sirala(adaylar, ajan, baglar):
+    """Uzmana bağlanmış sağlayıcı (örn. TULGA → AnythingLLM) o uzmanın
+    sorularında ilk sıraya alınır; diğer sorularda sıra değişmez."""
+    hedef = baglar.get(ajan) if ajan else None
+    if not hedef:
+        return adaylar
+    return sorted(adaylar, key=lambda b: getattr(b, "saglayici", "") != hedef)
+
+
 def _tani_yaz(beyin, mesajlar):
     """Son model isteğinin özeti (yalnızca bu Mac'te, ~/ÜlgenVeri/son_istek.json):
     yanıt yanlış soruya verilirse sıranın doğruluğu buradan görülür."""
@@ -210,9 +245,18 @@ class Ulgen:
         """Öncelik sırasıyla sistem istemini kurar."""
         ayarlar = ayar.yukle()
         kisisel = beyin.yerel or ayarlar.get("bulut_kisisel_veri", False)
-        parcalar = [
-            (0, kisilik.SISTEM_TEMEL + "\n\n" + kisilik.KIMLIK_EKI),
-            (0, ARAC_PROTOKOLU % self.araclar.katalog()),
+        # Bağlamı küçük yerel model (örn. 4096 token): araç listesi kısa, kimlik
+        # eki kısaltılabilir; yoksa istem bağlamı taşırır ve model saçmalar.
+        dar = beyin.sistem_butce < 1800
+        if getattr(beyin, "kisa", False):
+            # Bağlam taştıktan sonraki deneme: araçsız, en kısa istem
+            parcalar = [(0, KISA_TEMEL)]
+        else:
+            parcalar = [
+                (0, kisilik.SISTEM_TEMEL),
+                (2 if dar else 0, kisilik.KIMLIK_EKI),
+                (0, ARAC_PROTOKOLU % self.araclar.katalog(kisa=dar))]
+        parcalar += [
             (0, "Şu an: " + self.araclar.saat_tarih()),
             (0, "Answer ONLY the user's LAST message. Earlier messages are "
                 "context only; never answer an earlier question again. If you "
@@ -221,10 +265,10 @@ class Ulgen:
         ]
         uzman = uzmanlar.istem(kullanici_metni)
         if uzman:
-            parcalar.append((0, uzman))
+            parcalar.append((1 if dar else 0, uzman))
         # Kütüphane payı beynin istem bütçesine göre (yerel ~4300 karakter):
         # alıntılar bu paya göre SEÇİLİR, sonradan sondan kesilmez.
-        pay = int(beyin.sistem_butce * 3.2 * 0.45)
+        pay = int(beyin.sistem_butce * 3.2 * (0.3 if dar else 0.45))
         kutuphane = ""
         if self._kilavuz_eki and self._ajan in uzmanlar.UZMANLAR:
             # kılavuz ve sohbet buluta gidebilir; kendi notlarınız yalnızca yerelde
@@ -232,7 +276,7 @@ class Ulgen:
                 self._ajan, kullanici_metni, sinir=pay,
                 notlar=bool(beyin.yerel or self._duyarli_tur))
             if kutuphane:
-                parcalar.append((0, uzmanlar.KILAVUZ_ISTEMI + kutuphane))
+                parcalar.append((1, uzmanlar.KILAVUZ_ISTEMI + kutuphane))
         if self._arastirma_eki:
             parcalar.append((1, kutuphane_once.istem_parcasi(self._arastirma_eki)))
         if kisisel:
@@ -372,7 +416,8 @@ class Ulgen:
         Kota/yerel kapalı yüzünden hiçbir beyin deneyemediyse "kuyruk".
         Ücretli servise ASLA geçilmez; yalnızca ücretsiz beyinler denenir."""
         izin = ayar.yukle().get("bulut_kisisel_veri", False)
-        adaylar = self.yonlendirici.kullanilabilirler()
+        adaylar = oncelikli_sirala(self.yonlendirici.kullanilabilirler(), self._ajan,
+                                   ayar.yukle().get("uzman_saglayici") or {})
         engelli = self.yonlendirici.engelliler()
         atlanan_duyarli = kota_doldu = False
         son_hata = None
@@ -386,7 +431,13 @@ class Ulgen:
             self.araclar.bulut_modu = bulut
             self.araclar.kisisel_kullanildi = False
             try:
-                yanit = self._beyinle_yanitla(beyin, metin)
+                try:
+                    yanit = self._beyinle_yanitla(beyin, metin)
+                except BeyinHatasi as hata:
+                    if not BAGLAM_ASIMI.search(str(hata)):
+                        raise
+                    # bağlam taştı: kısa istem, geçmişsiz bir kez daha dene
+                    yanit = self._beyinle_yanitla(_KisaBeyin(beyin), metin)
             except KotaHatasi as hata:
                 kota_doldu = True
                 hatalar.append((beyin.ad, str(hata)))

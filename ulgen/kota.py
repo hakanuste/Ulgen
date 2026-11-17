@@ -298,7 +298,13 @@ def tablo(simdi=None):
             "gercek": None, "gercek_yas_sn": None,
             "hata_orani": (k["hata_24s"] / k["istek_24s"] if k["istek_24s"] else 0.0),
             "son_hata": "", "maliyet": MALIYET, "kapali": ad in kapali})
-    return sonuc
+    # Öne alınanlar en üstte, kullanılmayanlar (kapalı/ücretli) en altta
+    one = list(a.get("one_alinanlar") or [])
+    for x in sonuc:
+        x["one"] = x["saglayici"] in one
+    return sorted(sonuc, key=lambda x: (
+        x["kapali"] or x.get("ucretli", False),
+        one.index(x["saglayici"]) if x["one"] else len(one)))
 
 
 def metin(simdi=None):
