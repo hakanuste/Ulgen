@@ -439,7 +439,11 @@ class OzelBeyin(OpenAIUyumluBeyin):
         self.taban = tanim["taban"].rstrip("/")
         self.yerel = ozel_yerel_mi(self.taban)
         if self.yerel:
-            self.sistem_butce, self.gecmis_butce = 3000, 1000
+            # Yerel sunucuların bağlamı çoğu zaman küçüktür (ör. 4096): kısa istem.
+            self.sistem_butce, self.gecmis_butce = 900, 300
+            # AnythingLLM belgeleri kendisi bulup isteme ekler; Ülgen'in uzun
+            # talimatı + onun alıntıları bağlamı taşırır: en kısa istem gönderilir.
+            self.kisa = "/api/v1/openai" in self.taban
         self.ad = "%s (%s)" % (tanim.get("baslik") or tanim["ad"],
                                "yerel" if self.yerel else "bulut")
 
@@ -476,6 +480,7 @@ class KotaliBeyin(Beyin):
         self.yerel = ic.yerel
         self.sistem_butce = ic.sistem_butce
         self.gecmis_butce = ic.gecmis_butce
+        self.kisa = getattr(ic, "kisa", False)
         self.saglayici = ad_kisa
         self.model = getattr(ic, "model", "")
 

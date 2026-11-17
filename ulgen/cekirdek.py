@@ -434,7 +434,9 @@ class Ulgen:
                 try:
                     yanit = self._beyinle_yanitla(beyin, metin)
                 except BeyinHatasi as hata:
-                    if not BAGLAM_ASIMI.search(str(hata)):
+                    # bağlam taşması; yerel sunucuda ayrıntısız 500 de çoğu zaman budur
+                    bos_500 = beyin.yerel and re.fullmatch(r"HTTP 500:\s*", str(hata))
+                    if not (BAGLAM_ASIMI.search(str(hata)) or bos_500):
                         raise
                     # bağlam taştı: kısa istem, geçmişsiz bir kez daha dene
                     yanit = self._beyinle_yanitla(_KisaBeyin(beyin), metin)

@@ -36,11 +36,16 @@ def acik_mi():
     return bool(ayar.yukle().get("dogrulama", True))
 
 
+HATA_YANITI = re.compile(r"^(Beyin yanıt veremedi|İptal ettim|Kuyruğa)|\bHTTP \d{3}\b")
+
+
 def uygun_mu(soru, yanit, kisisel_kullanildi=False):
     """Bu konuşma doğrulanabilir mi? (kişisel/sağlık/kısa yanıtlar değil)"""
     if not acik_mi() or kisisel_kullanildi:
         return False
     if len(yanit or "") < EN_AZ_YANIT:
+        return False
+    if HATA_YANITI.search(yanit or ""):      # hata/durum iletisi: iddia değil
         return False
     if guvenlik.duyarli_mi(soru) or guvenlik.duyarli_mi(yanit):
         return False

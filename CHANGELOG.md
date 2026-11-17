@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.8.16
+- **AnythingLLM gerçek sorularda da yanıt verir:** AnythingLLM belgeleri kendisi bulup isteme eklediği için Ülgen ona artık kısa istem gönderir (uzun talimat ve araç listesi yok); yerel özel sağlayıcıların istem bütçesi küçültüldü. Ülgen'in uzun talimatı + AnythingLLM'in alıntıları llama.cpp'nin 4096 token bağlamını taşırıyor, AnythingLLM boş "HTTP 500" döndürüyordu. Yerel sunucudan ayrıntısız 500 gelirse bir kez en kısa istemle yeniden denenir.
+- **Doğrulama hata iletisini denetlemez:** "Beyin yanıt veremedi", "HTTP 500" gibi hata/durum iletileri iddia sayılmaz (gereksiz doğrulama bildirimi çıkmaz).
+
 ## 2.8.15
 - **Düzenle:** Eklediğiniz sağlayıcının satırında tek bir "Düzenle" düğmesi: ad, adres, model (servisteki modeller listesinden seçilebilir; AnythingLLM'de çalışma alanları), API anahtarı (boş bırakılırsa eskisi kalır) ve "ücretsiz" işareti, mevcut değerleriyle dolu bir formda yerinde değiştirilir. "Kaydet ve dene" ile bağlantı hemen denenir, sonuç birkaç saniye görünür, sonra satır yeni bilgilerle yenilenir. Öne alma ve uzman bağı korunur. Şu anki model adı serviste yoksa uyarı çıkar. (Ayrı "Anahtarı değiştir" ve "Modeli değiştir" düğmelerinin yerini aldı.)
 

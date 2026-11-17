@@ -83,3 +83,31 @@ class BaglamSiniri(TemizVeri):
         dar = u.sistem_istemi(N(yerel=True, sistem_butce=650), "merhaba")
         self.assertLess(len(dar), len(genis) * 0.75)
         self.assertLess(len(dar), 650 * 3.2 * 2.2)
+
+
+class AnythingLLMKisa(TemizVeri):
+
+    def test_anythingllm_kisa_istem_ve_bos_500_yeniden(self):
+        from ulgen import ozel_saglayici as oz
+        from ulgen.beyin import KotaliBeyin, OzelBeyin
+        t = {"ad": "ozel_anythingllm", "baslik": "AnythingLLM",
+             "taban": "http://127.0.0.1:3001/api/v1/openai", "model": "assistant-chats"}
+        b = KotaliBeyin(OzelBeyin(t, "anahtar-12345678"), "ozel_anythingllm")
+        self.assertTrue(b.kisa)
+        from ulgen.cekirdek import Ulgen
+        u = Ulgen()
+        istem = u.sistem_istemi(b, "Daewoo Musso şanzımanı nedir?")
+        self.assertLess(len(istem), 3500)
+        self.assertNotIn("hatirlatici_kur", istem)    # araç listesi yok
+        self.assertIsNotNone(oz)
+
+    def test_dogrulama_hata_iletisini_denetlemez(self):
+        from ulgen import dogrulama
+        y = ("Beyin yanıt veremedi:\nAnythingLLM (yerel): HTTP 500:\nClaude (bulut): "
+             "HTTP 400: credit balance is too low to access the Anthropic API")
+        from unittest import mock
+        with mock.patch.object(dogrulama, "acik_mi", return_value=True):
+            self.assertFalse(dogrulama.uygun_mu("Musso şanzımanı nedir?", y))
+            self.assertTrue(dogrulama.uygun_mu(
+                "Musso şanzımanı nedir?", "Daewoo Musso 3.2 Mercedes 722 ailesi bir "
+                "otomatik şanzıman kullanır; 1998 modellerde dört ileri vites vardır."))
