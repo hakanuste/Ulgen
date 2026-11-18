@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import time
+import unittest
 
 from tests.temel import TemizVeri
 from tests.test_sunucu import JSON, istek
@@ -62,7 +63,9 @@ class KilavuzTesti(TemizVeri):
         self.assertIn("[[musso vakum - Sayfa 51-100]]", dizin)
         self.assertIn("vakum hortumu", open(os.path.join(
             klasor, "musso vakum - Sayfa 1-50.md"), encoding="utf-8").read())
-        self.assertTrue(os.path.isfile(os.path.join(self.kasa, "not.txt")))
+        # .txt kasada aranmaz: Markdown bölümüne ve Dizin notuna çevrilir
+        self.assertTrue(os.path.isfile(os.path.join(self.kasa, "not", "not - Dizin.md")))
+        self.assertTrue(os.path.isfile(os.path.join(self.kasa, "not", "not - Bölüm 1.md")))
         # ikinci çalıştırma: yeni bir şey yok
         self.assertEqual(kilavuz.aktar(self.kaynak, self.kasa)["yeni"], 0)
         # yeni dosya eklenince yalnız o aktarılır
@@ -253,3 +256,32 @@ class KilavuzKmlTesti(TemizVeri):
         s = kilavuz.aktar(self.kaynak, self.kasa)
         self.assertEqual((s["yeni"], s["hata"]), (1, []))
         self.assertTrue(os.path.isfile(os.path.join(self.kasa, "Arazi", "arsa.md")))
+
+
+class KitapMetniTesti(unittest.TestCase):
+    def test_buyuk_ocr_metni_bolumlenir_ve_temizlenir(self):
+        import tempfile
+        kaynak, kasa = tempfile.mkdtemp(), tempfile.mkdtemp()
+        yol = os.path.join(kaynak, "_bn_i_Sina_El_Kanun_1_Kitap_djvu.txt")
+        paragraf = "Eser Türkçe'ye Rıfat Bilge ta-\nrafından çevrilmiştir. " * 40
+        with open(yol, "w", encoding="utf-8") as f:
+            f.write("\n\n".join([paragraf] * 60))           # ~150 KB
+        kilavuz._metin_aktar(yol, kasa)
+        ad = kilavuz.kitap_adi(yol)
+        self.assertEqual(ad, "bn i Sina El Kanun 1 Kitap")
+        klasor = os.path.join(kasa, ad)
+        self.assertTrue(os.path.isfile(os.path.join(klasor, ad + " - Dizin.md")))
+        bolumler = [x for x in os.listdir(klasor) if "Bölüm" in x]
+        self.assertGreater(len(bolumler), 2)
+        govde = open(os.path.join(klasor, ad + " - Bölüm 1.md"), encoding="utf-8").read()
+        self.assertIn("tarafından", govde)
+        self.assertLessEqual(len(govde), kilavuz.DOCX_PARCA + 500)
+
+    def test_kitap_alintisi_ayiklanmaz_not_ayiklanir(self):
+        from ulgen import baglam
+        import tempfile
+        kasa = tempfile.mkdtemp()
+        os.makedirs(os.path.join(kasa, "Kanun"))
+        open(os.path.join(kasa, "Kanun", "Kanun - Dizin.md"), "w").close()
+        self.assertTrue(baglam._kitap_mi(os.path.join(kasa, "Kanun", "Kanun - Bölüm 1.md")))
+        self.assertFalse(baglam._kitap_mi(os.path.join(kasa, "notum.md")))

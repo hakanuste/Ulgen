@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2.8.21
+- **Kitaplar (.txt) artık okunur:** Kılavuz klasörüne konan .txt dosyaları (ör. archive.org'dan indirilen taranmış kitap metinleri, "..._djvu.txt") eskiden kasaya olduğu gibi kopyalanıyor, ama Ülgen .txt'yi aramadığı ve 1 MB'ı aşan notları atladığı için hiç okunmuyordu. Şimdi her kitap kendi klasörüne ~40.000 karakterlik Markdown bölümlerine (paragraf sonundan) ve bir Dizin notuna çevrilir; satır sonunda bölünmüş sözcükler ("ta-/rafından") birleştirilir, dosya adındaki "_" ve "djvu" temizlenir.
+- **Kitap alıntıları ayıklanmaz:** 2.8.18'deki kişisel veri süzgeci yalnızca kendi notlarınıza ve eski sohbetlere uygulanır. Kılavuz ve kitap alıntıları (ör. Tıp Kanunu'nda "hastalık", "ilaç" geçen satırlar) kişisel veri olmadığından olduğu gibi kalır; önceden bu tür kitap parçaları tümüyle atlanıyordu.
+
 ## 2.8.20
 - **Bulut beyin yoğunken pes edilmez:** Gemini gibi bir servis "şu an çok yoğun" (HTTP 503) derse aynı beyin 3 ve 8 saniye arayla iki kez daha denenir; yine olmazsa sıradaki beyne geçilir. Hiçbiri yanıt veremezse ham JSON yerine anlaşılır bir açıklama gösterilir. Bekleme sırasında "Durdur" çalışır.
 

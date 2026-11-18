@@ -186,9 +186,24 @@ def _docx_aktar(yol, kasa):
         metin = metin.replace(kod, kar)
     metin = re.sub(r"\n{3,}", "\n\n", metin).strip()
     ad = dosya_adi_temizle(os.path.splitext(os.path.basename(yol))[0])
+    return _bolumlere_yaz(yol, kasa, ad, metin)
+
+
+def _bolumlere_yaz(yol, kasa, ad, metin):
+    """Uzun metni <kasa>/<ad>/ altında bölüm notlarına ve bir Dizin notuna
+    yazar (Ülgen bu klasörü kılavuz/kitap sayar); bölüm sayısını döndürür."""
     hedef = os.path.join(kasa, ad)
     os.makedirs(hedef, exist_ok=True)
-    parcalar = [metin[i:i + DOCX_PARCA] for i in range(0, len(metin), DOCX_PARCA)] or [""]
+    parcalar = []
+    while metin:
+        if len(metin) <= DOCX_PARCA:
+            parcalar.append(metin)
+            break
+        kes = metin.rfind("\n\n", DOCX_PARCA // 2, DOCX_PARCA)
+        kes = kes if kes > 0 else DOCX_PARCA            # paragraf sonunda böl
+        parcalar.append(metin[:kes])
+        metin = metin[kes:].lstrip("\n")
+    parcalar = parcalar or [""]
     adlar = []
     for n, govde in enumerate(parcalar, 1):
         parca_ad = "%s - Bölüm %d" % (ad, n)
@@ -471,9 +486,33 @@ def _kml_aktar(yol, kasa):
     return len(yerler)
 
 
+def kitap_adi(yol):
+    """'İbn_i_Sina_El_Kanun_1_Kitap_djvu.txt' -> 'İbn i Sina El Kanun 1 Kitap'."""
+    ad = os.path.splitext(os.path.basename(yol))[0]
+    ad = re.sub(r"[_]+", " ", ad)
+    ad = re.sub(r"(?i)[ .-]*(djvu|ocr|hocr)$", "", ad)
+    return dosya_adi_temizle(ad)
+
+
+def ocr_temizle(metin):
+    """Taranmış kitap metnini düzeltir: satır sonunda bölünmüş sözcükleri
+    ('ta-\\nrafından') birleştirir, satır sonu boşluklarını atar."""
+    metin = metin.replace("\r\n", "\n").replace("\x0c", "\n")
+    metin = re.sub(r"(\w)-[ \t]*\n[ \t]*(\w)", r"\1\2", metin)
+    metin = re.sub(r"[ \t]+\n", "\n", metin)
+    return re.sub(r"\n{3,}", "\n\n", metin).strip()
+
+
 def _metin_aktar(yol, kasa):
-    ad = dosya_adi_temizle(os.path.basename(yol))
-    shutil.copy2(yol, os.path.join(kasa, ad))
+    """.md olduğu gibi kopyalanır. .txt (kitap, OCR metni) Ülgen'in okuduğu
+    Markdown bölümlerine ve bir Dizin notuna çevrilir: .txt kasada
+    aranmaz, büyük tek not da arama sınırını aşar."""
+    if yol.lower().endswith(".md") and os.path.getsize(yol) <= obsidyen.MD_SINIR:
+        shutil.copy2(yol, os.path.join(kasa, dosya_adi_temizle(os.path.basename(yol))))
+        return
+    with open(yol, "r", encoding="utf-8", errors="replace") as f:
+        metin = f.read()
+    _bolumlere_yaz(yol, kasa, kitap_adi(yol), ocr_temizle(metin))
 
 
 def _eski_aktarim_var(yol, kasa):
@@ -482,6 +521,9 @@ def _eski_aktarim_var(yol, kasa):
     if yol.lower().endswith((".html", ".htm", ".kml", ".kmz")):
         return False
     if yol.lower().endswith((".pdf", ".docx")):
+        return os.path.isfile(os.path.join(kasa, ad, ad + " - Dizin.md"))
+    if not yol.lower().endswith(".md"):
+        ad = kitap_adi(yol)
         return os.path.isfile(os.path.join(kasa, ad, ad + " - Dizin.md"))
     return os.path.isfile(os.path.join(kasa, dosya_adi_temizle(
         os.path.basename(yol))))

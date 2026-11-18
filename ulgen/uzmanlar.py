@@ -617,9 +617,10 @@ def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
     kendi notlarınız (NOT; yalnızca notlar=True iken, yani yerel beyinde) ve
     eski sohbetler (ESKİ SOHBET). Her not baştan sona taranır; toplam sınır
     nota bölüştürülür ve her notta en ilgili parçalar seçilir (sondan kesme
-    yok). TULGA'da Musso geçenler önce. Duyarlı satırlar (sağlık, kimlik,
-    banka, adres...) atılır, kimlik numaraları örtülür; bulut=True iken
-    bulut beyne yalnızca bu ayıklanmış metin gider."""
+    yok). TULGA'da Musso geçenler önce. Notlarda ve sohbetlerde duyarlı
+    satırlar (sağlık, kimlik, banka, adres...) atılır, kimlik numaraları
+    örtülür; kılavuz/kitap alıntıları kişisel veri olmadığından olduğu gibi
+    kalır (ör. Tıp Kanunu'nda "hastalık", "ilaç" geçen satırlar)."""
     if ad not in UZMANLAR:
         return ""
     ara = ara or obsidyen.ara
@@ -646,7 +647,8 @@ def kilavuz_alintilari(ad, metin, ara=None, kilavuz_mu=None, sinir=8000,
     parcalar, toplam = [], 0
     for etiket, (baslik, yol, eski) in adaylar:
         alinti = sohbet_alintisi(yol, metin, oku, pay) or (eski or "")[:pay]
-        alinti = guvenlik.kisisel_ayikla(alinti)
+        if etiket != "KILAVUZ":          # kitap/kılavuz kişisel veri değildir
+            alinti = guvenlik.kisisel_ayikla(alinti)
         if not alinti:
             continue
         if etiket != "KILAVUZ" and not alan.search("%s %s" % (baslik, alinti)):

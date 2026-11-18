@@ -50,11 +50,37 @@ def kasa_alintilari(metin, sinir=6000, bulut=False):
     """Obsidian kasasında soruyla en ilgili 5 notun, baştan sona taranıp
     seçilmiş en ilgili parçalarını döndürür. bulut=True iken kişisel
     veriler ayıklanır (guvenlik.kisisel_ayikla)."""
+    from . import obsidyen
+    if obsidyen.hazir_mi() and os.path.isdir(obsidyen.kasa_yolu()):
+        return _dizinden(metin, sinir, bulut)
     sonuc = _kasa_alintilari(metin, sinir)
     if bulut and sonuc:
         from .guvenlik import kisisel_ayikla
         sonuc = kisisel_ayikla(sonuc)
     return sonuc
+
+
+def _dizinden(metin, sinir, bulut):
+    """Dizinli aramayla alıntılar; bulutta kendi notlarınız ayıklanır,
+    kılavuz/kitap alıntıları (Dizin notu olan klasörler) olduğu gibi kalır."""
+    from . import obsidyen
+    from .guvenlik import kisisel_ayikla
+    parcalar, toplam = [], 0
+    for baslik, yol, alinti in obsidyen.ara(metin, 5, max(1000, sinir // 5)):
+        if alinti and bulut and not _kitap_mi(yol):
+            alinti = kisisel_ayikla(alinti)
+        if alinti:
+            parcalar.append("## %s\n%s" % (baslik, alinti))
+            toplam += len(alinti)
+            if toplam > sinir:
+                break
+    return "\n\n".join(parcalar)
+
+
+def _kitap_mi(yol):
+    klasor = os.path.dirname(yol or "")
+    return os.path.isfile(os.path.join(
+        klasor, os.path.basename(klasor) + " - Dizin.md"))
 
 
 def _kasa_alintilari(metin, sinir):
