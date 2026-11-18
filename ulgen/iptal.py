@@ -29,3 +29,9 @@ def istendi():
 def denetle():
     if _BAYRAK.is_set():
         raise Iptal()
+
+
+def bekle(saniye):
+    """saniye kadar bekler; bu arada durdurma istenirse Iptal fırlatır."""
+    if _BAYRAK.wait(saniye):
+        raise Iptal()

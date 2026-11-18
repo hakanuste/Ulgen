@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.20
+- **Bulut beyin yoğunken pes edilmez:** Gemini gibi bir servis "şu an çok yoğun" (HTTP 503) derse aynı beyin 3 ve 8 saniye arayla iki kez daha denenir; yine olmazsa sıradaki beyne geçilir. Hiçbiri yanıt veremezse ham JSON yerine anlaşılır bir açıklama gösterilir. Bekleme sırasında "Durdur" çalışır.
+
 ## 2.8.19
 - **"Sağlık & Ölçümler" sekmesi kaldırıldı:** Menüde boş duran adım/nabız/uyku sayfası artık görünmez. Daha önce kaydedilmiş veriler silinmedi, Mac'te yerinde durur.
 

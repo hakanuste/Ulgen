@@ -76,11 +76,26 @@ EKLI = re.compile(r"\n\[(?:EKLİ DOSYA|YOUTUBE VİDEO): ")
 
 BAGLAM_ASIMI = re.compile(r"context size|exceeds? the (available )?context|"
                           r"context length|too many tokens", re.IGNORECASE)
+# Bulut servisinin geçici aşırı yükü (Gemini "high demand" 503 gibi):
+# aynı beyin kısa aralıklarla yeniden denenir, olmazsa sıradakine geçilir.
+YOGUNLUK = re.compile(r"HTTP 50[23]\b|UNAVAILABLE|overloaded|high demand",
+                      re.IGNORECASE)
+YOGUN_BEKLEME = (3, 8)
 
 
 KISA_TEMEL = ("Sen Ülgen'sin: Hakan'ın Türkçe konuşan, saygılı ve bilge kişisel "
               "yardımcısısın. Kısa, doğru ve düzgün Türkçe yanıt ver. Bilmediğini "
               "uydurma; verilen alıntılar varsa onlara dayan.")
+
+
+def _hata_ozeti(ad, hata):
+    """Kullanıcıya gösterilecek hata: yoğunlukta ham JSON yerine açıklama."""
+    if YOGUNLUK.search(str(hata)):
+        return ("%s şu an çok yoğun (geçici aşırı yük, HTTP 503); %d kez "
+                "denedim. Biraz sonra yeniden sorun ya da Yapay Zekâ "
+                "Modelleri sayfasından başka bir beyni açın."
+                % (ad, len(YOGUN_BEKLEME) + 1))
+    return str(hata)
 
 
 class _KisaBeyin:
@@ -451,7 +466,7 @@ class Ulgen:
             self.araclar.kisisel_kullanildi = False
             try:
                 try:
-                    yanit = self._beyinle_yanitla(beyin, metin)
+                    yanit = self._yogunlukta_yinele(beyin, metin)
                 except BeyinHatasi as hata:
                     # bağlam taşması; yerel sunucuda ayrıntısız 500 de çoğu zaman budur
                     bos_500 = beyin.yerel and re.fullmatch(r"HTTP 500:\s*", str(hata))
@@ -465,7 +480,7 @@ class Ulgen:
                 continue
             except BeyinHatasi as hata:
                 self.yonlendirici.sifirla()
-                hatalar.append((beyin.ad, str(hata)))
+                hatalar.append((beyin.ad, _hata_ozeti(beyin.ad, hata)))
                 son_hata = (hata, beyin.ad)
                 continue
             except OnayIstegi as istek:
@@ -484,13 +499,25 @@ class Ulgen:
                 ileti = "Beyin yanıt veremedi:\n" + "\n".join(
                     "- %s: %s" % (ad, m[:220]) for ad, m in hatalar)
             else:
-                ileti = "Beyin yanıt veremedi: %s" % son_hata[0]
+                ileti = "Beyin yanıt veremedi: %s" % hatalar[0][1]
             return "tamam", ileti, son_hata[1]
         return "yok", ("Şu an düşünen bir beynim yok. Ollama ya da llama.cpp "
                        "sunucusunu başlatın, ya da ücretsiz bir bulut "
                        "anahtarı (Gemini, Groq, Mistral, OpenRouter) "
                        "ekleyin. Saat, ses, hatırlatıcı gibi hızlı komutlar "
                        "yine de çalışır."), None
+
+    def _yogunlukta_yinele(self, beyin, metin):
+        """Bulut beyin geçici aşırı yük (503) verirse kısa aralıklarla yeniden
+        dener; yine olmazsa hatayı yükseltir (sıradaki beyne geçilir)."""
+        for bekleme in YOGUN_BEKLEME + (None,):
+            try:
+                return self._beyinle_yanitla(beyin, metin)
+            except BeyinHatasi as hata:
+                if beyin.yerel or bekleme is None \
+                        or not YOGUNLUK.search(str(hata)):
+                    raise
+                iptal.bekle(bekleme)
 
     def _kuyruga_al(self, metin):
         kimlik = kuyruk.ekle(metin, self._duyarli_tur)
