@@ -15,14 +15,15 @@ def sahte_getir(adres):
     if "langlinks" in adres:
         return {"query": {"pages": {"1": {"langlinks": [{"*": "The Canon of Medicine"}]}}}}
     if "advancedsearch" in adres:
-        if "Canon" in adres:
+        if "medici" in adres:
             return {"response": {"docs": [
                 {"identifier": "canonofmedicine00avic", "title": "The Canon of Medicine",
                  "creator": "Avicenna", "year": "1930", "language": "eng"},
-                {"identifier": "kanunodunc", "title": "Kanun", "year": "2014"}]}}
+                {"identifier": "kanunlatince", "title": "Canon medicinae",
+                 "creator": ["Avicenna"], "date": "1507", "language": "lat"}]}}
         return {"response": {"docs": [
-            {"identifier": "kanunlatince", "title": "Canon medicinae",
-             "creator": ["Avicenna"], "date": "1507", "language": "lat"}]}}
+            {"identifier": "kanunodunc", "title": "Tıp Kanunu", "year": "2014"},
+            {"identifier": "ilgisiz", "title": "Çöl Korsanı", "subject": ["tarih"]}]}}
     if "archive.org/metadata/canonofmedicine00avic" in adres:
         return {"metadata": {}, "files": [
             {"name": "canon.pdf", "size": "9000000"},
@@ -54,6 +55,7 @@ class KitapBulTesti(TemizVeri):
 
     def test_arama_listeler_telif_ve_engel_yazar(self):
         y = kitap_bul.ara("Tıp Kanunu", sahte_getir)
+        self.assertNotIn("Çöl Korsanı", y)                     # ilgisiz sonuç atılır
         self.assertIn("The Canon of Medicine", y)
         self.assertIn("https://archive.org/details/canonofmedicine00avic", y)
         self.assertIn("ödünç", y)
@@ -83,6 +85,19 @@ class KitapBulTesti(TemizVeri):
         dosyalar = os.listdir(hedef_klasor)
         self.assertTrue(any(d.endswith(".txt") for d in dosyalar))
         self.assertTrue(all(a.startswith("https://archive.org/") for a in indirilen))
+
+    def test_isabet_ve_terimler(self):
+        self.assertEqual(kitap_bul.onemli_sozcukler("Türk Tarihi ve mitolojisi kitabı"),
+                         ["türk", "tarihi", "mitolojisi"])
+        t = kitap_bul._arsiv_terimleri("Türk Tarihi ve mitolojisi")
+        self.assertIn("(türk* OR turk*)", t)
+        self.assertIn("AND mitoloji*", t)
+        iyi = {"baslik": "Türk Mitolojisi", "yazar": "Bahaeddin Ögel",
+               "konu": "Türk tarihi"}
+        kotu = {"baslik": "Çöl Korsanı", "yazar": "", "konu": "Gizlenen İslam"}
+        s = "Türk Tarihi ve mitolojisi"
+        self.assertGreaterEqual(kitap_bul.isabet(s, iyi), kitap_bul._esik(s))
+        self.assertLess(kitap_bul.isabet(s, kotu), kitap_bul._esik(s))
 
     def test_yalniz_guvenilir_site(self):
         self.assertTrue(kitap_bul._izinli("https://ia800.us.archive.org/x.txt"))

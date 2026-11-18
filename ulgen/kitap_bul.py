@@ -61,12 +61,15 @@ def _json(adres, getir=None):
 
 # ---------------------------------------------------------------- arama
 def vikipedi(sorgu, getir=None):
-    """[(başlık, adres)] ve İngilizce karşılık başlığı (varsa)."""
+    """[(başlık, adres)], İngilizce karşılık başlığı ve Vikipedi'de kitap
+    maddesi olarak geçen adlar (ör. 'Türk Mitolojisi (kitap)')."""
     sonuc, ingilizce = [], None
     for dil in ("tr", "en"):
+        if dil == "en" and sonuc:          # Türkçe bulunduysa İngilizce adı
+            break                          # langlinks verir; ilgisiz sonuç gelmez
         try:
             v = _json("https://%s.wikipedia.org/w/api.php?action=query&list=search"
-                      "&format=json&srlimit=2&srsearch=%s" % (dil, quote(sorgu)), getir)
+                      "&format=json&srlimit=3&srsearch=%s" % (dil, quote(sorgu)), getir)
         except Exception:
             continue
         for s in v.get("query", {}).get("search", []):
@@ -83,7 +86,45 @@ def vikipedi(sorgu, getir=None):
                     ingilizce = b.get("*") or ingilizce
         except Exception:
             pass
-    return sonuc, ingilizce
+    kitaplar = [re.sub(r"\s*\((kitap|book|roman|novel)\)\s*$", "", b, flags=re.I)
+                for b, _ in sonuc if re.search(r"\((kitap|book|roman|novel)\)", b, re.I)]
+    return sonuc, ingilizce, kitaplar
+
+
+# Aramada anlamsız sözcükler (bağlaçlar, "kitabı", iyelik ekleri)
+DOLGU = set("""ve ile veya ya da bir bu şu kitap kitabı kitabını kitapları hakkında
+için üzerine nin nın nun nün in ın un ün the of and or a an in on to for book books
+about""".split())
+
+
+def onemli_sozcukler(sorgu):
+    return [k for k in re.findall(r"\w+", sorgu.lower())
+            if len(k) >= 2 and k not in DOLGU][:6]
+
+
+def _kok(sozcuk):
+    """Kaba Türkçe/İngilizce kök: ekleri kesmek için sondan kırp
+    ('mitolojisi' -> 'mitoloji', 'tarihi' -> 'tarih')."""
+    n = len(sozcuk)
+    return sozcuk[:n - 2] if n > 6 else sozcuk[:n - 1] if n > 4 else sozcuk
+
+
+def isabet(sorgu, aday):
+    """Sorudaki önemli sözcüklerin kaçı başlık/yazar/konu içinde (0..1)."""
+    from .obsidyen import normal
+    sozcukler = onemli_sozcukler(sorgu)
+    if not sozcukler:
+        return 1.0
+    metin = normal(" ".join(str(aday.get(x) or "") for x in ("baslik", "yazar", "konu")))
+    parcalar = re.findall(r"\w+", metin)
+    tutan = sum(1 for k in sozcukler
+                if any(p.startswith(normal(_kok(k))) for p in parcalar))
+    return tutan / float(len(sozcukler))
+
+
+def _esik(sorgu):
+    n = len(onemli_sozcukler(sorgu))
+    return 1.0 if n <= 2 else 0.6
 
 
 def _yil(d):
@@ -97,29 +138,49 @@ def _ilk(x):
 
 def _arsiv_sorgu(q, getir):
     alanlar = "".join("&fl%%5B%%5D=%s" % x for x in (
-        "identifier", "title", "creator", "year", "date", "language", "licenseurl"))
+        "identifier", "title", "creator", "year", "date", "language", "licenseurl",
+        "subject"))
     adres = ("https://archive.org/advancedsearch.php?q=%s%s&rows=%d&output=json"
-             % (quote(q), alanlar, ADAY_SAYISI))
+             % (quote(q), alanlar, ADAY_SAYISI * 2))
     try:
         return _json(adres, getir).get("response", {}).get("docs", [])
     except Exception:
         return []
 
 
+def _arsiv_terimleri(sorgu):
+    """Her önemli sözcük ZORUNLU (AND); kök + '*' ile ekli biçimler de tutar,
+    Türkçe harfsiz yazımlar da ('türk*' OR 'turk*')."""
+    from .obsidyen import normal
+    terimler = []
+    for k in onemli_sozcukler(sorgu):
+        kok = re.sub(r"[^\w]", "", _kok(k))
+        if not kok:
+            continue
+        duz = normal(kok)
+        terimler.append("(%s* OR %s*)" % (kok, duz) if duz != kok else kok + "*")
+    return " AND ".join(terimler)
+
+
 def arsiv(sorgu, getir=None):
-    """Önce başlıkta arar (en isabetli); az sonuç çıkarsa tüm metinde."""
-    temiz = sorgu.replace('"', " ").replace("(", " ").replace(")", " ")
-    belgeler = _arsiv_sorgu("title:(%s) AND mediatype:texts" % temiz, getir)
+    """Önce başlıkta (tüm sözcükler zorunlu), az sonuç çıkarsa konu ve
+    açıklamada arar."""
+    terim = _arsiv_terimleri(sorgu)
+    if not terim:
+        return []
+    belgeler = _arsiv_sorgu("title:(%s) AND mediatype:texts" % terim, getir)
     if len(belgeler) < 3:
         gorulen = {d.get("identifier") for d in belgeler}
-        belgeler += [d for d in _arsiv_sorgu("(%s) AND mediatype:texts" % temiz, getir)
+        belgeler += [d for d in _arsiv_sorgu("(%s) AND mediatype:texts" % terim, getir)
                      if d.get("identifier") not in gorulen]
     return [{"kaynak": "archive.org", "kimlik": d["identifier"],
              "baslik": _ilk(d.get("title")) or d["identifier"],
              "yazar": _ilk(d.get("creator")), "yil": _yil(d),
              "dil": _ilk(d.get("language")), "lisans": d.get("licenseurl") or "",
+             "konu": " ".join(d["subject"]) if isinstance(d.get("subject"), list)
+             else d.get("subject") or "",
              "sayfa": "https://archive.org/details/%s" % d["identifier"]}
-            for d in belgeler[:ADAY_SAYISI] if d.get("identifier")]
+            for d in belgeler if d.get("identifier")]
 
 
 def _arsiv_dosyasi(aday, getir=None):
@@ -189,20 +250,23 @@ def ara(sorgu, getir=None):
     """Arar, adayları kaydeder ve gösterilecek metni döndürür."""
     sorgu = re.sub(r"\s+", " ", sorgu).strip(" '\"")[:150]
     _TUR.hatalar = []
-    viki, ingilizce = vikipedi(sorgu, getir)
-    sorgular = [sorgu] + ([ingilizce] if ingilizce and ingilizce.lower() != sorgu.lower()
-                          else [])
+    viki, ingilizce, kitap_adlari = vikipedi(sorgu, getir)
+    sorgular = []
+    for s in [sorgu] + kitap_adlari + ([ingilizce] if ingilizce else []):
+        if s and s.lower() not in [x.lower() for x in sorgular]:
+            sorgular.append(s)
     adaylar, gorulen = [], set()
     for s in sorgular:
         for a in arsiv(s, getir) + gutenberg(s, getir):
-            if a["kimlik"] not in gorulen:
+            a["isabet"] = isabet(s, a)
+            if a["kimlik"] not in gorulen and a["isabet"] >= _esik(s):
                 gorulen.add(a["kimlik"])
                 adaylar.append(a)
-    arsivdekiler = [a for a in adaylar if a["kaynak"] == "archive.org"][:ADAY_SAYISI]
+    adaylar.sort(key=lambda a: -a["isabet"])       # en isabetli önce
+    adaylar = adaylar[:10]
+    arsivdekiler = [a for a in adaylar if a["kaynak"] == "archive.org"]
     with ThreadPoolExecutor(4) as havuz:
         list(havuz.map(lambda a: _arsiv_dosyasi(a, getir), arsivdekiler))
-    adaylar = [a for a in adaylar
-               if a["kaynak"] != "archive.org" or a in arsivdekiler][:10]
     try:
         with open(_aday_yolu(), "w", encoding="utf-8") as f:
             json.dump({"sorgu": sorgu, "adaylar": adaylar}, f, ensure_ascii=False)
@@ -232,8 +296,10 @@ def _goster(sorgu, viki, ingilizce, adaylar):
     if ingilizce:
         s += ["İngilizce adıyla da arandı: *%s*" % ingilizce, ""]
     if not adaylar:
-        s.append("archive.org ve Project Gutenberg'de bir sonuç çıkmadı. Kitabın "
-                 "İngilizce ya da özgün adıyla yeniden deneyin.")
+        s.append("archive.org ve Project Gutenberg'de adı bu sözcüklerin hepsini "
+                 "içeren bir kitap çıkmadı. Kitabın tam adıyla, yazarıyla ya da "
+                 "İngilizce adıyla yeniden deneyin (örn. 'kitap ara: Bahaeddin "
+                 "Ögel Türk Mitolojisi').")
         return "\n".join(s)
     s.append("**Bulunan kitaplar:**")
     for i, a in enumerate(adaylar, 1):

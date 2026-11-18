@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.24
+- **Kitap araması isabetli:** "Türk Tarihi ve mitolojisi" aramasında konuyla ilgisiz kitaplar geliyordu; arşiv, sözcüklerden yalnızca birini ("tarihi") içeren her kaydı döndürüyordu. Artık "ve, ile, kitabı, the, of" gibi dolgu sözcükleri atılır, kalan her sözcük ZORUNLU olur ve ekli biçimler de tutar ("mitoloji*", "türk*/turk*"). Gelen sonuçlar ayrıca Ülgen'de puanlanır: adında, yazarında ya da konusunda sözcüklerin çoğu geçmeyen kayıt listeye girmez; en isabetliler önce gelir. Vikipedi'de kitap maddesi olarak geçen adlar (ör. "Türk Mitolojisi (kitap)") da ayrıca aranır; Türkçe madde bulunduğunda ilgisiz İngilizce madde gösterilmez.
+
 ## 2.8.23
 - **Kitap bulma ve indirme:** "kitap ara: Tıp Kanunu" ya da "İbn Sina'nın Tıp Kanunu kitabını bul" yazın. Ülgen Türkçe ve İngilizce Vikipedi'de konuyu bulur, kitabın İngilizce adını da çıkarır ("The Canon of Medicine"), archive.org ve Project Gutenberg'de her iki adla arar. Sonuçlar bağlantılarıyla listelenir: yazar, yıl, dil, dosya türü ve boyutu, telif durumu; ödünç verilen (indirilemeyen) kitaplar belirtilir. Hiçbir şey kendiliğinden indirilmez: siz inceledikten sonra "kitap indir 2" (ya da "kitap indir 1, 3") dersiniz; dosya yalnızca archive.org ya da gutenberg.org'dan, en çok 80 MB, Kılavuz klasörüne indirilir ve Obsidian'a aktarılır. archive.org'da taranmış metin (_djvu.txt) varsa PDF yerine o seçilir; uzmanlar kitabı hemen okuyabilir. Aramada yalnızca kitap adı gönderilir.
 
