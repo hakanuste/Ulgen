@@ -150,7 +150,7 @@ svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-widt
 #sohbetKolon { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #pano { display: none; }
 body[data-s="gorevler"] #sohbetKolon, body[data-s="ilac"] #sohbetKolon, body[data-s="bildirim"] #sohbetKolon,
-body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon, body[data-s="saglik"] #sohbetKolon, body[data-s="projeler"] #sohbetKolon,
+body[data-s="kasa"] #sohbetKolon, body[data-s="sistem"] #sohbetKolon, body[data-s="projeler"] #sohbetKolon,
 body[data-s="bilgi"] #sohbetKolon, body[data-s="yz"] #sohbetKolon, body[data-s="ajanlar"] #sohbetKolon, body[data-s="ayarlar"] #sohbetKolon { display: none; }
 #saat { font-variant-numeric: tabular-nums; color: var(--altin); font-size: 13px; }
 .sat { display: flex; gap: 10px; align-items: flex-end; margin: 8px 0; }
@@ -360,7 +360,6 @@ body[data-s="sohbet"] #serit, body[data-s="sohbet"] #yaklasan { display: none !i
   <button data-s="sohbet" onclick="sekme('sohbet')"><svg class="i"><use href="#i-sohbet"/></svg>Sohbet</button>
   <button data-s="gorevler" onclick="sekme('gorevler')"><svg class="i"><use href="#i-gorev"/></svg>Görevler<em class="rz" id="rzGorev"></em></button>
   <button data-s="ilac" onclick="sekme('ilac')"><svg class="i"><use href="#i-hap"/></svg>İlaçlar</button>
-  <button data-s="saglik" onclick="sekme('saglik')"><svg class="i"><use href="#i-kalp"/></svg>Sağlık &amp; Ölçümler</button>
   <button data-s="projeler" onclick="sekme('projeler')"><svg class="i"><use href="#i-katman"/></svg>Projeler</button>
   <button data-s="ajanlar" onclick="sekme('ajanlar')"><svg class="i"><use href="#i-cip"/></svg>Ajanlar</button>
   <button data-s="bilgi" onclick="sekme('bilgi')"><svg class="i"><use href="#i-veri"/></svg>Hafıza &amp; Bilgi</button>
@@ -444,7 +443,6 @@ body[data-s="sohbet"] #serit, body[data-s="sohbet"] #yaklasan { display: none !i
 <div id="pIlac" class="panel"></div>
 <div id="pBildirim" class="panel"></div>
 <div id="pKasa" class="panel"></div>
-<div id="pSaglik" class="panel"></div>
 <div id="pProjeler" class="panel"></div>
 <div id="pAjanlar" class="panel"></div>
 <div id="pBilgi" class="panel"></div>
@@ -1233,13 +1231,14 @@ async function kasaOku(ad, acma, istekNo) {
 }
 
 // ---- sekmeler ------------------------------------------------------------
-const paneller = { gorevler: "pGorevler", ilac: "pIlac", bildirim: "pBildirim", kasa: "pKasa", saglik: "pSaglik", projeler: "pProjeler", ajanlar: "pAjanlar", bilgi: "pBilgi", yz: "pYz", ayarlar: "pAyarlar", sistem: "pSistem" };
+const paneller = { gorevler: "pGorevler", ilac: "pIlac", bildirim: "pBildirim", kasa: "pKasa", projeler: "pProjeler", ajanlar: "pAjanlar", bilgi: "pBilgi", yz: "pYz", ayarlar: "pAyarlar", sistem: "pSistem" };
 const gecmisBildirim = [];
 let aktifSekme = "ana";
 
 const sohbetli = ad => ad === "ana" || ad === "sohbet";
 function sekme(ad, geriden) {
   menuKapat();
+  if (!sohbetli(ad) && !paneller[ad]) ad = "ana";   // kaldırılmış sekme
   if (!geriden && ad !== aktifSekme) { try { history.pushState({ s: ad }, ""); } catch (e) {} }
   aktifSekme = ad;
   document.body.dataset.s = ad;
@@ -1268,7 +1267,6 @@ function kartK(ust, baslik, govde, ikon, ek, git) {
 function resimEkle(kap, ad, sinif) {
   const i = document.createElement("img"); i.src = "/varlik/" + ad + ".webp"; i.alt = ""; i.className = sinif; kap.appendChild(i); return i;
 }
-function uykuYazi(dk) { return dk === null || dk === undefined ? "—" : Math.floor(dk / 60) + "s " + (dk % 60) + "dk"; }
 function cubuk(oran, renk) { const c = document.createElement("div"); c.className = "cubuk" + (renk ? " " + renk : "");
   const i = document.createElement("i"); i.style.width = Math.max(0, Math.min(100, oran)) + "%"; c.appendChild(i); return c; }
 function satirS(kap, a, b, sinif, rozet) { const r = document.createElement("div"); r.className = "s";
@@ -1423,30 +1421,12 @@ async function panelYenile(ad) {
     else if (ad === "ilac") await ilacCiz();
     else if (ad === "bildirim") bildirimCiz();
     else if (ad === "sistem") await sistemCiz();
-    else if (ad === "saglik") await saglikCiz();
     else if (ad === "projeler") await projelerCiz();
     else if (ad === "ajanlar") await ajanlarCiz();
     else if (ad === "bilgi") await bilgiCiz();
     else if (ad === "yz") await yzCiz();
     else if (ad === "ayarlar") await ayarCiz();
   } catch (e) { /* bağlantı uyarısı zaten gösteriliyor */ }
-}
-
-async function saglikCiz() {
-  const k = document.getElementById("pSaglik"); k.innerHTML = "";
-  const [b, h] = await Promise.all([istek("/saglik/bugun"), istek("/saglik/gecmis")]);
-  baslik(k, "Bugün");
-  if (!b.veri_var) ekle(k, "Henüz veri yok.", "iPhone Kestirmesi kurulunca adım, nabız ve uyku buraya gelir (SAGLIK_KESTIRME.md).");
-  else {
-    ekle(k, "Adım: " + (b.adim === null ? "—" : b.adim.toLocaleString("tr-TR")));
-    ekle(k, "Son nabız: " + (b.nabiz === null ? "—" : b.nabiz + " atım/dk"), b.nabiz_zaman || "");
-    ekle(k, "Uyku: " + uykuYazi(b.uyku_dk));
-  }
-  baslik(k, "Son 7 gün");
-  if (!h.length) ekle(k, "Kayıt yok.");
-  h.forEach(g => ekle(k, g.gun + "  ·  adım " + (g.adim === null ? "—" : Math.round(g.adim)) + "  ·  ort. nabız " + (g.nabiz === null ? "—" : Math.round(g.nabiz)) +
-    "  ·  uyku " + uykuYazi(g.uyku === null ? null : Math.round(g.uyku))));
-  ekle(k, "Bu veriler yalnızca Mac'inizde durur, buluta gönderilmez. Ülgen tıbbi öneri vermez.");
 }
 
 // Pano istekleri: sunucu hata gövdesi dönerse (ör. 429, 403) hangi istekte olduğunu açıkça söyler.
