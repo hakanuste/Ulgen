@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.22
+- **Yalnız size ait sağlık verisi gizli kalır:** Bir soru artık yalnızca SİZE ait bilgi içerdiğinde buluta gönderilmez: "ilacım", "ilaçlarımı", "tansiyonum", "hastalığım" gibi birinci tekil iyelikli sağlık sözcükleri; "benim / bende / kullandığım" ile birlikte geçen sağlık sözcükleri; İlaçlar sayfasına kaydettiğiniz bir ilacın adı; kimlik, IBAN, kart, parola, maaş, tapu, adres. "İbn Sina sarılığı nasıl tedavi eder?", "Kantaron hangi hastalıklara iyi gelir?" gibi genel sorular Gemini'ye gidebilir ve internette araştırılabilir. Kendi notlarınızdaki sağlık satırları buluta yine hiç gitmez.
+
 ## 2.8.21
 - **Kitaplar (.txt) artık okunur:** Kılavuz klasörüne konan .txt dosyaları (ör. archive.org'dan indirilen taranmış kitap metinleri, "..._djvu.txt") eskiden kasaya olduğu gibi kopyalanıyor, ama Ülgen .txt'yi aramadığı ve 1 MB'ı aşan notları atladığı için hiç okunmuyordu. Şimdi her kitap kendi klasörüne ~40.000 karakterlik Markdown bölümlerine (paragraf sonundan) ve bir Dizin notuna çevrilir; satır sonunda bölünmüş sözcükler ("ta-/rafından") birleştirilir, dosya adındaki "_" ve "djvu" temizlenir.
 - **Kitap alıntıları ayıklanmaz:** 2.8.18'deki kişisel veri süzgeci yalnızca kendi notlarınıza ve eski sohbetlere uygulanır. Kılavuz ve kitap alıntıları (ör. Tıp Kanunu'nda "hastalık", "ilaç" geçen satırlar) kişisel veri olmadığından olduğu gibi kalır; önceden bu tür kitap parçaları tümüyle atlanıyordu.

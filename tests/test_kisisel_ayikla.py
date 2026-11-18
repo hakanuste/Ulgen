@@ -38,3 +38,25 @@ def test_kasa_alintilari_bulutta_ayiklar(monkeypatch):
                         lambda m, s: "Ölçü 8x12\nŞifre: abc123")
     assert baglam.kasa_alintilari("x", bulut=True) == "Ölçü 8x12"
     assert "Şifre" in baglam.kasa_alintilari("x", bulut=False)
+
+
+def test_genel_saglik_sorusu_kisisel_degil():
+    for soru in ("İbn Sina sarılığı nasıl tedavi eder?",
+                 "Kantaron yağı hangi hastalıklara iyi gelir?",
+                 "Tıp Kanunu'nda ilaçlar nasıl sınıflanır?",
+                 "Uyku düzeni için hangi bitkiler kullanılır?"):
+        assert not guvenlik.kisisel_mi(soru), soru
+
+
+def test_size_ait_veri_kisisel():
+    for soru in ("İlacımı ne zaman almalıyım?", "Tansiyonum 14 çıktı",
+                 "ilaçlarımı listele", "Benim hastalığım için kantaron olur mu?",
+                 "Kullandığım ilaç ile kekik çayı içilir mi?",
+                 "IBAN numaramı yaz", "şifremi unuttum", "Hastalığımla ilgili not"):
+        assert guvenlik.kisisel_mi(soru), soru
+
+
+def test_kayitli_ilac_adi_kisisel(monkeypatch):
+    monkeypatch.setattr(guvenlik, "_kayitli_ilaclar", lambda: ["beloc"])
+    assert guvenlik.kisisel_mi("Beloc ile ıhlamur içilir mi?")
+    assert not guvenlik.kisisel_mi("Ihlamur neye iyi gelir?")

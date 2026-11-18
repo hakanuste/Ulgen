@@ -37,7 +37,7 @@ def bilgi_sorusu_mu(metin):
         return False
     if not SORU.search(m) or KISISEL.search(m):
         return False
-    return not guvenlik.duyarli_mi(m)
+    return not guvenlik.kisisel_mi(m)
 
 
 def anahtar_sozcukler(metin):

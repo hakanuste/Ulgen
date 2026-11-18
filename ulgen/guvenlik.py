@@ -126,6 +126,53 @@ def duyarli_mi(metin):
     return bool(DUYARLI_DESENI.search(metin or ""))
 
 
+# Her zaman kişisel olan: kimlik, parola, para, mülk, adres
+_KIMLIK_SOZ = re.compile(
+    r"\b(tc\s*kimlik|kimlik\s*no|iban|kredi\s*kart|kart\s*numaras|şifre|sifre|"
+    r"parola|password|maaş|maas|borcum|banka\s*hesab|tapu|parsel|arazim|"
+    r"arsam|adresim|konumum|ev\s*adres)", re.IGNORECASE)
+# Sağlık sözcükleri: tek başına genel bilgi sorusudur ("İbn Sina sarılığı
+# nasıl tedavi eder?"); BİRİNCİ TEKİL iyelikle (ilacım, tansiyonum,
+# hastalığım, ilaçlarımı) ya da "benim/bende/kullandığım" ile kişiseldir.
+_SAGLIK_KOK = (r"(ilaç|ilac|hap|tansiyon|şeker|seker|insülin|insulin|teşhis|"
+               r"teshis|tedavi|reçete|recete|hastalı|hastalığ|hastalig|kanser|"
+               r"ameliyat|doz|nabz|nabız|nabiz|uyku|ağrı|agri|sağlığ|saglig|"
+               r"kolesterol|tahlil|migren|alerji|tahlil|kan\s*değer)")
+_SAGLIK_IYELIK = re.compile(
+    r"\b" + _SAGLIK_KOK + r"\w*?(ım|im|um|üm|m)"
+    r"(ı|i|u|ü|a|e|da|de|dan|den|la|le|ın|in|un|ün)?\b", re.IGNORECASE)
+_BEN = re.compile(r"\b(benim|bende|bana|kullandığım|kullandigim|içtiğim|"
+                  r"ictigim|aldığım|aldigim|olduğum|oldugum)\b", re.IGNORECASE)
+_SAGLIK = re.compile(r"\b" + _SAGLIK_KOK, re.IGNORECASE)
+
+
+def _kayitli_ilaclar():
+    """İlaçlar sayfasına kaydettiğiniz ilaç adları (küçük harf)."""
+    try:
+        from . import veritabani
+        return [r["ad"].strip().lower() for r in veritabani.sorgu(
+            "SELECT ad FROM ilac", (), True) if (r["ad"] or "").strip()]
+    except Exception:
+        return []
+
+
+def kisisel_mi(metin):
+    """Soru SİZE ait kişisel veri mi içeriyor (buluta gitmemeli)?
+
+    Genel sağlık/bitki/tarih soruları kişisel sayılmaz. Kişisel olan:
+    kimlik/parola/banka/adres/tapu; birinci tekil iyelikli sağlık sözcüğü
+    ("ilacım", "tansiyonum"); "benim/bende/kullandığım" + sağlık sözcüğü;
+    İlaçlar sayfasına kaydettiğiniz bir ilacın adı."""
+    m = metin or ""
+    if _KIMLIK_SOZ.search(m) or _SAGLIK_IYELIK.search(m):
+        return True
+    if _BEN.search(m) and _SAGLIK.search(m):
+        return True
+    kucuk = m.lower()
+    return any(len(ad) >= 3 and re.search(r"\b%s" % re.escape(ad), kucuk)
+               for ad in _kayitli_ilaclar())
+
+
 # Kimlik bilgisi kalıpları: metin içinde "[gizli]" ile örtülür
 _KIMLIK_KALIPLARI = (
     re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"),                  # e-posta

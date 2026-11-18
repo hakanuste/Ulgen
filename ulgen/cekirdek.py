@@ -21,7 +21,7 @@ from .araclar import Araclar
 from .ocr import KitapAjani
 from .baglam import BaglamYoneticisi, kasa_alintilari
 from .beyin import BeyinHatasi, BeyinYonlendirici, KotaHatasi
-from .guvenlik import OnayIstegi, OnayYoneticisi, duyarli_mi, kod_ayikla
+from .guvenlik import OnayIstegi, OnayYoneticisi, kisisel_mi, kod_ayikla
 from .hafiza import HafizaYoneticisi
 from .zamanlayici import Zamanlayici
 
@@ -333,7 +333,9 @@ class Ulgen:
         with (_BOS_KILIT if ajan_gorevi else self._sohbet_kilit):
             if not ajan_gorevi:
                 iptal.temizle()
-            self._duyarli_tur = duyarli_mi(metin)
+            # yalnız SİZE ait veri (ilacım, tansiyonum, kimlik...) yerelde kalır;
+            # genel sağlık/bitki/tarih soruları bulut beyne gidebilir
+            self._duyarli_tur = kisisel_mi(metin)
             try:
                 yanit, beyin_adi = self._isle(metin)
             except iptal.Iptal:
@@ -551,7 +553,7 @@ class Ulgen:
             return False
         with self._sohbet_kilit:
             self._duyarli_tur = bool(kayit["duyarli"]) or \
-                duyarli_mi(kayit["metin"])
+                kisisel_mi(kayit["metin"])
             durum, yanit, beyin_adi = self._beyinle_dene(kayit["metin"])
         if durum == "tamam":
             kuyruk.bitir(kayit["id"], "tamam", beyin_adi or "", yanit)
