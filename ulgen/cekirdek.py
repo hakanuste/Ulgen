@@ -15,7 +15,7 @@ from datetime import datetime
 
 from . import ayar, cihazlar, iptal, kilavuz, kisilik, kota, kuyruk, veritabani, yedek
 from . import ajan_kayit, analiz, dogrulama, kutuphane_once, macsenk, oturum
-from . import kasa_bul, metin_temizle, niyet, portfoy, uzmanlar
+from . import kasa_bul, kitap_bul, metin_temizle, niyet, portfoy, uzmanlar
 from .ajanlar import ArastirmaAjani, SabahOzeti, SaglikAjani
 from .araclar import Araclar
 from .ocr import KitapAjani
@@ -375,6 +375,10 @@ class Ulgen:
             self._ajan, self._duyarli_tur = "YAZIT", True
             self._ajan_isi = True
             return kasa_bul.bul(sorgu, self._onceki_soru()), "hızlı komut"
+        kitap = kitap_bul.komut(metin)        # kitap ara / kitap indir 2
+        if kitap is not None:
+            self._duyarli_tur, self._ajan_isi = True, True
+            return kitap, "hızlı komut"
         kaynak_yaniti = uzmanlar.komut(metin)
         if kaynak_yaniti is None:
             kaynak_yaniti = analiz.komut(metin)

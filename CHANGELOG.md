@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.23
+- **Kitap bulma ve indirme:** "kitap ara: Tıp Kanunu" ya da "İbn Sina'nın Tıp Kanunu kitabını bul" yazın. Ülgen Türkçe ve İngilizce Vikipedi'de konuyu bulur, kitabın İngilizce adını da çıkarır ("The Canon of Medicine"), archive.org ve Project Gutenberg'de her iki adla arar. Sonuçlar bağlantılarıyla listelenir: yazar, yıl, dil, dosya türü ve boyutu, telif durumu; ödünç verilen (indirilemeyen) kitaplar belirtilir. Hiçbir şey kendiliğinden indirilmez: siz inceledikten sonra "kitap indir 2" (ya da "kitap indir 1, 3") dersiniz; dosya yalnızca archive.org ya da gutenberg.org'dan, en çok 80 MB, Kılavuz klasörüne indirilir ve Obsidian'a aktarılır. archive.org'da taranmış metin (_djvu.txt) varsa PDF yerine o seçilir; uzmanlar kitabı hemen okuyabilir. Aramada yalnızca kitap adı gönderilir.
+
 ## 2.8.22
 - **Yalnız size ait sağlık verisi gizli kalır:** Bir soru artık yalnızca SİZE ait bilgi içerdiğinde buluta gönderilmez: "ilacım", "ilaçlarımı", "tansiyonum", "hastalığım" gibi birinci tekil iyelikli sağlık sözcükleri; "benim / bende / kullandığım" ile birlikte geçen sağlık sözcükleri; İlaçlar sayfasına kaydettiğiniz bir ilacın adı; kimlik, IBAN, kart, parola, maaş, tapu, adres. "İbn Sina sarılığı nasıl tedavi eder?", "Kantaron hangi hastalıklara iyi gelir?" gibi genel sorular Gemini'ye gidebilir ve internette araştırılabilir. Kendi notlarınızdaki sağlık satırları buluta yine hiç gitmez.
 
