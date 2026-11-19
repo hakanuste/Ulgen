@@ -777,9 +777,10 @@ function yerelKonus(metin, sirada) {
   const parcalar = (metin.replace(/\s+/g, " ").match(/[^.!?]+[.!?]*/g) || [metin]).filter(p => p.trim());
   if (!parcalar.length) return Promise.resolve();
   return new Promise(coz => {
-    // Chrome: cancel() ardından hemen speak() bazen yutulur; kısa bekleme +
-    // resume() takılı kalmış ses motorunu açar.
-    setTimeout(() => {
+    let basladi = false;
+    // Söylenenler tutulur: Chrome, onend gelmeden nesneyi atınca ses kesilir.
+    window._ulgenSoz = [];
+    const oku = (son) => {
       try { speechSynthesis.resume(); } catch (e) {}
       parcalar.forEach((p, i) => {
         const u = new SpeechSynthesisUtterance(p.trim());
@@ -787,11 +788,38 @@ function yerelKonus(metin, sirada) {
         if (secili) u.voice = secili;
         u.rate = t.hiz || 0.95;
         u.pitch = t.perde || 0.8;
-        if (i === parcalar.length - 1) { u.onend = () => coz(); u.onerror = () => coz(); }
+        u.onstart = () => { basladi = true; };
+        u.onerror = e => {
+          const n = e && e.error;
+          if (n && !/interrupted|canceled/.test(n) && son) sesNotu("🔇 Ses okunamadı (" + n + ").");
+          if (i === parcalar.length - 1) coz();
+        };
+        if (i === parcalar.length - 1) u.onend = () => coz();
+        window._ulgenSoz.push(u);
         speechSynthesis.speak(u);
       });
+    };
+    // Chrome: cancel() ardından hemen speak() bazen yutulur; kısa bekleme +
+    // resume() takılı kalmış ses motorunu açar.
+    setTimeout(() => {
+      oku(false);
+      // Ses motoru takıldıysa (hiç başlamadı): sıfırlayıp bir kez daha dene,
+      // yine olmazsa sessiz kalma, nedenini yaz.
+      setTimeout(() => {
+        if (basladi || speechSynthesis.speaking) return;
+        try { speechSynthesis.cancel(); } catch (e) {}
+        setTimeout(() => {
+          oku(true);
+          setTimeout(() => {
+            if (!basladi && !speechSynthesis.speaking) {
+              sesNotu("🔇 Tarayıcının ses motoru yanıt vermiyor. Tarayıcıyı tümüyle kapatıp (⌘Q) yeniden açın; olmazsa Ayarlar > Ses seçimi'nden başka bir ses seçin.");
+              coz();
+            }
+          }, 2500);
+        }, 150);
+      }, 2000);
       // Güvenlik: onend hiç gelmezse kuyruk kilitlenmesin
-      setTimeout(coz, 4000 + metin.length * 90);
+      setTimeout(coz, 8000 + metin.length * 90);
     }, sirada ? 0 : 60);
   });
 }

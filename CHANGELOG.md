@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.30
+- **Ses takılınca kendini toparlar:** Tarayıcının konuşma motoru takıldığında yanıt yazılı geliyor ama hiç okunmuyordu. Artık okuma 2 saniyede başlamazsa motor sıfırlanıp bir kez daha denenir; yine olmazsa sohbette nedeni yazılır ("ses motoru yanıt vermiyor; tarayıcıyı ⌘Q ile kapatıp açın"). Ses hata verirse hata adı gösterilir. Okunan cümleler bellekte tutulur (Chrome'un okumayı yarıda kesmesine karşı).
+
 ## 2.8.29
 - **Boş yanıt veren bulut modelleri:** NVIDIA'daki gemma gibi bazı modeller ayrı "system" talimatını desteklemiyor ya da düşünme payında sözcük hakkını bitirip boş yanıt döndürüyordu ("boş yanıt döndürdü"). Artık boş yanıtta talimat ilk iletiye katılıp daha geniş sözcük hakkıyla bir kez daha denenir; <think> düşünme bölümleri yanıttan atılır. Yine boşsa "başka model seçin" denir. "Bağlantıyı dene" de daha geniş sözcük hakkıyla dener.
 
