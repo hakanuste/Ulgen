@@ -44,3 +44,14 @@ class HazirSaglayiciTesti(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnahtarOnceligiTesti(TemizVeri):
+    def test_zincirdeki_yeni_anahtar_eski_duz_anahtari_gecer(self):
+        from ulgen import gizli
+        ayar.guncelle("nvidia_anahtar", "nvapi-ESKIDUZANAHTAR")
+        with mock.patch.object(gizli, "sir_oku",
+                               side_effect=lambda ad: "nvapi-YENI1234" if ad == "nvidia" else ""):
+            self.assertEqual(ayar.yukle()["nvidia_anahtar"], "nvapi-YENI1234")
+        with mock.patch.object(gizli, "sir_oku", return_value=""):
+            self.assertEqual(ayar.yukle()["nvidia_anahtar"], "nvapi-ESKIDUZANAHTAR")

@@ -713,8 +713,15 @@ def istek_sinifi(ulgen, limit):
                     return self._cevap(400, {"hata": "anahtar geçersiz görünüyor: "
                                              "boşluksuz, tek parça olmalı (ör. nvapi-…)"})
                 yer = gizli.sir_yaz(ad, anahtar)
+                try:                 # ayar.json'da kalmış eski düz anahtarı sil
+                    with open(ayar.AYAR_DOSYASI, "r", encoding="utf-8") as f:
+                        if json.load(f).get(ayar.SIRLAR[ad]):
+                            ayar.guncelle(ayar.SIRLAR[ad], "")
+                except (OSError, ValueError, AttributeError):
+                    pass
                 veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı yazıldı" % ad)
-                return self._cevap(200, {"tamam": True, "yer": yer})
+                return self._cevap(200, {"tamam": True, "yer": yer,
+                                         "son4": anahtar[-4:]})
             if ad == "elevenlabs":
                 try:
                     return self._cevap(200, {

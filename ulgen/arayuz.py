@@ -1754,10 +1754,16 @@ async function anahtarlarim(k) {
         kay.disabled = true;
         const c = await istek("/yz/anahtar", { saglayici: ad, anahtar: gir.value, ses_kimligi: kim ? kim.value : "" });
         gir.value = "";
-        if (c.tamam) { balonEkle(SAGLAYICI_AD[ad] + " anahtarı kaydedildi (" + c.yer + ").", "asistan"); yzCiz(); }
+        if (c.tamam) {
+          so.style.color = "var(--ulgen-success)";
+          so.textContent = "✔ Kaydedildi (" + c.yer + (c.son4 ? ", son 4 hane: …" + c.son4 : "") + "). Sayfa yenileniyor…";
+          setTimeout(yzCiz, 1500);
+        }
         else { so.textContent = c.hata || "Kaydedilemedi."; kay.disabled = false; }
       };
-      f.appendChild(gir); if (kim) f.appendChild(kim); f.appendChild(kay); f.appendChild(va); f.appendChild(so); satir.appendChild(f);
+      f.appendChild(gir); if (kim) f.appendChild(kim); f.appendChild(kay); f.appendChild(va); f.appendChild(so);
+      ek.insertAdjacentElement("afterend", f);       // düğmenin hemen altında açılsın
+      gir.focus();
     };
     if (d.var && hazir[ad]) hazirDuzen(satir, ad, hazir[ad], dugme);
     if (d.var) {

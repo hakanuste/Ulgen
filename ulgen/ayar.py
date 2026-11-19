@@ -166,9 +166,10 @@ def yukle():
         pass
     # API anahtarları ayar.json yerine Anahtar Zinciri'nde tutulur
     from . import gizli
+    # Anahtar Zinciri önce gelir: "Değiştir" ile yazılan yeni anahtar,
+    # ayar.json'da kalmış eski düz anahtarın arkasında kalmasın.
     for ad, alan in SIRLAR.items():
-        if not sonuc.get(alan):
-            sonuc[alan] = gizli.sir_oku(ad)
+        sonuc[alan] = gizli.sir_oku(ad) or sonuc.get(alan) or ""
     return sonuc
 
 

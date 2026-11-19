@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.28
+- **API anahtarı değiştirme düzeldi:** "Değiştir" ile girilen yeni anahtar Anahtar Zinciri'ne yazılıyor, ama ayar.json'da eskiden kalmış düz bir anahtar varsa Ülgen o eskiyi kullanmayı sürdürüyordu. Artık Anahtar Zinciri'ndeki anahtar her zaman önce gelir; kaydedince ayar.json'daki eski düz kopya silinir. Anahtar kutusu artık düğmenin hemen altında açılır, kaydedince sonuç ("✔ Kaydedildi, son 4 hane …") kutunun altında görünür.
+
 ## 2.8.27
 - **NVIDIA için daha uzun bekleme:** NVIDIA'nın ücretsiz uç noktalarında büyük modeller (gemma-4-31b, kimi, Mistral Large 4) sıra bekleyebildiğinden yanıt için 60 yerine 150 saniye beklenir ("The read operation timed out" hatası).
 
