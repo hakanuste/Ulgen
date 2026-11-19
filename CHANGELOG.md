@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2.8.33
+- **Ülgen'in kendi sesi (Piper, internetsiz):** Yanıtlar artık Mac'te, internetsiz sese çevrilebilir; metin hiçbir yere gönderilmez, kişisel yanıtlar da okunur. Ayarlar'da yeni bölüm: "Piper'ı kur" (bir kez), "Türkçe sesi indir" (tr_TR-dfki-medium, ~63 MB, bir kez), ses seçimi, hız, "Bu sesle oku" ve "Dene". Açıkken yanıtlar önce bu sesle okunur; olmazsa tarayıcı sesine geçilir. iPhone'dan da çalışır (ses Mac'te üretilir).
+- **Kendi sesimi kaydet:** Ekrana gelen cümleyi okuyup kaydedersiniz (22050 Hz tek kanal WAV, Piper'ın eğitim biçimi). Dinle, son kaydı sil, atla; ilerleme dakika olarak görünür (hedef 45 dk). 120 hazır cümle bitince kasadaki kitaplardan uygun cümleler gelir. "Eğitim paketini indir" ses_veri.zip verir.
+- **Eğitim defteri:** docs/piper_egitim.ipynb (Google Colab, ücretsiz GPU) hazır Türkçe sesten başlayarak sizin sesinize uyarlanmış modeli üretir; adımlar docs/SESIM.md'de. Ortaya çıkan iki dosya ~/ÜlgenVeri/sesler/ klasörüne konunca listede "kendi sesiniz" olarak görünür.
+
 ## 2.8.32
 - **Mac sesi: Yelda yüklü değilse de okur:** "Mac'in kendi sesiyle oku" seçili ses (Yelda) Mac'te yüklü değilse sessiz kalmak yerine Mac'in varsayılan sesiyle okur.
 

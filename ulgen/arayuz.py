@@ -736,6 +736,14 @@ async function konusIc(metin) {
     if (ad) { if (!(await klipCal(ad))) await yedekKonus(sesliMetin(metin)); return; }
     metin = sesliMetin(metin);
     if (!metin) return;
+    if (piperAcik) {                                      // internetsiz kendi ses
+      const pp = parcalaMetin(metin);
+      for (let i = 0; i < pp.length; i++) {
+        if (no !== konusmaNo) return;
+        if (!(await piperOku(pp[i], true))) { if (no === konusmaNo) await yerelKonus(pp.slice(i).join(" "), true); return; }
+      }
+      return;
+    }
     if (!bulutSes) { await yerelKonus(metin); return; }
     const parcalar = parcalaMetin(metin);
     for (let i = 0; i < parcalar.length; i++) {
@@ -981,8 +989,19 @@ async function sesDurumuYukle() {
   try { cevrimdisiSes = !!(await istek("/ses/durum")).cevrimdisi; } catch (e) { cevrimdisiSes = false; }
   try { klipler = await istek("/ses/klipler"); } catch (e) { klipler = {}; }
   try { bulutSes = !!(await istek("/ses/durum")).bulut; } catch (e) { bulutSes = false; }
+  try { piperAcik = !!(await istek("/ses/piper/durum")).acik; } catch (e) { piperAcik = false; }
 }
 let bulutSes = false;
+// Ülgen'in kendi sesi (Piper): metin Mac'te, internetsiz sese çevrilir.
+let piperAcik = false;
+async function piperOku(metin, bitenKadar) {
+  try {
+    const h = { "Content-Type": "application/json" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+    const c = await fetch("/ses/piper", { method: "POST", headers: h, body: JSON.stringify({ metin: metin }) });
+    if (!c.ok) return false;
+    return await sesCal(URL.createObjectURL(await c.blob()), bitenKadar);
+  } catch (e) { return false; }
+}
 // Tek, yeniden kullanılan ses öğesi: Safari/Chrome ilk kullanıcı dokunuşunda "kilidi açılan" öğeyi sonradan,
 // dokunuş olmadan da çalmaya izin verir. Her seferinde yeni Audio() oluşturmak engelleniyordu ve kadın sesine düşülüyordu.
 const sesKap = new Audio();
@@ -1912,7 +1931,130 @@ function anahtarKutusu(k) {
   k.appendChild(kap);
 }
 
+// Ülgen'in kendi sesi (Piper, internetsiz): kur, ses indir, seç, aç/kapat, dene; kendi sesini kaydet.
+async function piperPaneli(k) {
+  let d; try { d = await istek("/ses/piper/durum"); } catch (e) { return; }
+  const kap = ekle(k, "Ülgen'in kendi sesi (Piper, internetsiz)",
+    "Yanıtlar Mac'te sese çevrilir; metin hiçbir yere gönderilmez, internet gerekmez. Kişisel yanıtlar da bu sesle okunur.");
+  const dug = (yazi, aktif) => { const b = document.createElement("button"); b.className = "dugme" + (aktif ? " aktif" : ""); b.textContent = yazi; b.style.cssText = "margin:6px 6px 0 0"; kap.appendChild(b); return b; };
+  const bilgi = document.createElement("div"); bilgi.style.cssText = "font-size:13px;margin-top:6px"; kap.appendChild(bilgi);
+  const yenile = () => setTimeout(ayarCiz, 2500);
+  if (!d.piper) {
+    bilgi.textContent = d.kurulum === "sürüyor" ? "Piper kuruluyor… (birkaç dakika)" : (d.kurulum.startsWith("hata") ? "Kurulamadı: " + d.kurulum : "Piper kurulu değil. Bir kez internetle kurulur (~40 MB).");
+    if (yerel && d.kurulum !== "sürüyor") dug("Piper'ı kur", true).onclick = async () => { await istek("/ses/piper/kur", {}); yenile(); };
+    if (d.kurulum === "sürüyor") yenile();
+    return;
+  }
+  if (!d.sesler.length || d.indirme.startsWith("sürüyor")) {
+    bilgi.textContent = d.indirme.startsWith("sürüyor") ? "Türkçe ses iniyor… " + d.indirme.replace("sürüyor ", "") : (d.indirme.startsWith("hata") ? "İndirilemedi: " + d.indirme : "Henüz ses yok. Hazır Türkçe sesi bir kez indirin (~63 MB).");
+    if (yerel && !d.indirme.startsWith("sürüyor")) dug("Türkçe sesi indir", true).onclick = async () => { await istek("/ses/piper/indir", { ad: "tr_TR-dfki-medium" }); yenile(); };
+    if (d.indirme.startsWith("sürüyor")) yenile();
+  }
+  if (d.sesler.length) {
+    bilgi.textContent = "Ses: " + d.secili + (d.acik ? "  ·  AÇIK: yanıtlar bu sesle okunuyor" : "");
+    if (yerel) {
+      const sec = document.createElement("select"); sec.className = "dugme"; sec.style.cssText = "max-width:100%;margin:6px 6px 0 0";
+      d.sesler.forEach(a => { const o = document.createElement("option"); o.value = a; o.textContent = a + (d.hazir_sesler.includes(a) ? " (hazır)" : " (kendi sesiniz)"); if (a === d.secili) o.selected = true; sec.appendChild(o); });
+      sec.onchange = async () => { await istek("/ses/piper/ayar", { ses: sec.value }); ayarCiz(); };
+      kap.appendChild(sec);
+      const hiz = document.createElement("input"); hiz.type = "range"; hiz.min = 0.7; hiz.max = 1.4; hiz.step = 0.05; hiz.value = d.hiz; hiz.title = "Hız"; hiz.style.cssText = "width:100%";
+      hiz.onchange = () => istek("/ses/piper/ayar", { hiz: parseFloat(hiz.value) });
+      kap.appendChild(document.createTextNode("Hız")); kap.appendChild(hiz);
+      dug("Bu sesle oku: " + (d.acik ? "açık" : "kapalı"), d.acik).onclick = async () => {
+        const c = await istek("/ses/piper/ayar", { acik: !d.acik }); piperAcik = !!c.acik; ayarCiz();
+      };
+    }
+    dug("Dene").onclick = () => piperOku("Merhaba, ben Ülgen. İnternet olmadan da konuşabilirim.", false);
+  }
+  dug("Kendi sesimi kaydet").onclick = () => sesKayitPaneli(k);
+}
+
+// Kendi sesinizle model eğitmek için kayıt: cümleyi okuyun, kaydedilir (22050 Hz, tek kanal WAV).
+async function sesKayitPaneli(k) {
+  k.innerHTML = "";
+  baslik(k, "Kendi sesimi kaydet");
+  const geri = document.createElement("button"); geri.className = "dugme"; geri.textContent = "← Ayarlara dön"; geri.onclick = () => ayarCiz(); k.appendChild(geri);
+  const kap = ekle(k, "Sessiz bir odada, mikrofona yakın ve doğal bir sesle okuyun.",
+    "Her cümleyi bir kez okuyun. Yanlış okursanız «Son kaydı sil». Hedef: 45 dakika (yaklaşık 500 cümle); birkaç oturuma bölebilirsiniz.");
+  const durum = document.createElement("div"); durum.style.cssText = "font-size:13px;color:var(--soluk);margin-top:6px";
+  const cumle = document.createElement("div"); cumle.style.cssText = "font-size:22px;line-height:1.5;margin:14px 0;padding:14px;border-radius:12px;background:rgba(0,0,0,.25)";
+  const not = document.createElement("div"); not.style.cssText = "font-size:13px;min-height:18px";
+  const dug = (yazi, aktif) => { const b = document.createElement("button"); b.className = "dugme" + (aktif ? " aktif" : ""); b.textContent = yazi; b.style.cssText = "margin:6px 6px 0 0"; return b; };
+  const kayitB = dug("● Kaydı başlat", true), dinleB = dug("Dinle"), gonderB = dug("Kaydet ve sonraki", true), atlaB = dug("Atla"), silB = dug("Son kaydı sil"), paketB = dug("Eğitim paketini indir");
+  [durum, cumle, not, kayitB, dinleB, gonderB, atlaB, silB, paketB].forEach(e => kap.appendChild(e));
+  let simdiki = null, wav = null, kayit = null;
+  const goster = (c) => {
+    simdiki = c.metin; wav = null; dinleB.disabled = gonderB.disabled = true;
+    cumle.textContent = c.metin || "Cümle kalmadı. Eğitim paketini indirebilirsiniz.";
+    durum.textContent = c.adet + " cümle · " + c.dakika + " / " + c.hedef_dakika + " dakika" + (c.kaynak === "kitap" ? " · kitaplarınızdan cümleler" : "");
+  };
+  const al = async () => { try { goster(await istek("/ses/kayit/siradaki")); } catch (e) { not.textContent = e.message; } };
+  kayitB.onclick = async () => {
+    if (kayit) { wav = await kayit.bitir(); kayit = null; kayitB.textContent = "● Yeniden kaydet"; kayitB.classList.add("aktif");
+      dinleB.disabled = gonderB.disabled = !wav; not.textContent = wav ? "Kaydedildi; dinleyip gönderin." : "Ses alınamadı."; return; }
+    try { kayit = await wavKaydedici(); } catch (e) { not.textContent = "Mikrofon açılamadı: " + e.message; return; }
+    kayitB.textContent = "■ Bitir"; kayitB.classList.remove("aktif"); not.textContent = "Kaydediliyor… cümleyi okuyun, sonra «Bitir».";
+  };
+  dinleB.onclick = () => { if (wav) sesCal(URL.createObjectURL(wav), false); };
+  gonderB.onclick = async () => {
+    if (!wav || !simdiki) return;
+    gonderB.disabled = true;
+    const h = { "Content-Type": "audio/wav" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
+    try {
+      const c = await fetch("/ses/kayit/kaydet?cumle=" + encodeURIComponent(simdiki), { method: "POST", headers: h, body: wav });
+      const v = await c.json();
+      if (!c.ok) { not.textContent = v.hata || "Kaydedilemedi."; gonderB.disabled = false; return; }
+      not.textContent = "✔ " + v.kaydedilen; kayitB.textContent = "● Kaydı başlat"; goster(v);
+    } catch (e) { not.textContent = "Gönderilemedi."; gonderB.disabled = false; }
+  };
+  atlaB.onclick = async () => { if (simdiki) goster(await istek("/ses/kayit/atla", { metin: simdiki })); };
+  silB.onclick = async () => { const c = await istek("/ses/kayit/geri", {}); not.textContent = c.geri_alinan ? "Silindi: " + c.geri_alinan : "Silinecek kayıt yok."; goster(c); };
+  paketB.onclick = async () => {
+    const h = anahtar ? { "Authorization": "Bearer " + anahtar } : {};
+    const c = await fetch("/ses/kayit/paket.zip", { headers: h });
+    if (!c.ok) { not.textContent = "Paket hazırlanamadı (henüz kayıt yok mu?)."; return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(await c.blob()); a.download = "ses_veri.zip"; a.click();
+    not.textContent = "ses_veri.zip indirildi. Eğitim adımları: Ülgen klasöründeki docs/SESIM.md.";
+  };
+  al();
+}
+
+// Mikrofonu 22050 Hz, tek kanal, 16 bit WAV olarak kaydeder (dönüştürme gerektirmez).
+async function wavKaydedici() {
+  const akim = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const kaynak = ctx.createMediaStreamSource(akim);
+  const isle = ctx.createScriptProcessor(4096, 1, 1);
+  const parcalar = [];
+  isle.onaudioprocess = e => parcalar.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  kaynak.connect(isle); isle.connect(ctx.destination);
+  return {
+    bitir: async () => {
+      isle.disconnect(); kaynak.disconnect(); akim.getTracks().forEach(t => t.stop());
+      const hiz = ctx.sampleRate; await ctx.close();
+      const n = parcalar.reduce((a, p) => a + p.length, 0);
+      if (n < hiz) return null;                                // 1 sn'den kısa
+      const ham = new Float32Array(n); let o = 0; parcalar.forEach(p => { ham.set(p, o); o += p.length; });
+      const hedef = 22050, oran = hiz / hedef, m = Math.floor(n / oran);
+      const veri = new DataView(new ArrayBuffer(44 + m * 2));
+      const yaz = (i, t) => { for (let j = 0; j < t.length; j++) veri.setUint8(i + j, t.charCodeAt(j)); };
+      yaz(0, "RIFF"); veri.setUint32(4, 36 + m * 2, true); yaz(8, "WAVE"); yaz(12, "fmt ");
+      veri.setUint32(16, 16, true); veri.setUint16(20, 1, true); veri.setUint16(22, 1, true);
+      veri.setUint32(24, hedef, true); veri.setUint32(28, hedef * 2, true); veri.setUint16(32, 2, true); veri.setUint16(34, 16, true);
+      yaz(36, "data"); veri.setUint32(40, m * 2, true);
+      for (let i = 0; i < m; i++) {                            // basit ortalamalı yeniden örnekleme
+        const a = Math.floor(i * oran), b = Math.min(n, Math.floor((i + 1) * oran));
+        let t = 0; for (let j = a; j < b; j++) t += ham[j];
+        const v = Math.max(-1, Math.min(1, t / Math.max(1, b - a)));
+        veri.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+      }
+      return new Blob([veri], { type: "audio/wav" });
+    }
+  };
+}
+
 async function sesPaneli(k) {
+  await piperPaneli(k);
   baslik(k, "Ses seçimi");
   // 1) Yerel ses (bu cihazın sesi): ad, hız, perde
   const kap = ekle(k, "Okuma sesi (bu cihazda)", "Sabit cümleler dışındaki yanıtlar bu sesle okunur.");

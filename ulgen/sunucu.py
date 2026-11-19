@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, urlparse
 from . import ajan_kayit, ekler, gizli, guncelle, hava, iptal, kilavuz, macsenk, obsidyen
 from . import ajan_gorevi, obsidyen_yaz, ocr, uzmanlar, uzun_arastirma
 from . import mali, ozel_saglayici, saglik_veri, ses, ses_klip, youtube
+from . import piper_ses, ses_kaydi
 from . import (__surum__, ayar, cihazlar, kodpenceresi, kota, kuyruk, ozelkasa,
                takvim, webauthn,
                tls, veritabani, yedek)
@@ -568,6 +569,25 @@ def istek_sinifi(ulgen, limit):
                 self.end_headers()
                 self.wfile.write(ham)
                 return
+            if yol == "/ses/piper/durum":
+                return self._cevap(200, piper_ses.durum())
+            if yol == "/ses/kayit/siradaki":
+                return self._cevap(200, ses_kaydi.siradaki())
+            if yol == "/ses/kayit/paket.zip":
+                try:
+                    with open(ses_kaydi.paketle(), "rb") as f:
+                        ham = f.read()
+                except ses_kaydi.KayitHatasi as hata:
+                    return self._cevap(404, {"hata": str(hata)})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Disposition",
+                                 'attachment; filename="ses_veri.zip"')
+                self.send_header("Content-Length", str(len(ham)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(ham)
+                return
             if yol == "/ses/durum":
                 kul, _ = ses_klip.kullanilan()
                 return self._cevap(200, {
@@ -765,6 +785,63 @@ def istek_sinifi(ulgen, limit):
                 return
             self._cevap(200, {"tamam": True})
 
+        def _kayit_yukle(self, tur):
+            """Ses kaydı veri setine bir cümle ekler (POST ham WAV, ?cumle=)."""
+            cumle = (parse_qs(urlparse(self.path).query).get("cumle") or [""])[0]
+            try:
+                uzunluk = int(self.headers.get("Content-Length", 0) or 0)
+            except ValueError:
+                uzunluk = 0
+            if uzunluk <= 0 or uzunluk > ses_kaydi.AZAMI_BAYT:
+                return self._cevap(413, {"hata": "kayıt boş ya da çok büyük"})
+            if not tur.startswith(("audio/wav", "audio/x-wav", "application/octet-stream")):
+                return self._cevap(415, {"hata": "WAV gerekli"})
+            govde = self.rfile.read(uzunluk)
+            if not self._yetkili():
+                return
+            try:
+                dosya = ses_kaydi.kaydet(cumle, govde)
+            except ses_kaydi.KayitHatasi as hata:
+                return self._cevap(400, {"hata": str(hata)})
+            return self._cevap(200, dict(ses_kaydi.siradaki(), kaydedilen=dosya))
+
+        def _piper(self, yol, veri):
+            """Ülgen'in kendi sesi (Piper) ve ses kaydı işlemleri."""
+            mac_isi = yol in ("/ses/piper/kur", "/ses/piper/indir", "/ses/piper/ayar")
+            if mac_isi and not self.server.yerel:
+                return self._cevap(403, {"hata": "yalnız Mac'in kendi tarayıcısından"})
+            try:
+                if yol == "/ses/piper":
+                    ham = piper_ses.sentezle(veri.get("metin", ""))
+                    self.send_response(200)
+                    self.send_header("Content-Type", "audio/wav")
+                    self.send_header("Content-Length", str(len(ham)))
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("X-Content-Type-Options", "nosniff")
+                    self.end_headers()
+                    self.wfile.write(ham)
+                    return None
+                if yol == "/ses/piper/kur":
+                    piper_ses.kur_arka_planda()
+                    return self._cevap(200, piper_ses.durum())
+                if yol == "/ses/piper/indir":
+                    piper_ses.indir_arka_planda(veri.get("ad") or "tr_TR-dfki-medium")
+                    return self._cevap(200, piper_ses.durum())
+                if yol == "/ses/piper/ayar":
+                    return self._cevap(200, piper_ses.ayarla(
+                        veri.get("acik"), veri.get("ses"), veri.get("hiz")))
+                if yol == "/ses/kayit/atla":
+                    ses_kaydi.atla(veri.get("metin", ""))
+                    return self._cevap(200, ses_kaydi.siradaki())
+                if yol == "/ses/kayit/geri":
+                    geri = ses_kaydi.son_kaydi_sil()
+                    return self._cevap(200, dict(ses_kaydi.siradaki(), geri_alinan=geri))
+            except (piper_ses.PiperHatasi, ses_kaydi.KayitHatasi, ValueError) as hata:
+                return self._cevap(409, {"hata": str(hata)})
+            except Exception as hata:            # ses motoru hatası: açık ileti
+                return self._cevap(500, {"hata": "Piper: %s" % str(hata)[:200]})
+            return self._cevap(404, {"hata": "bulunamadı"})
+
         def _kitap_yukle(self):
             """Taranmış PDF/resmi 'gelen' klasörüne alır (POST ham dosya,
             ?ad=dosya.pdf). Gövde diske parça parça yazılır (≤ 600 MB)."""
@@ -829,6 +906,8 @@ def istek_sinifi(ulgen, limit):
                 return self._ses_yaz(tur)
             if urlparse(self.path).path.startswith("/ses/klip/"):
                 return self._klip_yukle(tur)
+            if urlparse(self.path).path == "/ses/kayit/kaydet":
+                return self._kayit_yukle(tur)
             if urlparse(self.path).path == "/kitap/yukle":
                 return self._kitap_yukle()
             if urlparse(self.path).path == "/ek/yukle":
@@ -865,6 +944,8 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
                     "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path.startswith(("/ses/piper", "/ses/kayit/")):
+                return self._piper(urlparse(self.path).path, veri)
             if urlparse(self.path).path in ("/ses/mac", "/ses/mac-dur"):
                 # Tarayıcı sesi çalışmazsa Mac'in kendi sesi (say); yalnız Mac'ten
                 if not self.server.yerel:

@@ -79,6 +79,9 @@ VARSAYILAN = {
     "izinli_hostlar": [],          # IP dışında kabul edilen adlar
     # Konuşma
     "ses": "Yelda",
+    "piper_acik": False,        # Ülgen'in kendi sesi (Piper, internetsiz)
+    "piper_ses": "",            # ~/ÜlgenVeri/sesler/<ad>.onnx
+    "piper_hiz": 1.0,
     "tts_motor": "otomatik",
     "uyandirma_sozcukleri": ["ülgen", "ulgen", "ülgün", "ulgun"],
     # Dosya ve veri klasörleri
