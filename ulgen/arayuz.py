@@ -1730,6 +1730,8 @@ async function anahtarlarim(k) {
   baslik(k, "API anahtarlarım (Mac'in Anahtar Zinciri'nde saklanır)");
   let durum = {};
   try { durum = await istek("/yz/anahtarlar"); } catch (e) { ekle(k, "Anahtar durumu okunamadı."); return; }
+  let hazir = {};
+  try { hazir = await istek("/yz/hazir", { islem: "durum" }); } catch (e) { hazir = {}; }
   Object.keys(SAGLAYICI_AD).forEach(ad => {
     const d = durum[ad] || { var: false };
     const satir = ekle(k, SAGLAYICI_AD[ad] + " — " + (d.var ? "✔ anahtar VAR" : "✘ anahtar YOK"),
@@ -1757,6 +1759,7 @@ async function anahtarlarim(k) {
       };
       f.appendChild(gir); if (kim) f.appendChild(kim); f.appendChild(kay); f.appendChild(va); f.appendChild(so); satir.appendChild(f);
     };
+    if (d.var && hazir[ad]) hazirDuzen(satir, ad, hazir[ad], dugme);
     if (d.var) {
       const de = dugme("Bağlantıyı dene");
       de.onclick = () => deneYaz(satir, de, () => istek("/yz/dene", { saglayici: ad }));
@@ -1769,6 +1772,53 @@ async function anahtarlarim(k) {
       };
     }
   });
+}
+
+// Hazır beyin: şu anki model, «Model seç» (servisteki ücretsiz modeller) ve «Öne al».
+function hazirDuzen(satir, ad, h, dugme) {
+  const bilgi = document.createElement("div");
+  bilgi.style.cssText = "font-size:13px;margin-top:4px";
+  bilgi.textContent = "Model: " + (h.model || "—") + (h.one ? "  ·  ÖNE ALINDI" : "");
+  satir.appendChild(bilgi);
+  const ms = dugme("Model seç");
+  ms.onclick = async () => {
+    if (satir.querySelector(".modelForm")) return;
+    const f = document.createElement("div"); f.className = "modelForm"; f.style.marginTop = "8px";
+    const so = document.createElement("div"); so.style.cssText = "font-size:12px;color:var(--soluk)";
+    so.textContent = "Servisteki ücretsiz modeller alınıyor…"; f.appendChild(so); satir.appendChild(f);
+    let c;
+    try { c = await istek("/yz/hazir", { islem: "modeller", saglayici: ad }); } catch (e) { c = { hata: String(e) }; }
+    if (!c.modeller) { so.textContent = c.hata || "Liste alınamadı."; return; }
+    const st = "width:100%;margin:4px 0;padding:9px;border-radius:10px;border:1px solid var(--kenar);background:var(--ulgen-navy);color:var(--yazi)";
+    const ara = document.createElement("input"); ara.placeholder = "Süz (ör. kimi, mistral, gemma)"; ara.style.cssText = st;
+    const sec = document.createElement("select"); sec.style.cssText = st; sec.size = 8;
+    const doldur = () => {
+      const q = ara.value.trim().toLowerCase(); sec.innerHTML = "";
+      c.modeller.filter(m => !q || m.toLowerCase().includes(q)).forEach(m => {
+        const o = document.createElement("option"); o.value = m; o.textContent = m; if (m === h.model) o.selected = true; sec.appendChild(o);
+      });
+    };
+    ara.oninput = doldur; doldur();
+    so.textContent = c.modeller.length + " model. Birini seçip «Kaydet ve dene»ye basın.";
+    const kay = document.createElement("button"); kay.className = "dugme aktif"; kay.textContent = "Kaydet ve dene";
+    const va = document.createElement("button"); va.className = "dugme"; va.textContent = "Vazgeç"; va.style.marginLeft = "8px"; va.onclick = () => f.remove();
+    kay.onclick = async () => {
+      if (!sec.value) { so.textContent = "Bir model seçin."; return; }
+      kay.disabled = true;
+      const r = await istek("/yz/hazir", { islem: "model", saglayici: ad, model: sec.value });
+      if (!r.tamam) { so.textContent = r.hata || "Kaydedilemedi."; kay.disabled = false; return; }
+      h.model = r.model; bilgi.textContent = "Model: " + r.model + (h.one ? "  ·  ÖNE ALINDI" : "");
+      f.remove();
+      deneYaz(satir, ms, () => istek("/yz/dene", { saglayici: ad }));
+    };
+    f.insertBefore(ara, so); f.insertBefore(sec, so); f.appendChild(kay); f.appendChild(va);
+  };
+  const on = dugme(h.one ? "Öne almayı kaldır" : "Öne al");
+  on.onclick = async () => {
+    on.disabled = true;
+    await istek("/yz/hazir", { islem: "one", saglayici: ad, one: !h.one });
+    yzCiz();
+  };
 }
 
 async function beyinKipi(k) {

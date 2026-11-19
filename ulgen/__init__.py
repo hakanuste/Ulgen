@@ -1,3 +1,3 @@
 """Ülgen: yerel ve ücretsiz, ajan tabanlı kişisel yapay zeka asistanı."""
 
-__surum__ = "2.8.24"
+__surum__ = "2.8.25"

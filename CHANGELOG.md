@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.25
+- **Hazır beyinlerde model seçme ve "Öne al":** Yapay Zekâ Modelleri > API anahtarlarım bölümünde anahtarı olan Gemini, NVIDIA, Groq, Mistral ve OpenRouter satırlarında artık şu anki model görünür. "Model seç" servisteki modelleri listeler (süzme kutusuyla, ör. "kimi"); seçip "Kaydet ve dene"ye basınca model hemen sınanır. Yalnızca ücretsiz modeller kabul edilir (OpenRouter'da ":free"); gömme, yeniden sıralama, belge ayrıştırma, ses gibi sohbet etmeyen modeller listede gösterilmez. "Öne al" ile o beyin sıranın başına geçer. Yalnızca Mac'in kendi tarayıcısından yapılır.
+
 ## 2.8.24
 - **Kitap araması isabetli:** "Türk Tarihi ve mitolojisi" aramasında konuyla ilgisiz kitaplar geliyordu; arşiv, sözcüklerden yalnızca birini ("tarihi") içeren her kaydı döndürüyordu. Artık "ve, ile, kitabı, the, of" gibi dolgu sözcükleri atılır, kalan her sözcük ZORUNLU olur ve ekli biçimler de tutar ("mitoloji*", "türk*/turk*"). Gelen sonuçlar ayrıca Ülgen'de puanlanır: adında, yazarında ya da konusunda sözcüklerin çoğu geçmeyen kayıt listeye girmez; en isabetliler önce gelir. Vikipedi'de kitap maddesi olarak geçen adlar (ör. "Türk Mitolojisi (kitap)") da ayrıca aranır; Türkçe madde bulunduğunda ilgisiz İngilizce madde gösterilmez.
 

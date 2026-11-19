@@ -646,6 +646,29 @@ def istek_sinifi(ulgen, limit):
             sonuc["yeniden_basliyor"] = guncelle.yeniden_baslat()
             return self._cevap(200, sonuc)
 
+        def _yz_hazir(self, veri):
+            """Hazır beyinlerde model seçme ve öne alma (yalnız Mac'ten)."""
+            from . import hazir_saglayici as hs
+            if not self.server.yerel:
+                return self._cevap(403, {"hata": "yalnız Mac'in kendi "
+                                                 "tarayıcısından"})
+            islem, ad = veri.get("islem"), veri.get("saglayici")
+            try:
+                if islem == "durum":
+                    return self._cevap(200, hs.durum())
+                if islem == "modeller":
+                    return self._cevap(200, {"modeller": hs.modeller(ad)})
+                if islem == "model":
+                    m = hs.model_degistir(ad, veri.get("model"))
+                    veritabani.gunluge_yaz("bilgi", "beyin", "%s modeli: %s" % (ad, m))
+                    return self._cevap(200, {"tamam": True, "model": m})
+                if islem == "one":
+                    return self._cevap(200, {"tamam": True, "one_alinanlar":
+                                             hs.one_al(ad, bool(veri.get("one", True)))})
+            except hs.HazirHatasi as hata:
+                return self._cevap(200, {"tamam": False, "hata": str(hata)})
+            return self._cevap(400, {"hata": "bilinmeyen işlem"})
+
         def _yz_anahtar(self, yol, veri):
             """API anahtarını Anahtar Zinciri'ne yazar / bağlantıyı dener.
 
@@ -987,6 +1010,8 @@ def istek_sinifi(ulgen, limit):
                     pass
                 veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı silindi" % ad)
                 return self._cevap(200, {"silinen": adet})
+            if urlparse(self.path).path == "/yz/hazir":
+                return self._yz_hazir(veri)
             if urlparse(self.path).path == "/yz/ozel":
                 if not self.server.yerel:
                     return self._cevap(403, {"hata": "yalnız Mac'in kendi "
