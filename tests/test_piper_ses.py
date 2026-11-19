@@ -104,3 +104,38 @@ class SesKaydiTesti(TemizVeri):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PiperIsciTesti(TemizVeri):
+    """Ayrı ortamdaki işçi süreci: sahte bir 'piper' paketiyle uçtan uca."""
+
+    def test_isci_sureci_wav_uretir(self):
+        import sys
+        import tempfile
+        kok = tempfile.mkdtemp()
+        os.makedirs(os.path.join(kok, "piper"))
+        with open(os.path.join(kok, "piper", "__init__.py"), "w") as f:
+            f.write(
+                "class SynthesisConfig:\n"
+                "    def __init__(self, length_scale=1.0): self.length_scale = length_scale\n"
+                "class PiperVoice:\n"
+                "    @staticmethod\n"
+                "    def load(m): return PiperVoice()\n"
+                "    def synthesize_wav(self, metin, w, syn_config=None):\n"
+                "        w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)\n"
+                "        w.writeframes(b'\\x00\\x00' * len(metin))\n")
+        isci = piper_ses._Isci()
+        with mock.patch.dict(os.environ, {"PYTHONPATH": kok}), \
+                mock.patch.object(piper_ses, "_ortam_python", return_value=sys.executable):
+            ham = isci.sentezle("/yok/model.onnx", "merhaba", 1.0)
+            ham2 = isci.sentezle("/yok/model.onnx", "ikinci", 1.0)    # aynı süreç
+        with wave.open(io.BytesIO(ham)) as w:
+            self.assertEqual(w.getnframes(), len("merhaba"))
+        self.assertTrue(ham2.startswith(b"RIFF"))
+        isci._p.terminate()
+
+    def test_uygun_python_surum_araligi(self):
+        with mock.patch.object(piper_ses, "_surum", return_value=(3, 13)):
+            self.assertEqual(piper_ses.uygun_python(), "")
+        with mock.patch.object(piper_ses, "_surum", return_value=(3, 9)):
+            self.assertTrue(piper_ses.uygun_python())

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.35
+- **Piper kurulumu düzeldi (macOS 12):** "Piper'ı kur" ResolutionImpossible hatası veriyordu: onnxruntime'ın yeni sürümleri yalnızca macOS 13 ve üstü için, eski sürümleri ise Python 3.13 için yayımlanmıyor. Artık Piper, Ülgen'in Python'undan bağımsız, ayrı bir ortama (~/ÜlgenVeri/piper_ortam) kurulur: Mac'te bulunan uygun bir Python (3.9-3.12; macOS 12'de Apple'ın /usr/bin/python3'ü de olur) seçilir, macOS 12'de onnxruntime 1.19'a sabitlenir. Ses, bu ortamda sürekli açık bekleyen bir Piper işçisiyle üretilir (ses bir kez yüklenir). Uygun Python yoksa ne kurulacağı yazılır.
+
 ## 2.8.34
 - **Kayıt ekle (dosyadan):** "Kendi sesimi kaydet" sayfasına "Dosyadan ekle" düğmesi geldi. Telefonda ya da başka yerde kaydettiğiniz ses dosyası (mp3, m4a, wav…) seçilir; tarayıcıda 22050 Hz tek kanal WAV'a çevrilir, dinlenip kaydedilir. Cümle kutusu artık düzenlenebilir: dosyada söylenen metni buraya yazarsınız. Dosya 1-30 saniye olmalı.
 
