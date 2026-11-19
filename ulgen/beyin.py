@@ -324,6 +324,8 @@ class OpenAIUyumluBeyin(Beyin):
                 "nvidia": "https://integrate.api.nvidia.com/v1",
                 "mistral": "https://api.mistral.ai/v1",
                 "openrouter": "https://openrouter.ai/api/v1"}
+    # NVIDIA'nın ücretsiz uç noktalarında büyük modeller sıra bekleyebilir
+    ZAMAN_ASIMI = {"nvidia": 150}
     ADLAR = {"groq": "Groq", "nvidia": "NVIDIA", "mistral": "Mistral",
              "openrouter": "OpenRouter"}
 
@@ -395,7 +397,8 @@ class OpenAIUyumluBeyin(Beyin):
                  + mesajlar}
         veri, basliklar = _json_gonder(
             self._taban() + "/chat/completions", govde,
-            self._basliklar(), 300 if getattr(self, "yerel", False) else 60,
+            self._basliklar(), 300 if getattr(self, "yerel", False)
+            else self.ZAMAN_ASIMI.get(self.saglayici, 60),
             baslik_don=True)
         kota.basliklari_isle(self.saglayici, basliklar)
         kul = veri.get("usage") or {}

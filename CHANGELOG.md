@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.27
+- **NVIDIA için daha uzun bekleme:** NVIDIA'nın ücretsiz uç noktalarında büyük modeller (gemma-4-31b, kimi, Mistral Large 4) sıra bekleyebildiğinden yanıt için 60 yerine 150 saniye beklenir ("The read operation timed out" hatası).
+
 ## 2.8.26
 - **Anahtar yapıştırma kolaylaştı:** Servisin örnek kodundan kopyalanan "Bearer nvapi-…" ya da tırnaklı anahtar artık kendiliğinden temizlenip kaydedilir. Hatalı anahtarda ne beklendiği yazılır.
 
