@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.29
+- **Boş yanıt veren bulut modelleri:** NVIDIA'daki gemma gibi bazı modeller ayrı "system" talimatını desteklemiyor ya da düşünme payında sözcük hakkını bitirip boş yanıt döndürüyordu ("boş yanıt döndürdü"). Artık boş yanıtta talimat ilk iletiye katılıp daha geniş sözcük hakkıyla bir kez daha denenir; <think> düşünme bölümleri yanıttan atılır. Yine boşsa "başka model seçin" denir. "Bağlantıyı dene" de daha geniş sözcük hakkıyla dener.
+
 ## 2.8.28
 - **API anahtarı değiştirme düzeldi:** "Değiştir" ile girilen yeni anahtar Anahtar Zinciri'ne yazılıyor, ama ayar.json'da eskiden kalmış düz bir anahtar varsa Ülgen o eskiyi kullanmayı sürdürüyordu. Artık Anahtar Zinciri'ndeki anahtar her zaman önce gelir; kaydedince ayar.json'daki eski düz kopya silinir. Anahtar kutusu artık düğmenin hemen altında açılır, kaydedince sonuç ("✔ Kaydedildi, son 4 hane …") kutunun altında görünür.
 

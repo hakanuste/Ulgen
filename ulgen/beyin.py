@@ -311,6 +311,10 @@ class GeminiBeyin(Beyin):
             if "generateContent" in m.get("supportedGenerationMethods", []))
 
 
+class _BosYanit(BeyinHatasi):
+    """Servis yanıt verdi ama metin boş (yeniden denenebilir)."""
+
+
 class OpenAIUyumluBeyin(Beyin):
     """Groq, Mistral ve OpenRouter: OpenAI uyumlu sohbet arayüzü (bulut).
 
@@ -389,12 +393,34 @@ class OpenAIUyumluBeyin(Beyin):
             return yanit
 
     def _yanitla(self, sistem, mesajlar, azami_token=700):
+        try:
+            return self._istek(sistem, mesajlar, azami_token, ayri_sistem=True)
+        except _BosYanit:
+            # Bazı modeller (ör. NVIDIA'daki gemma) "system" rolünü desteklemez
+            # ya da düşünme payında sözcük hakkını bitirir: talimat ilk kullanıcı
+            # iletisine katılıp daha geniş sözcük hakkıyla bir kez denenir.
+            try:
+                return self._istek(sistem, mesajlar, max(azami_token * 4, 600),
+                                   ayri_sistem=False)
+            except _BosYanit:
+                raise BeyinHatasi("%s boş yanıt döndürdü (model bu biçimi "
+                                  "desteklemiyor olabilir; başka model seçin)."
+                                  % self.ad)
+
+    def _istek(self, sistem, mesajlar, azami_token, ayri_sistem=True):
         from . import kota
         kota.ucretsiz_dogrula(self.saglayici, self.model)
+        if ayri_sistem:
+            iletiler = [{"role": "system", "content": sistem}] + list(mesajlar)
+        else:
+            iletiler = [dict(m) for m in mesajlar]
+            ilk = next((m for m in iletiler if m.get("role") == "user"), None)
+            if ilk is not None and isinstance(ilk.get("content"), str):
+                ilk["content"] = sistem + "\n\n" + ilk["content"]
+            else:
+                iletiler.insert(0, {"role": "user", "content": sistem})
         govde = {"model": self.model, "temperature": 0.6, "stream": False,
-                 "max_tokens": azami_token,
-                 "messages": [{"role": "system", "content": sistem}]
-                 + mesajlar}
+                 "max_tokens": azami_token, "messages": iletiler}
         veri, basliklar = _json_gonder(
             self._taban() + "/chat/completions", govde,
             self._basliklar(), 300 if getattr(self, "yerel", False)
@@ -410,8 +436,9 @@ class OpenAIUyumluBeyin(Beyin):
             metin = (veri["choices"][0]["message"]["content"] or "").strip()
         except (KeyError, IndexError, TypeError) as hata:
             raise BeyinHatasi("%s beklenmeyen yanıt verdi." % self.ad) from hata
+        metin = re.sub(r"(?s)<think>.*?</think>", "", metin).strip()
         if not metin:
-            raise BeyinHatasi("%s boş yanıt döndürdü." % self.ad)
+            raise _BosYanit()
         return metin
 
     def modelleri_listele(self):

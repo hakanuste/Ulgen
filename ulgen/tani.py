@@ -259,7 +259,7 @@ def dene(saglayicilar=None):
             yanit = nesne.yanitla("Kısa Türkçe yanıt ver.",
                                   [{"role": "user",
                                     "content": "Tek kelimeyle yanıtla: "
-                                               "merhaba de."}], 30)
+                                               "merhaba de."}], 200)
         except b.KotaHatasi as hata:
             print("   KOTA/429: %s (bekleme %s sn)" % (hata, hata.bekle_sn))
             kod = 1

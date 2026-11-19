@@ -55,3 +55,32 @@ class AnahtarOnceligiTesti(TemizVeri):
             self.assertEqual(ayar.yukle()["nvidia_anahtar"], "nvapi-YENI1234")
         with mock.patch.object(gizli, "sir_oku", return_value=""):
             self.assertEqual(ayar.yukle()["nvidia_anahtar"], "nvapi-ESKIDUZANAHTAR")
+
+
+class BosYanitTesti(unittest.TestCase):
+    def test_bos_yanitta_sistem_kullaniciya_katilip_yeniden_denenir(self):
+        from ulgen import beyin
+        gonderilen = []
+
+        def sahte(adres, govde=None, basliklar=None, zaman=60, baslik_don=False):
+            gonderilen.append(govde)
+            icerik = "" if len(gonderilen) == 1 else "Merhaba"
+            return {"choices": [{"message": {"content": icerik}}]}, {}
+        b = beyin.OpenAIUyumluBeyin("nvidia", "nvapi-x", "google/gemma-3-12b-it")
+        with mock.patch.object(beyin, "_json_gonder", side_effect=sahte):
+            self.assertEqual(b.yanitla("Kısa yanıt ver.",
+                                       [{"role": "user", "content": "selam"}], 30),
+                             "Merhaba")
+        self.assertEqual(gonderilen[0]["messages"][0]["role"], "system")
+        self.assertEqual([m["role"] for m in gonderilen[1]["messages"]], ["user"])
+        self.assertIn("Kısa yanıt ver.", gonderilen[1]["messages"][0]["content"])
+        self.assertGreater(gonderilen[1]["max_tokens"], 30)
+
+    def test_iki_kez_bossa_anlasilir_hata(self):
+        from ulgen import beyin
+        b = beyin.OpenAIUyumluBeyin("nvidia", "nvapi-x", "m")
+        with mock.patch.object(beyin, "_json_gonder", return_value=(
+                {"choices": [{"message": {"content": "<think>x</think>"}}]}, {})):
+            with self.assertRaises(beyin.BeyinHatasi) as h:
+                b.yanitla("s", [{"role": "user", "content": "u"}], 30)
+        self.assertIn("başka model seçin", str(h.exception))
