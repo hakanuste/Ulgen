@@ -1977,15 +1977,29 @@ async function sesKayitPaneli(k) {
   const kap = ekle(k, "Sessiz bir odada, mikrofona yakın ve doğal bir sesle okuyun.",
     "Her cümleyi bir kez okuyun. Yanlış okursanız «Son kaydı sil». Hedef: 45 dakika (yaklaşık 500 cümle); birkaç oturuma bölebilirsiniz.");
   const durum = document.createElement("div"); durum.style.cssText = "font-size:13px;color:var(--soluk);margin-top:6px";
-  const cumle = document.createElement("div"); cumle.style.cssText = "font-size:22px;line-height:1.5;margin:14px 0;padding:14px;border-radius:12px;background:rgba(0,0,0,.25)";
+  const cumle = document.createElement("textarea"); cumle.rows = 3; cumle.title = "Okunan metin; dosyadan eklerken içindekini yazın";
+  cumle.style.cssText = "width:100%;box-sizing:border-box;font:inherit;font-size:22px;line-height:1.5;margin:14px 0;padding:14px;border-radius:12px;border:1px solid var(--kenar);background:rgba(0,0,0,.25);color:var(--yazi)";
   const not = document.createElement("div"); not.style.cssText = "font-size:13px;min-height:18px";
   const dug = (yazi, aktif) => { const b = document.createElement("button"); b.className = "dugme" + (aktif ? " aktif" : ""); b.textContent = yazi; b.style.cssText = "margin:6px 6px 0 0"; return b; };
-  const kayitB = dug("● Kaydı başlat", true), dinleB = dug("Dinle"), gonderB = dug("Kaydet ve sonraki", true), atlaB = dug("Atla"), silB = dug("Son kaydı sil"), paketB = dug("Eğitim paketini indir");
-  [durum, cumle, not, kayitB, dinleB, gonderB, atlaB, silB, paketB].forEach(e => kap.appendChild(e));
+  const kayitB = dug("● Kaydı başlat", true), dosyaB = dug("Dosyadan ekle"), dinleB = dug("Dinle"), gonderB = dug("Kaydet ve sonraki", true), atlaB = dug("Atla"), silB = dug("Son kaydı sil"), paketB = dug("Eğitim paketini indir");
+  const sec = document.createElement("input"); sec.type = "file"; sec.accept = "audio/*,.mp3,.m4a,.wav,.aac,.ogg"; sec.style.display = "none";
+  [durum, cumle, not, kayitB, dosyaB, dinleB, gonderB, atlaB, silB, paketB, sec].forEach(e => kap.appendChild(e));
+  dosyaB.onclick = () => sec.click();
+  sec.onchange = async () => {
+    const f = sec.files && sec.files[0]; sec.value = "";
+    if (!f) return;
+    not.textContent = "Dosya hazırlanıyor…";
+    try {
+      wav = await dosyadanWav(f);
+      dinleB.disabled = gonderB.disabled = false;
+      not.textContent = "«" + f.name + "» hazır. Yukarıdaki metni dosyada söylenenle aynı yapın, dinleyip «Kaydet ve sonraki».";
+      cumle.focus();
+    } catch (e) { wav = null; not.textContent = e.message; }
+  };
   let simdiki = null, wav = null, kayit = null;
   const goster = (c) => {
     simdiki = c.metin; wav = null; dinleB.disabled = gonderB.disabled = true;
-    cumle.textContent = c.metin || "Cümle kalmadı. Eğitim paketini indirebilirsiniz.";
+    cumle.value = c.metin || ""; cumle.placeholder = "Cümle kalmadı. Dosyadan eklerken metni buraya yazın ya da eğitim paketini indirin.";
     durum.textContent = c.adet + " cümle · " + c.dakika + " / " + c.hedef_dakika + " dakika" + (c.kaynak === "kitap" ? " · kitaplarınızdan cümleler" : "");
   };
   const al = async () => { try { goster(await istek("/ses/kayit/siradaki")); } catch (e) { not.textContent = e.message; } };
@@ -1997,7 +2011,9 @@ async function sesKayitPaneli(k) {
   };
   dinleB.onclick = () => { if (wav) sesCal(URL.createObjectURL(wav), false); };
   gonderB.onclick = async () => {
-    if (!wav || !simdiki) return;
+    simdiki = cumle.value.replace(/\s+/g, " ").trim();
+    if (!wav) return;
+    if (!simdiki) { not.textContent = "Kayıtta söylenen metni yazın."; return; }
     gonderB.disabled = true;
     const h = { "Content-Type": "audio/wav" }; if (anahtar) h["Authorization"] = "Bearer " + anahtar;
     try {
@@ -2035,22 +2051,43 @@ async function wavKaydedici() {
       const n = parcalar.reduce((a, p) => a + p.length, 0);
       if (n < hiz) return null;                                // 1 sn'den kısa
       const ham = new Float32Array(n); let o = 0; parcalar.forEach(p => { ham.set(p, o); o += p.length; });
-      const hedef = 22050, oran = hiz / hedef, m = Math.floor(n / oran);
-      const veri = new DataView(new ArrayBuffer(44 + m * 2));
-      const yaz = (i, t) => { for (let j = 0; j < t.length; j++) veri.setUint8(i + j, t.charCodeAt(j)); };
-      yaz(0, "RIFF"); veri.setUint32(4, 36 + m * 2, true); yaz(8, "WAVE"); yaz(12, "fmt ");
-      veri.setUint32(16, 16, true); veri.setUint16(20, 1, true); veri.setUint16(22, 1, true);
-      veri.setUint32(24, hedef, true); veri.setUint32(28, hedef * 2, true); veri.setUint16(32, 2, true); veri.setUint16(34, 16, true);
-      yaz(36, "data"); veri.setUint32(40, m * 2, true);
-      for (let i = 0; i < m; i++) {                            // basit ortalamalı yeniden örnekleme
-        const a = Math.floor(i * oran), b = Math.min(n, Math.floor((i + 1) * oran));
-        let t = 0; for (let j = a; j < b; j++) t += ham[j];
-        const v = Math.max(-1, Math.min(1, t / Math.max(1, b - a)));
-        veri.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
-      }
-      return new Blob([veri], { type: "audio/wav" });
+      return wavYap(ham, hiz);
     }
   };
+}
+
+// Float32 tek kanal örnekleri 22050 Hz, 16 bit WAV'a çevirir (ortalamalı yeniden örnekleme).
+function wavYap(ham, hiz) {
+  const n = ham.length, hedef = 22050, oran = hiz / hedef, m = Math.floor(n / oran);
+  const veri = new DataView(new ArrayBuffer(44 + m * 2));
+  const yaz = (i, t) => { for (let j = 0; j < t.length; j++) veri.setUint8(i + j, t.charCodeAt(j)); };
+  yaz(0, "RIFF"); veri.setUint32(4, 36 + m * 2, true); yaz(8, "WAVE"); yaz(12, "fmt ");
+  veri.setUint32(16, 16, true); veri.setUint16(20, 1, true); veri.setUint16(22, 1, true);
+  veri.setUint32(24, hedef, true); veri.setUint32(28, hedef * 2, true); veri.setUint16(32, 2, true); veri.setUint16(34, 16, true);
+  yaz(36, "data"); veri.setUint32(40, m * 2, true);
+  for (let i = 0; i < m; i++) {
+    const a = Math.floor(i * oran), b = Math.max(a + 1, Math.min(n, Math.floor((i + 1) * oran)));
+    let t = 0; for (let j = a; j < b; j++) t += ham[j];
+    const v = Math.max(-1, Math.min(1, t / (b - a)));
+    veri.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+  }
+  return new Blob([veri], { type: "audio/wav" });
+}
+
+// Ses dosyası (mp3, m4a, wav…) -> kayıt biçimi WAV; 1-30 saniye.
+async function dosyadanWav(dosya) {
+  if (dosya.size > 40 * 1024 * 1024) throw new Error("Dosya çok büyük.");
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  let tampon;
+  const ham = await dosya.arrayBuffer();
+  try { tampon = await new Promise((coz, ret) => { const p = ctx.decodeAudioData(ham, coz, ret); if (p && p.then) p.then(coz, ret); }); }
+  catch (e) { await ctx.close(); throw new Error("Bu ses dosyası açılamadı (mp3, m4a ya da wav deneyin)."); }
+  await ctx.close();
+  const sure = tampon.duration;
+  if (sure < 1 || sure > 30) throw new Error("Kayıt 1 ile 30 saniye arasında olmalı (bu dosya " + sure.toFixed(1) + " sn). Uzun kayıtları cümle cümle bölün.");
+  const k = tampon.numberOfChannels, n = tampon.length, tek = new Float32Array(n);
+  for (let c = 0; c < k; c++) { const d = tampon.getChannelData(c); for (let i = 0; i < n; i++) tek[i] += d[i] / k; }
+  return wavYap(tek, tampon.sampleRate);
 }
 
 async function sesPaneli(k) {

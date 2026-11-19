@@ -20,7 +20,10 @@ Bundan sonra internet gerekmez.
 3. Yanlış okursanız **Son kaydı sil**; okuyamadığınız cümlede **Atla**.
 4. Hedef **45 dakika** (~500 cümle). Birkaç oturuma bölebilirsiniz; kaldığınız
    yerden sürer. Hazır cümleler bitince kasadaki kitaplarınızdan cümle gelir.
-5. Kayıtlar Mac'te `~/ÜlgenVeri/ses_kaydi/` içinde durur.
+5. Daha önce kaydettiğiniz bir ses dosyanız varsa **Dosyadan ekle** ile
+   seçin (mp3, m4a, wav; 1-30 saniye), kutudaki metni dosyada söylenenle aynı
+   yapın ve **Kaydet ve sonraki**.
+6. Kayıtlar Mac'te `~/ÜlgenVeri/ses_kaydi/` içinde durur.
 
 ## 3. Modeli eğitin (Google Colab, ücretsiz GPU, birkaç saat)
 

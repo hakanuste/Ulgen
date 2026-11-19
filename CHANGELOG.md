@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.34
+- **Kayıt ekle (dosyadan):** "Kendi sesimi kaydet" sayfasına "Dosyadan ekle" düğmesi geldi. Telefonda ya da başka yerde kaydettiğiniz ses dosyası (mp3, m4a, wav…) seçilir; tarayıcıda 22050 Hz tek kanal WAV'a çevrilir, dinlenip kaydedilir. Cümle kutusu artık düzenlenebilir: dosyada söylenen metni buraya yazarsınız. Dosya 1-30 saniye olmalı.
+
 ## 2.8.33
 - **Ülgen'in kendi sesi (Piper, internetsiz):** Yanıtlar artık Mac'te, internetsiz sese çevrilebilir; metin hiçbir yere gönderilmez, kişisel yanıtlar da okunur. Ayarlar'da yeni bölüm: "Piper'ı kur" (bir kez), "Türkçe sesi indir" (tr_TR-dfki-medium, ~63 MB, bir kez), ses seçimi, hız, "Bu sesle oku" ve "Dene". Açıkken yanıtlar önce bu sesle okunur; olmazsa tarayıcı sesine geçilir. iPhone'dan da çalışır (ses Mac'te üretilir).
 - **Kendi sesimi kaydet:** Ekrana gelen cümleyi okuyup kaydedersiniz (22050 Hz tek kanal WAV, Piper'ın eğitim biçimi). Dinle, son kaydı sil, atla; ilerleme dakika olarak görünür (hedef 45 dk). 120 hazır cümle bitince kasadaki kitaplardan uygun cümleler gelir. "Eğitim paketini indir" ses_veri.zip verir.
