@@ -237,3 +237,42 @@ class CevrimdisiTanima:
             parcalar, _ = cls._yukle().transcribe(
                 wav, language="tr", vad_filter=True, beam_size=1)
             return " ".join(p.text.strip() for p in parcalar).strip()
+
+
+# ------------------------------------------------- tarayıcının yedeği: Mac'in sesi
+_MAC_SUREC = {"p": None}
+_MAC_KILIT = threading.Lock()
+MAC_AZAMI = 6000
+
+
+def mac_oku(metin, ses=None):
+    """Metni Mac'in kendi sesiyle (say) okur ve bitince döner. Tarayıcının
+    konuşma motoru çalışmadığında arayüz bunu kullanır. Metin stdin'den
+    verilir (komut satırında görünmez, '-' ile başlasa da seçenek sanılmaz).
+    Önceki okuma sürüyorsa keser. True: okundu."""
+    if not shutil.which("say"):
+        return False
+    metin = str(metin or "").strip()[:MAC_AZAMI]
+    if not metin:
+        return True
+    ses = ses or ayar.yukle().get("ses", "Yelda")
+    komut = ["say", "-f", "-"]
+    if re.fullmatch(r"[\w .()-]{1,40}", ses or ""):
+        komut[1:1] = ["-v", ses]
+    mac_dur()
+    with _MAC_KILIT:
+        surec = subprocess.Popen(komut, stdin=subprocess.PIPE,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        _MAC_SUREC["p"] = surec
+    try:
+        surec.communicate(metin.encode("utf-8"), timeout=600)
+    except subprocess.TimeoutExpired:
+        surec.kill()
+    return surec.returncode in (0, -15)
+
+
+def mac_dur():
+    with _MAC_KILIT:
+        p = _MAC_SUREC["p"]
+        if p and p.poll() is None:
+            p.terminate()

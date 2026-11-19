@@ -616,6 +616,15 @@ function sesiDurdur() {
   konusuyor = false;
   if ("speechSynthesis" in window) speechSynthesis.cancel();
   if (klipSes) { try { klipSes.pause(); } catch (e) {} }
+  if (yerel && macSesKullan) { macSesKullan = macSesKalici(); istek("/ses/mac-dur", {}).catch(() => {}); }
+}
+
+// Mac'in kendi sesi (say): tarayıcının konuşma motoru çalışmazsa ya da
+// Ayarlar'da seçildiyse yanıtlar sunucuda, Mac'in sesiyle okunur.
+function macSesKalici() { try { return localStorage.getItem("ulgen_mac_ses") === "1"; } catch (e) { return false; } }
+let macSesKullan = macSesKalici();
+async function macKonus(metin) {
+  try { const c = await istek("/ses/mac", { metin: metin }); return !!(c && c.okundu); } catch (e) { return false; }
 }
 
 // Uzun metni cümle sınırlarında ≤ 700 karakterlik parçalara böler (bulut sesi sınırı).
@@ -768,6 +777,7 @@ function sesTercihi() {
 }
 
 function yerelKonus(metin, sirada) {
+  if (yerel && (macSesKullan || !("speechSynthesis" in window))) return macKonus(metin);
   if (!("speechSynthesis" in window)) return Promise.resolve();
   if (!sirada) speechSynthesis.cancel();
   const t = sesTercihi();
@@ -812,8 +822,15 @@ function yerelKonus(metin, sirada) {
           oku(true);
           setTimeout(() => {
             if (!basladi && !speechSynthesis.speaking) {
-              sesNotu("🔇 Tarayıcının ses motoru yanıt vermiyor. Tarayıcıyı tümüyle kapatıp (⌘Q) yeniden açın; olmazsa Ayarlar > Ses seçimi'nden başka bir ses seçin.");
-              coz();
+              try { speechSynthesis.cancel(); } catch (e) {}
+              if (yerel) {                       // Mac'te: Mac'in kendi sesiyle oku
+                macSesKullan = true;
+                sesNotu("🔈 Tarayıcının ses motoru yanıt vermedi; bu oturumda Mac'in kendi sesiyle okuyorum.");
+                macKonus(metin).then(() => coz());
+              } else {
+                sesNotu("🔇 Tarayıcının ses motoru yanıt vermiyor. Tarayıcıyı tümüyle kapatıp yeniden açın; olmazsa Ayarlar > Ses seçimi'nden başka bir ses seçin.");
+                coz();
+              }
             }
           }, 2500);
         }, 150);
@@ -1915,9 +1932,23 @@ async function sesPaneli(k) {
   const hiz = kaydirak("Hız", 0.6, 1.4, 0.05, t.hiz || 0.95), perde = kaydirak("Perde", 0.5, 1.5, 0.05, t.perde || 0.8);
   const dene = document.createElement("button"); dene.className = "dugme aktif"; dene.textContent = "Dene"; dene.style.marginTop = "6px";
   dene.onclick = () => { kaydetTercih(); yerelKonus("Merhaba, ben Ülgen. Sesim böyle."); };
+  let mb = null;
+  if (yerel) {                                 // tarayıcı sesi yerine Mac'in sesi (say)
+    mb = document.createElement("button"); mb.className = "dugme" + (macSesKalici() ? " aktif" : "");
+    mb.style.cssText = "margin:6px 0 0 8px";
+    mb.textContent = "Mac'in kendi sesiyle oku: " + (macSesKalici() ? "açık" : "kapalı");
+    mb.title = "Tarayıcının sesi çalışmazsa açın: yanıtları Mac'in say komutu (Yelda) okur.";
+    mb.onclick = () => {
+      const ac = !macSesKalici();
+      try { localStorage.setItem("ulgen_mac_ses", ac ? "1" : "0"); } catch (e) {}
+      macSesKullan = ac; ayarCiz();
+      if (ac) macKonus("Merhaba, ben Ülgen. Artık Mac'in sesiyle okuyorum.");
+    };
+  }
   sec.onchange = kaydetTercih; hiz.onchange = kaydetTercih; perde.onchange = kaydetTercih;
   kap.appendChild(sec); kap.appendChild(document.createTextNode("Hız")); kap.appendChild(hiz);
   kap.appendChild(document.createTextNode("Perde")); kap.appendChild(perde); kap.appendChild(dene);
+  if (mb) kap.appendChild(mb);
   // 1b) Bulut sesi (ElevenLabs): yalnız Mac'in kendi tarayıcısından açılıp kapatılır
   if (yerel) {
     const durum = await istek("/ses/durum");

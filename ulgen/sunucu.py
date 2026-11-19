@@ -865,6 +865,16 @@ def istek_sinifi(ulgen, limit):
                 return self._cevap(200, {
                     "adres": "/takvim.ics?t=" + takvim.anahtar_uret(),
                     "omur_sn": takvim.OMUR_SN})
+            if urlparse(self.path).path in ("/ses/mac", "/ses/mac-dur"):
+                # Tarayıcı sesi çalışmazsa Mac'in kendi sesi (say); yalnız Mac'ten
+                if not self.server.yerel:
+                    return self._cevap(403, {"hata": "yalnız Mac'in kendi tarayıcısından"})
+                from . import ses as ses_mod
+                if urlparse(self.path).path == "/ses/mac-dur":
+                    ses_mod.mac_dur()
+                    return self._cevap(200, {"tamam": True})
+                return self._cevap(200, {"okundu": ses_mod.mac_oku(
+                    str(veri.get("metin", "")), veri.get("ses") or None)})
             if urlparse(self.path).path == "/ses/oku":
                 try:
                     ham = ses_klip.metni_oku(str(veri.get("metin", "")))

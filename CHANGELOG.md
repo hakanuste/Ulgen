@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.31
+- **Mac'in kendi sesiyle okuma:** Tarayıcının konuşma motoru hiç çalışmadığında (Ayarlar > Ses seçimi > "Dene" bile ses vermiyorsa) yanıtlar artık Mac'in kendi "say" komutuyla (Yelda) okunur. Ayarlar > Ses seçimi'ne "Mac'in kendi sesiyle oku" düğmesi eklendi; açıkken bütün yanıtlar ve "Dene" bu yoldan okunur. Kapalıyken de tarayıcı sesi başlamazsa o oturum için kendiliğinden Mac'in sesine geçilir ve sohbette bildirilir. "Dur" Mac'in sesini de keser. Yalnızca Mac'in kendi tarayıcısında çalışır; metin komut satırına yazılmaz (stdin).
+
 ## 2.8.30
 - **Ses takılınca kendini toparlar:** Tarayıcının konuşma motoru takıldığında yanıt yazılı geliyor ama hiç okunmuyordu. Artık okuma 2 saniyede başlamazsa motor sıfırlanıp bir kez daha denenir; yine olmazsa sohbette nedeni yazılır ("ses motoru yanıt vermiyor; tarayıcıyı ⌘Q ile kapatıp açın"). Ses hata verirse hata adı gösterilir. Okunan cümleler bellekte tutulur (Chrome'un okumayı yarıda kesmesine karşı).
 
