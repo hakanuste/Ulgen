@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.32
+- **Mac sesi: Yelda yüklü değilse de okur:** "Mac'in kendi sesiyle oku" seçili ses (Yelda) Mac'te yüklü değilse sessiz kalmak yerine Mac'in varsayılan sesiyle okur.
+
 ## 2.8.31
 - **Mac'in kendi sesiyle okuma:** Tarayıcının konuşma motoru hiç çalışmadığında (Ayarlar > Ses seçimi > "Dene" bile ses vermiyorsa) yanıtlar artık Mac'in kendi "say" komutuyla (Yelda) okunur. Ayarlar > Ses seçimi'ne "Mac'in kendi sesiyle oku" düğmesi eklendi; açıkken bütün yanıtlar ve "Dene" bu yoldan okunur. Kapalıyken de tarayıcı sesi başlamazsa o oturum için kendiliğinden Mac'in sesine geçilir ve sohbette bildirilir. "Dur" Mac'in sesini de keser. Yalnızca Mac'in kendi tarayıcısında çalışır; metin komut satırına yazılmaz (stdin).
 

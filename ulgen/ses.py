@@ -260,6 +260,13 @@ def mac_oku(metin, ses=None):
     if re.fullmatch(r"[\w .()-]{1,40}", ses or ""):
         komut[1:1] = ["-v", ses]
     mac_dur()
+    sonuc = _calistir(komut, metin)
+    if sonuc not in (0, -15) and "-v" in komut:     # ses (ör. Yelda) yüklü değil:
+        sonuc = _calistir(["say", "-f", "-"], metin)  # Mac'in varsayılan sesiyle
+    return sonuc in (0, -15)
+
+
+def _calistir(komut, metin):
     with _MAC_KILIT:
         surec = subprocess.Popen(komut, stdin=subprocess.PIPE,
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -268,7 +275,7 @@ def mac_oku(metin, ses=None):
         surec.communicate(metin.encode("utf-8"), timeout=600)
     except subprocess.TimeoutExpired:
         surec.kill()
-    return surec.returncode in (0, -15)
+    return surec.returncode
 
 
 def mac_dur():

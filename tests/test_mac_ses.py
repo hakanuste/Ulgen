@@ -28,5 +28,13 @@ class MacSesTesti(unittest.TestCase):
         self.assertEqual(p.call_args[0][0], ["say", "-f", "-"])
 
 
+    def test_ses_yukluyse_degil_varsayilan_sesle_yeniden(self):
+        hatali, iyi = mock.Mock(returncode=1), mock.Mock(returncode=0)
+        with mock.patch.object(ses.shutil, "which", return_value="/usr/bin/say"), \
+                mock.patch.object(ses.subprocess, "Popen", side_effect=[hatali, iyi]) as p:
+            self.assertTrue(ses.mac_oku("selam", "Yelda"))
+        self.assertEqual(p.call_args_list[1][0][0], ["say", "-f", "-"])
+
+
 if __name__ == "__main__":
     unittest.main()
