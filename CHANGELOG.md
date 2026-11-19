@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## 2.8.26
+- **Anahtar yapıştırma kolaylaştı:** Servisin örnek kodundan kopyalanan "Bearer nvapi-…" ya da tırnaklı anahtar artık kendiliğinden temizlenip kaydedilir. Hatalı anahtarda ne beklendiği yazılır.
+
 ## 2.8.25
 - **Hazır beyinlerde model seçme ve "Öne al":** Yapay Zekâ Modelleri > API anahtarlarım bölümünde anahtarı olan Gemini, NVIDIA, Groq, Mistral ve OpenRouter satırlarında artık şu anki model görünür. "Model seç" servisteki modelleri listeler (süzme kutusuyla, ör. "kimi"); seçip "Kaydet ve dene"ye basınca model hemen sınanır. Yalnızca ücretsiz modeller kabul edilir (OpenRouter'da ":free"); gömme, yeniden sıralama, belge ayrıştırma, ses gibi sohbet etmeyen modeller listede gösterilmez. "Öne al" ile o beyin sıranın başına geçer. Yalnızca Mac'in kendi tarayıcısından yapılır.
 

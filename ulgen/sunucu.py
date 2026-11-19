@@ -704,10 +704,14 @@ def istek_sinifi(ulgen, limit):
                                              "yer": "ayar.json (ses kimliği)"})
             if yol == "/yz/anahtar":
                 anahtar = veri.get("anahtar")
+                if isinstance(anahtar, str):     # örnek koddan kopyalananı düzelt
+                    anahtar = re.sub(r"^\s*(Authorization:\s*)?(Bearer\s+)?", "",
+                                     anahtar.strip().strip('"\''), flags=re.I).strip()
                 if (not isinstance(anahtar, str) or not 8 <= len(anahtar) <= 400
                         or re.search(r"\s", anahtar)
                         or not anahtar.isprintable()):
-                    return self._cevap(400, {"hata": "anahtar geçersiz görünüyor"})
+                    return self._cevap(400, {"hata": "anahtar geçersiz görünüyor: "
+                                             "boşluksuz, tek parça olmalı (ör. nvapi-…)"})
                 yer = gizli.sir_yaz(ad, anahtar)
                 veritabani.gunluge_yaz("bilgi", "anahtar", "%s anahtarı yazıldı" % ad)
                 return self._cevap(200, {"tamam": True, "yer": yer})
